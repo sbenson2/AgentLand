@@ -142,8 +142,8 @@ people and coding agents alike.
 ## Support
 
 AgentLand is free and open source. If it is useful to you, you can support its
-development by buying the App Store build (coming soon) or through
-[GitHub Sponsors](https://github.com/sponsors/OWNER) <!-- TODO: replace OWNER with the GitHub account -->.
+development by buying the App Store build (coming soon), starring the repo, or
+reporting bugs and ideas in [Issues](https://github.com/sbenson2/AgentLand/issues).
 
 ## License and trademarks
 
