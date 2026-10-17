@@ -1,0 +1,266 @@
+{
+  "sourceImage": "75943e09-6ca1-45b5-954e-9114d4f024e1",
+  "outputImage": "c9a98274-8770-42c9-95c6-742538698101",
+  "changes": [
+    {
+      "operation": "select_mask",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "name": "entrance",
+      "selector": {
+        "kind": "color",
+        "colors": [
+          "#000000ff"
+        ],
+        "region": [
+          22,
+          62,
+          36,
+          84
+        ]
+      },
+      "reason": "Retain the existing arched doorway as negative space."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        28,
+        38
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 340,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        59,
+        38
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 374,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        16,
+        48
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 22,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        70,
+        51
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 34,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        24,
+        53
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 45,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        60,
+        55
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 54,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        36,
+        56
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 57,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        62,
+        70
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 594,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        37,
+        69
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 431,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        48,
+        56
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 50,
+      "reason": "Replace empty outlined tent panels with solid ink."
+    },
+    {
+      "operation": "brush",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "mask": "entrance",
+      "points": [
+        [
+          29,
+          73
+        ]
+      ],
+      "size": 32,
+      "shape": "square",
+      "mode": "erase",
+      "reason": "Keep a clear arched entrance through the filled wall."
+    },
+    {
+      "operation": "brush",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "points": [
+        [
+          43,
+          26
+        ],
+        [
+          39,
+          36
+        ],
+        [
+          32,
+          48
+        ]
+      ],
+      "size": 4,
+      "shape": "circle",
+      "mode": "erase",
+      "reason": "Keep one broad curved roof seam in the filled canopy."
+    },
+    {
+      "operation": "brush",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "points": [
+        [
+          51,
+          28
+        ],
+        [
+          58,
+          35
+        ],
+        [
+          67,
+          44
+        ]
+      ],
+      "size": 4,
+      "shape": "circle",
+      "mode": "erase",
+      "reason": "Show the right roof plane with a clear second seam."
+    },
+    {
+      "operation": "brush",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "points": [
+        [
+          48,
+          62
+        ],
+        [
+          48,
+          81
+        ]
+      ],
+      "size": 3,
+      "shape": "square",
+      "mode": "erase",
+      "reason": "Separate the front and side walls with one simple fold."
+    }
+  ]
+}

@@ -1,0 +1,2049 @@
+{
+  "folder": "animation-research-final",
+  "frames": 72,
+  "palmsFound": "144/144",
+  "palmErrorPx": [
+    0.16,
+    4.03,
+    1.61
+  ],
+  "opaqueRange": [
+    2146,
+    2243
+  ],
+  "allBinaryAlpha": true,
+  "framesWithStrays": [
+    "frame-15.png",
+    "frame-16.png",
+    "frame-17.png",
+    "frame-18.png",
+    "frame-19.png",
+    "frame-20.png",
+    "frame-21.png",
+    "frame-37.png",
+    "frame-38.png",
+    "frame-39.png",
+    "frame-40.png",
+    "frame-41.png",
+    "frame-42.png"
+  ],
+  "framesTouchingEdge": [],
+  "rows": [
+    {
+      "frame": "frame-00.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2173,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          30.06,
+          49.76
+        ],
+        "far": [
+          61.11,
+          48.7
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.24,
+        "far": 0.98
+      }
+    },
+    {
+      "frame": "frame-01.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2180,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          30.04,
+          49.46
+        ],
+        "far": [
+          61.27,
+          48.77
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.29,
+        "far": 1.19
+      }
+    },
+    {
+      "frame": "frame-02.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2185,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          30.09,
+          48.61
+        ],
+        "far": [
+          61.41,
+          48.97
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.11,
+        "far": 1.32
+      }
+    },
+    {
+      "frame": "frame-03.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2177,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          29.95,
+          48.4
+        ],
+        "far": [
+          61.53,
+          49.02
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.9,
+        "far": 1.59
+      }
+    },
+    {
+      "frame": "frame-04.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2192,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          29.97,
+          48.35
+        ],
+        "far": [
+          61.45,
+          49.07
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.45,
+        "far": 1.81
+      }
+    },
+    {
+      "frame": "frame-05.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2173,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          29.83,
+          47.8
+        ],
+        "far": [
+          61.49,
+          49.16
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.37,
+        "far": 2.1
+      }
+    },
+    {
+      "frame": "frame-06.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2176,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          29.11,
+          47.76
+        ],
+        "far": [
+          61.54,
+          49.1
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.5,
+        "far": 2.56
+      }
+    },
+    {
+      "frame": "frame-07.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2167,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          28.22,
+          47.09
+        ],
+        "far": [
+          60.65,
+          50.12
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.17,
+        "far": 1.81
+      }
+    },
+    {
+      "frame": "frame-08.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2190,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          27.41,
+          46.86
+        ],
+        "far": [
+          60.48,
+          50.05
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.5,
+        "far": 2.43
+      }
+    },
+    {
+      "frame": "frame-09.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2184,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          27.27,
+          47.03
+        ],
+        "far": [
+          60.5,
+          50.9
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.05,
+        "far": 2.32
+      }
+    },
+    {
+      "frame": "frame-10.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2193,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          26.36,
+          46.92
+        ],
+        "far": [
+          60.64,
+          51.21
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.41,
+        "far": 2.83
+      }
+    },
+    {
+      "frame": "frame-11.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2191,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          26.22,
+          47.09
+        ],
+        "far": [
+          59.82,
+          52.13
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.07,
+        "far": 2.19
+      }
+    },
+    {
+      "frame": "frame-12.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2188,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          25.33,
+          46.99
+        ],
+        "far": [
+          58.84,
+          52.58
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.57,
+        "far": 1.56
+      }
+    },
+    {
+      "frame": "frame-13.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2190,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.8,
+          47.62
+        ],
+        "far": [
+          57.88,
+          52.0
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.53,
+        "far": 1.43
+      }
+    },
+    {
+      "frame": "frame-14.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2183,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.59,
+          47.83
+        ],
+        "far": [
+          57.79,
+          51.69
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.51,
+        "far": 1.66
+      }
+    },
+    {
+      "frame": "frame-15.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2184,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 6,
+      "palms": {
+        "near": [
+          24.55,
+          48.56
+        ],
+        "far": [
+          56.76,
+          50.83
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.23,
+        "far": 1.38
+      }
+    },
+    {
+      "frame": "frame-16.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2190,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 9,
+      "palms": {
+        "near": [
+          24.48,
+          48.73
+        ],
+        "far": [
+          56.51,
+          50.29
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.17,
+        "far": 1.55
+      }
+    },
+    {
+      "frame": "frame-17.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2180,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 10,
+      "palms": {
+        "near": [
+          24.44,
+          49.51
+        ],
+        "far": [
+          55.52,
+          48.57
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.0,
+        "far": 1.65
+      }
+    },
+    {
+      "frame": "frame-18.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2182,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 14,
+      "palms": {
+        "near": [
+          23.76,
+          49.62
+        ],
+        "far": [
+          55.34,
+          48.47
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.55,
+        "far": 1.3
+      }
+    },
+    {
+      "frame": "frame-19.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2194,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 19,
+      "palms": {
+        "near": [
+          23.69,
+          49.66
+        ],
+        "far": [
+          55.3,
+          47.42
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.51,
+        "far": 1.66
+      }
+    },
+    {
+      "frame": "frame-20.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2207,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 21,
+      "palms": {
+        "near": [
+          23.61,
+          49.87
+        ],
+        "far": [
+          55.21,
+          47.34
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.48,
+        "far": 1.2
+      }
+    },
+    {
+      "frame": "frame-21.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2208,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 27,
+      "palms": {
+        "near": [
+          23.39,
+          50.0
+        ],
+        "far": [
+          55.46,
+          46.72
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.63,
+        "far": 1.34
+      }
+    },
+    {
+      "frame": "frame-22.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2236,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          23.49,
+          50.69
+        ],
+        "far": [
+          55.46,
+          46.72
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.38,
+        "far": 0.86
+      }
+    },
+    {
+      "frame": "frame-23.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2220,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          23.4,
+          50.8
+        ],
+        "far": [
+          55.46,
+          46.11
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.54,
+        "far": 1.15
+      }
+    },
+    {
+      "frame": "frame-24.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2183,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.04,
+          50.21
+        ],
+        "far": [
+          56.39,
+          45.92
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.66,
+        "far": 1.17
+      }
+    },
+    {
+      "frame": "frame-25.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2208,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.09,
+          51.11
+        ],
+        "far": [
+          57.14,
+          46.49
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.49,
+        "far": 0.76
+      }
+    },
+    {
+      "frame": "frame-26.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2214,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.86,
+          51.36
+        ],
+        "far": [
+          58.3,
+          45.87
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.38,
+        "far": 1.58
+      }
+    },
+    {
+      "frame": "frame-27.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2225,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          25.02,
+          52.06
+        ],
+        "far": [
+          58.95,
+          46.46
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.53,
+        "far": 1.42
+      }
+    },
+    {
+      "frame": "frame-28.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2218,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          25.82,
+          52.47
+        ],
+        "far": [
+          59.74,
+          46.41
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.35,
+        "far": 1.67
+      }
+    },
+    {
+      "frame": "frame-29.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2234,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          26.77,
+          53.08
+        ],
+        "far": [
+          60.67,
+          46.43
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.84,
+        "far": 2.1
+      }
+    },
+    {
+      "frame": "frame-30.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2243,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          27.72,
+          53.0
+        ],
+        "far": [
+          61.39,
+          45.69
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.62,
+        "far": 2.71
+      }
+    },
+    {
+      "frame": "frame-31.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2239,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          27.74,
+          52.56
+        ],
+        "far": [
+          61.36,
+          45.75
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.1,
+        "far": 2.51
+      }
+    },
+    {
+      "frame": "frame-32.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2229,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          28.76,
+          52.25
+        ],
+        "far": [
+          62.23,
+          46.58
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.65,
+        "far": 2.8
+      }
+    },
+    {
+      "frame": "frame-33.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2221,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          29.56,
+          50.42
+        ],
+        "far": [
+          62.27,
+          47.37
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.51,
+        "far": 2.51
+      }
+    },
+    {
+      "frame": "frame-34.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2223,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          30.46,
+          49.48
+        ],
+        "far": [
+          62.36,
+          47.51
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.6,
+        "far": 2.52
+      }
+    },
+    {
+      "frame": "frame-35.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2231,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          30.52,
+          49.21
+        ],
+        "far": [
+          62.96,
+          47.45
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.23,
+        "far": 3.13
+      }
+    },
+    {
+      "frame": "frame-36.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2191,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          30.98,
+          49.01
+        ],
+        "far": [
+          61.49,
+          48.16
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.81,
+        "far": 1.61
+      }
+    },
+    {
+      "frame": "frame-37.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2188,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 29,
+      "palms": {
+        "near": [
+          31.01,
+          48.87
+        ],
+        "far": [
+          61.49,
+          48.16
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.55,
+        "far": 1.8
+      }
+    },
+    {
+      "frame": "frame-38.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2183,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 24,
+      "palms": {
+        "near": [
+          31.02,
+          48.85
+        ],
+        "far": [
+          61.49,
+          48.16
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.16,
+        "far": 2.05
+      }
+    },
+    {
+      "frame": "frame-39.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2191,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 18,
+      "palms": {
+        "near": [
+          31.0,
+          47.98
+        ],
+        "far": [
+          61.49,
+          48.16
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.67,
+        "far": 2.35
+      }
+    },
+    {
+      "frame": "frame-40.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2205,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 15,
+      "palms": {
+        "near": [
+          30.97,
+          47.91
+        ],
+        "far": [
+          62.2,
+          48.46
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.71,
+        "far": 2.7
+      }
+    },
+    {
+      "frame": "frame-41.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2213,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 9,
+      "palms": {
+        "near": [
+          30.01,
+          47.96
+        ],
+        "far": [
+          62.34,
+          49.26
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.18,
+        "far": 2.46
+      }
+    },
+    {
+      "frame": "frame-42.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2212,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 2,
+      "strayPixels": 6,
+      "palms": {
+        "near": [
+          30.0,
+          47.88
+        ],
+        "far": [
+          62.34,
+          49.05
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.45,
+        "far": 3.0
+      }
+    },
+    {
+      "frame": "frame-43.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2224,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          29.1,
+          47.14
+        ],
+        "far": [
+          62.3,
+          49.81
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.71,
+        "far": 2.91
+      }
+    },
+    {
+      "frame": "frame-44.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2216,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          29.08,
+          47.07
+        ],
+        "far": [
+          61.29,
+          50.02
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.85,
+        "far": 2.79
+      }
+    },
+    {
+      "frame": "frame-45.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2226,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          28.1,
+          47.14
+        ],
+        "far": [
+          61.43,
+          50.86
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.61,
+        "far": 2.94
+      }
+    },
+    {
+      "frame": "frame-46.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2225,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          27.1,
+          47.14
+        ],
+        "far": [
+          61.44,
+          51.18
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.74,
+        "far": 3.44
+      }
+    },
+    {
+      "frame": "frame-47.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2235,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          26.29,
+          47.85
+        ],
+        "far": [
+          60.61,
+          51.29
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.69,
+        "far": 3.33
+      }
+    },
+    {
+      "frame": "frame-48.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2217,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          26.14,
+          47.88
+        ],
+        "far": [
+          60.41,
+          51.38
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.43,
+        "far": 3.53
+      }
+    },
+    {
+      "frame": "frame-49.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2220,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          25.29,
+          47.84
+        ],
+        "far": [
+          59.74,
+          51.26
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.0,
+        "far": 3.32
+      }
+    },
+    {
+      "frame": "frame-50.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2212,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          25.32,
+          48.56
+        ],
+        "far": [
+          59.39,
+          50.71
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.67,
+        "far": 3.54
+      }
+    },
+    {
+      "frame": "frame-51.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2214,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.43,
+          48.66
+        ],
+        "far": [
+          59.25,
+          50.44
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.34,
+        "far": 3.8
+      }
+    },
+    {
+      "frame": "frame-52.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2199,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.48,
+          48.73
+        ],
+        "far": [
+          58.79,
+          49.3
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.17,
+        "far": 4.03
+      }
+    },
+    {
+      "frame": "frame-53.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2209,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.56,
+          49.33
+        ],
+        "far": [
+          58.08,
+          48.85
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.88,
+        "far": 3.67
+      }
+    },
+    {
+      "frame": "frame-54.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2199,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.51,
+          49.53
+        ],
+        "far": [
+          57.2,
+          48.31
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.82,
+        "far": 3.05
+      }
+    },
+    {
+      "frame": "frame-55.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2205,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.44,
+          50.23
+        ],
+        "far": [
+          57.04,
+          47.88
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.74,
+        "far": 2.89
+      }
+    },
+    {
+      "frame": "frame-56.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2194,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.28,
+          50.62
+        ],
+        "far": [
+          57.57,
+          47.11
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.79,
+        "far": 3.32
+      }
+    },
+    {
+      "frame": "frame-57.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2184,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.28,
+          50.62
+        ],
+        "far": [
+          57.71,
+          46.98
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.62,
+        "far": 3.07
+      }
+    },
+    {
+      "frame": "frame-58.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2187,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.24,
+          50.91
+        ],
+        "far": [
+          57.32,
+          46.55
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.61,
+        "far": 2.35
+      }
+    },
+    {
+      "frame": "frame-59.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2175,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.14,
+          51.01
+        ],
+        "far": [
+          57.36,
+          47.09
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.78,
+        "far": 1.75
+      }
+    },
+    {
+      "frame": "frame-60.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2150,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          23.86,
+          50.36
+        ],
+        "far": [
+          57.35,
+          47.0
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.66,
+        "far": 1.31
+      }
+    },
+    {
+      "frame": "frame-61.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2154,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.84,
+          51.25
+        ],
+        "far": [
+          58.2,
+          46.89
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.84,
+        "far": 1.72
+      }
+    },
+    {
+      "frame": "frame-62.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2149,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          24.84,
+          51.25
+        ],
+        "far": [
+          59.1,
+          47.0
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.48,
+        "far": 2.11
+      }
+    },
+    {
+      "frame": "frame-63.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2152,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          25.84,
+          52.25
+        ],
+        "far": [
+          59.23,
+          46.36
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 0.78,
+        "far": 1.71
+      }
+    },
+    {
+      "frame": "frame-64.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2146,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          25.81,
+          52.17
+        ],
+        "far": [
+          60.29,
+          46.4
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.55,
+        "far": 2.21
+      }
+    },
+    {
+      "frame": "frame-65.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2163,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          26.0,
+          52.68
+        ],
+        "far": [
+          60.43,
+          46.36
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.71,
+        "far": 1.88
+      }
+    },
+    {
+      "frame": "frame-66.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2167,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          26.76,
+          52.85
+        ],
+        "far": [
+          60.75,
+          46.57
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.45,
+        "far": 1.77
+      }
+    },
+    {
+      "frame": "frame-67.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2164,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          27.94,
+          52.33
+        ],
+        "far": [
+          60.81,
+          46.67
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.12,
+        "far": 1.57
+      }
+    },
+    {
+      "frame": "frame-68.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2165,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          27.84,
+          52.05
+        ],
+        "far": [
+          61.22,
+          46.89
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.56,
+        "far": 1.75
+      }
+    },
+    {
+      "frame": "frame-69.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2156,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          28.76,
+          51.27
+        ],
+        "far": [
+          61.15,
+          47.64
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.35,
+        "far": 1.36
+      }
+    },
+    {
+      "frame": "frame-70.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2164,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          29.59,
+          50.2
+        ],
+        "far": [
+          61.33,
+          47.82
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.31,
+        "far": 1.45
+      }
+    },
+    {
+      "frame": "frame-71.png",
+      "size": [
+        96,
+        96
+      ],
+      "opaque": 2154,
+      "binaryAlpha": true,
+      "colors": 5,
+      "offPalette": null,
+      "components": 1,
+      "strayPixels": 0,
+      "palms": {
+        "near": [
+          30.2,
+          49.2
+        ],
+        "far": [
+          61.15,
+          48.65
+        ]
+      },
+      "touchesEdge": false,
+      "palmError": {
+        "near": 1.4,
+        "far": 1.01
+      }
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "notice.body" : {
+      "comment" : "Push alert body. Its one argument is the notice record's alertBody field, which the Mac composes with notice.body.titleAndProject or the project name alone. A CloudKit subscription names this key; iOS looks it up in the app when the push arrives. Keep the text equal to AgentLandNotifications' (NoticeAlertTextAppTests checks it).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@"
+          }
+        }
+      }
+    },
+    "notice.title.chat.approval.needed" : {
+      "comment" : "Push alert title: an agent is waiting for the user to allow or deny an action. A CloudKit subscription names this key; iOS looks it up in the app when the push arrives. Keep the text equal to AgentLandNotifications' (NoticeAlertTextAppTests checks it).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs your approval"
+          }
+        }
+      }
+    },
+    "notice.title.chat.question.needed" : {
+      "comment" : "Push alert title: an agent asked the user a question and waits for the answer. A CloudKit subscription names this key; iOS looks it up in the app when the push arrives. Keep the text equal to AgentLandNotifications' (NoticeAlertTextAppTests checks it).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question for you"
+          }
+        }
+      }
+    },
+    "notice.title.chat.turn.failed" : {
+      "comment" : "Push alert title: an agent's reply ended with an error. A CloudKit subscription names this key; iOS looks it up in the app when the push arrives. Keep the text equal to AgentLandNotifications' (NoticeAlertTextAppTests checks it).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply failed"
+          }
+        }
+      }
+    },
+    "notice.title.chat.turn.finished" : {
+      "comment" : "Push alert title: an agent finished its reply. A CloudKit subscription names this key; iOS looks it up in the app when the push arrives. Keep the text equal to AgentLandNotifications' (NoticeAlertTextAppTests checks it).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply ready"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

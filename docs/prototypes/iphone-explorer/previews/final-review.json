@@ -1,0 +1,71 @@
+{
+  "checkedAt": "2026-09-30T01:21:27.214Z",
+  "homeActions": [
+    {
+      "name": "New Chat",
+      "heading": "New Chat",
+      "left": false,
+      "right": false
+    },
+    {
+      "name": "New Terminal",
+      "heading": "Terminal",
+      "left": false,
+      "right": false
+    },
+    {
+      "name": "Browse Files",
+      "heading": "",
+      "left": true,
+      "right": false
+    },
+    {
+      "name": "Resume Work",
+      "heading": "Fix sign-in callback",
+      "left": false,
+      "right": false
+    },
+    {
+      "name": "Open Workspace",
+      "heading": "",
+      "left": true,
+      "right": false
+    },
+    {
+      "name": "Settings",
+      "heading": "",
+      "left": false,
+      "right": true
+    }
+  ],
+  "workspaceChecks": [
+    {
+      "workspace": "AgentLand",
+      "panes": {
+        "git": "AgentLand\n\nChanges · read-only comparison\n\nM\nSources/LoginRouter.swift\n›\nM\ndocs/README.md\n›",
+        "files": "AgentLand\n\nProject files\n\n›\nSources\n›\nTests\n›\ndocs\nREADME.md\nPackage.swift",
+        "sessions": "Past sessions\n\nAgentLand\n\nReview settings drawer\nAgentLand · Yesterday\n›\nTrace workspace pairing\nAgentLand · Monday\n›"
+      }
+    },
+    {
+      "workspace": "Website refresh",
+      "panes": {
+        "git": "Website refresh\n\nChanges · read-only comparison\n\nM\nsrc/index.html\n›\nM\nsrc/tokens.css\n›",
+        "files": "Website refresh\n\nProject files\n\n›\nsrc\n›\ndocs\nREADME.md",
+        "sessions": "Past sessions\n\nWebsite refresh\n\nCompare landing page copy\nWebsite refresh · Yesterday\n›\nCheck mobile spacing\nWebsite refresh · Tuesday\n›"
+      }
+    },
+    {
+      "workspace": "Solo chats",
+      "panes": {
+        "git": "Solo chats\n\nChanges · read-only comparison\n\nNo Git repository in Solo chats. Local notes are available in Files.",
+        "files": "Solo chats\n\nLocal notes\n\nrelease-notes.md\nmeeting-notes.md",
+        "sessions": "Past sessions\n\nSolo chats\n\nDraft a release summary\nSolo chats · Yesterday\n›\nOrganize reading notes\nSolo chats · Last week\n›"
+      }
+    }
+  ],
+  "settingsSecurity": true,
+  "settingsNotifications": true,
+  "settingsAppearance": true,
+  "errors": []
+}

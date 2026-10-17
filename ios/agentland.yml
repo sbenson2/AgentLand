@@ -1,0 +1,141 @@
+name: AgentLand
+options:
+  deploymentTarget:
+    iOS: "26.0"
+  # The app icon is AgentLand/AppIcon.icon (Icon Composer; scripts/package-logo.py writes it). XcodeGen
+  # 2.46 files it as one reference but types it wrapper.icon, which Xcode would copy instead of
+  # compiling; Xcode's own type makes actool build it with the asset catalog.
+  postGenCommand: sed -i '' 's/lastKnownFileType = wrapper.icon;/lastKnownFileType = folder.iconcomposer.icon;/' AgentLand.xcodeproj/project.pbxproj
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: ""
+packages:
+  AgentLandBranding:
+    path: ../shared/AgentLandBranding
+  AgentLandChat:
+    path: ../shared/AgentLandChat
+  AgentLandCore:
+    path: ../shared/AgentLandCore
+  AgentLandDesign:
+    path: ../shared/AgentLandDesign
+  # iroh's Swift bindings, built from pinned source by scripts/build-iroh-ffi.sh (not committed; its
+  # VerifyIrohLib plugin checks the libraries against third_party/iroh-ffi/IrohLib.sha256 before they
+  # link). The app reaches it through AgentLandRemoteAccess; the notices of the crates it links are
+  # AgentLand/IrohLib-NOTICES.txt.
+  AgentLandIroh:
+    path: ../shared/AgentLandIroh
+  AgentLandNotifications:
+    path: ../shared/AgentLandNotifications
+  AgentLandPairing:
+    path: ../shared/AgentLandPairing
+  AgentLandRemoteAccess:
+    path: ../shared/AgentLandRemoteAccess
+  AgentLandWorkspace:
+    path: ../shared/AgentLandWorkspace
+  SwiftTerm:
+    url: https://github.com/migueldeicaza/SwiftTerm.git
+    revision: 5d14406844143538cd8f8851d2d8a67c1fe443e5
+targets:
+  AgentLand:
+    type: application
+    platform: iOS
+    sources:
+      - path: AgentLand
+    info:
+      path: AgentLand/Info.plist
+      properties:
+        CFBundleDisplayName: AgentLand
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSFaceIDUsageDescription: Unlock AgentLand with Face ID.
+        NSLocalNetworkUsageDescription: AgentLand connects to the Mac you paired with on your local network.
+        NSCameraUsageDescription: AgentLand scans the pairing QR code shown by your computer and takes photos you attach to a chat.
+        NSMicrophoneUsageDescription: AgentLand listens only while you dictate a chat message.
+        NSSpeechRecognitionUsageDescription: AgentLand turns your dictation into chat text, on this device when possible.
+        # The brand navy (AgentLandColor.brand), so launch shows no white before the cover.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    dependencies:
+      - package: AgentLandBranding
+      - package: AgentLandChat
+      - package: AgentLandCore
+      - package: AgentLandDesign
+      - package: AgentLandNotifications
+        product: AgentLandNotifications
+      - package: AgentLandPairing
+      - package: AgentLandRemoteAccess
+      - package: AgentLandWorkspace
+      - package: SwiftTerm
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.agentland.client
+        # Push through the owner's iCloud: aps-environment, the iCloud.dev.agentland container and
+        # CloudKit. A signed device build needs the explicit App ID with iCloud and Push, which
+        # -allowProvisioningUpdates creates. No background mode: the alerts are shown by iOS and
+        # taps reach the app without one.
+        CODE_SIGN_ENTITLEMENTS: AgentLand/AgentLand.entitlements
+        PRODUCT_NAME: AgentLand
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # AgentLand blue (the AgentLandDesign `tint` token's values) is the app's accent.
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+  AgentLandTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AgentLandTests
+    dependencies:
+      - target: AgentLand
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.agentland.client.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/AgentLand.app/AgentLand"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  AgentLandUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: AgentLandUITests
+      - path: AgentLandUITests/Fixture.json
+        buildPhase: resources
+    dependencies:
+      - target: AgentLand
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.agentland.client.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: AgentLand
+schemes:
+  AgentLand:
+    build:
+      targets:
+        AgentLand: all
+    test:
+      # The unit tests' host app never uses CloudKit. UI tests launch the app themselves and pass
+      # -AgentLandUITests… flags, which also keep it off (AppModel.cloudKitEnvironment). Nor does it make
+      # the phone's iroh tunnel: its tests pass fakes. The only simulator run that binds an endpoint is
+      # the UI test testConnectsThroughIrohTunnel, under the router-ports profile the harness applies
+      # (integration/check-ios-product.py, integration/RouterPortsSandbox).
+      environmentVariables:
+        AGENTLAND_CLOUDKIT: "0"
+        AGENTLAND_REMOTE_ACCESS: "0"
+      targets:
+        - AgentLandTests
+        - AgentLandUITests

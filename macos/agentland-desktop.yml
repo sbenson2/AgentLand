@@ -1,0 +1,119 @@
+# AgentLand.app, the Mac companion. Generate the project with
+#   cd macos && xcodegen generate --spec agentland-desktop.yml
+# and build it with scripts/build-desktop-app.sh or scheme AgentLand.
+#
+# The app's code is the AgentLandDesktop library in Package.swift, which links
+# iroh's Swift bindings (shared/AgentLandIroh; their VerifyIrohLib build tool
+# plugin checks the library against third_party/iroh-ffi/IrohLib.sha256 before
+# it compiles). This target adds the entry point (App/), the bundled Go host,
+# the icon, the third-party notices and Xcode's automatic signing. The app
+# bundles no OpenCode: the host installs and updates it. The
+# AgentLandBundleCheck target runs BuildPhases/check-app-bundle.sh after the
+# app is signed, with the signing identity the app target recorded (Xcode
+# gives an aggregate target no signing settings).
+name: AgentLandDesktop
+options:
+  deploymentTarget:
+    macOS: "26.0"
+  # The app icon is ../ios/AgentLand/AppIcon.icon (Icon Composer), shared with iPhone and iPad.
+  # XcodeGen 2.46 types it wrapper.icon, which Xcode would copy instead of compiling; Xcode's own
+  # type makes actool build AppIcon.icns and Assets.car from it.
+  postGenCommand: sed -i '' 's/lastKnownFileType = wrapper.icon;/lastKnownFileType = folder.iconcomposer.icon;/' AgentLandDesktop.xcodeproj/project.pbxproj
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+packages:
+  AgentLandDesktop:
+    path: .
+fileGroups:
+  - agentland-desktop.yml
+  - AgentLandDesktop.entitlements
+  - CloudKit
+  - Resources
+  - BuildPhases
+targets:
+  AgentLand:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+      # One icon for iPhone, iPad and the Mac, written by scripts/package-logo.py.
+      - path: ../ios/AgentLand/AppIcon.icon
+        buildPhase: resources
+    dependencies:
+      - package: AgentLandDesktop
+        product: AgentLandDesktop
+    settings:
+      base:
+        PRODUCT_NAME: AgentLand
+        # The process name the install script and integration checks look for.
+        EXECUTABLE_NAME: AgentLandDesktop
+        PRODUCT_BUNDLE_IDENTIFIER: dev.agentland.desktop
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_FILE: Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        GENERATE_PKGINFO_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: AgentLandDesktop.entitlements
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: Apple Development
+        DEVELOPMENT_TEAM: 572969HWXM
+        # Development signing would otherwise add get-task-allow, which the app
+        # has never carried. The entitlements file is the whole list.
+        CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+        ENABLE_HARDENED_RUNTIME: NO
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_DEBUG_DYLIB: NO
+        # The phases read the repository (desktop/, scripts/) and the Go caches.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        # The helpers are built for this Mac only, so the app is too.
+        ONLY_ACTIVE_ARCH: YES
+    postBuildScripts:
+      - name: Stamp helper inputs
+        basedOnDependencyAnalysis: false
+        script: exec "$SRCROOT/BuildPhases/stamp-helper-inputs.sh"
+        outputFiles:
+          - $(DERIVED_FILE_DIR)/agentland-host.stamp
+          - $(DERIVED_FILE_DIR)/helper-signing.stamp
+          - $(DERIVED_FILE_DIR)/signing-identity
+      - name: Build agentland-host
+        script: exec "$SRCROOT/BuildPhases/build-host.sh"
+        inputFiles:
+          - $(DERIVED_FILE_DIR)/agentland-host.stamp
+        outputFiles:
+          - $(DERIVED_FILE_DIR)/agentland-host
+      - name: Embed and sign helpers
+        script: exec "$SRCROOT/BuildPhases/embed-helpers.sh"
+        inputFiles:
+          - $(DERIVED_FILE_DIR)/agentland-host
+          - $(DERIVED_FILE_DIR)/helper-signing.stamp
+          - $(SRCROOT)/BuildPhases/embed-helpers.sh
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(EXECUTABLE_FOLDER_PATH)/agentland-host
+      - name: Third-party notices
+        basedOnDependencyAnalysis: false
+        script: exec "$SRCROOT/BuildPhases/third-party-notices.sh"
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/ThirdPartyNotices/README.md
+      - name: Web workspace
+        basedOnDependencyAnalysis: false
+        script: exec "$SRCROOT/BuildPhases/web-workspace.sh"
+        outputFiles:
+          - $(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AgentLandWeb/integrity.json
+aggregateTargets:
+  AgentLandBundleCheck:
+    targets:
+      - AgentLand
+    buildScripts:
+      - name: Check AgentLand.app
+        basedOnDependencyAnalysis: false
+        script: exec "$SRCROOT/BuildPhases/check-app-bundle.sh" "$BUILT_PRODUCTS_DIR/AgentLand.app" "$(cat "$CONFIGURATION_TEMP_DIR/AgentLand.build/DerivedSources/signing-identity")"
+schemes:
+  AgentLand:
+    build:
+      targets:
+        AgentLand: all
+        AgentLandBundleCheck: all
+    run:
+      config: Debug
+    archive:
+      config: Release

@@ -1,0 +1,30 @@
+{
+  "sourceImage": "75943e09-6ca1-45b5-954e-9114d4f024e1",
+  "sourceArchive": "archive/isometric-outline/tent-mono.png",
+  "outputImage": "64f4521a-c588-4ca0-ba75-95814030778f",
+  "whiteOutputImage": "be9aa9f6-958b-44cc-9f46-585b0488b193",
+  "foregroundPixels": 2584,
+  "changes": [
+    {
+      "operation": "outline",
+      "mode": "outside",
+      "layer": "image",
+      "frames": [1],
+      "width": 1,
+      "connectivity": 4,
+      "include_holes": true,
+      "color": "#000000ff",
+      "reason": "Thicken the restored circus-tent outlines while keeping the panels open."
+    }
+  ],
+  "whiteChanges": [
+    {
+      "operation": "map_colors",
+      "layer": "image",
+      "frames": [1],
+      "region": [0, 0, 95, 95],
+      "colors": {"#000000ff": "#ffffffff"},
+      "reason": "Export the identical circus-tent alpha mask in white for dark backgrounds."
+    }
+  ]
+}

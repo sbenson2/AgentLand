@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "pageErrors": [],
+  "checks": [
+    "Mouse full swipe reveals only",
+    "Distinct Close tap",
+    "Duplicate task ID ownership",
+    "No swipe navigation",
+    "Keyboard reveal and Escape",
+    "Inactive active and last workspace close",
+    "Resume preserves sample files",
+    "Vertical touch scroll",
+    "Touch two-step close",
+    "320px no overflow"
+  ]
+}

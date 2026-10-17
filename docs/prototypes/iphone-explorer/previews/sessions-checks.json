@@ -1,0 +1,25 @@
+{
+  "midClose": {
+    "hidden": false,
+    "x": -167.154,
+    "animations": 1
+  },
+  "rapidReopen": true,
+  "sessionOpenCloseReopen": true,
+  "sessions": [
+    "Review settings drawerAgentLand · Yesterday›",
+    "Trace workspace pairingAgentLand · Monday›"
+  ],
+  "websiteSessions": [
+    "Compare landing page copyWebsite refresh · Yesterday›",
+    "Check mobile spacingWebsite refresh · Tuesday›"
+  ],
+  "gitScoped": true,
+  "filesScoped": true,
+  "reducedMotion": {
+    "hidden": true,
+    "x": 0,
+    "animations": 0
+  },
+  "errors": []
+}

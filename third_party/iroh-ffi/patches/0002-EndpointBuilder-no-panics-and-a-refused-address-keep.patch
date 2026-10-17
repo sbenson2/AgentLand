@@ -1,0 +1,289 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AgentLand <agentland@localhost>
+Date: Fri, 25 Sep 2026 23:17:31 -0700
+Subject: [PATCH 2/5] EndpointBuilder: no panics, and a refused address keeps
+ the builder
+
+bind_addr took the builder out of its mutex and returned early when
+iroh refused the address (a second IPv4 address, for example), so the
+builder was gone. Every later call then panicked on "EndpointBuilder
+consumed" while holding the mutex, and after that on the poisoned
+mutex; calls after bind() panicked the same way. A panic through the
+FFI ends the foreign process.
+
+- Bind addresses are checked on a scratch builder when they are set
+  and applied to the real builder when it binds, so a refused address
+  leaves the builder as it was.
+- map() returns an error instead of expect(); methods that return a
+  Result fail with "EndpointBuilder was already used by bind()", and
+  the ones without an error in their FFI signature (apply_*, alpns,
+  relay_mode) do nothing and log a warning: no endpoint can be made
+  from a used builder.
+- A poisoned mutex is recovered instead of unwrapped.
+
+diff --git a/src/endpoint.rs b/src/endpoint.rs
+index baead38..05d17bf 100644
+--- a/src/endpoint.rs
++++ b/src/endpoint.rs
+@@ -1,7 +1,13 @@
+-use std::{collections::HashMap, fmt::Debug, str::FromStr, sync::Arc};
++use std::{
++    collections::HashMap,
++    fmt::Debug,
++    net::SocketAddr,
++    str::FromStr,
++    sync::{Arc, MutexGuard, PoisonError},
++};
+ 
+ use iroh::{
+-    endpoint::{self, presets, presets::Preset as _},
++    endpoint::{self, BindOpts, presets, presets::Preset as _},
+     protocol::AcceptError,
+ };
+ use tokio::sync::Mutex;
+@@ -19,36 +25,117 @@ use crate::{
+ /// `iroh::endpoint::presets` impl (which, importantly, install the crypto
+ /// provider) — a custom preset will almost always call one of them as a
+ /// baseline before layering its own configuration.
++///
++/// No method panics. Once [`bind`](Self::bind) has used the builder, the
++/// methods that return a `Result` fail and the others do nothing (no endpoint
++/// can be made from it any more). A method that fails leaves the builder as it
++/// was.
+ #[derive(uniffi::Object)]
+ pub struct EndpointBuilder {
+-    inner: std::sync::Mutex<Option<iroh::endpoint::Builder>>,
++    inner: std::sync::Mutex<Option<PendingBuilder>>,
++}
++
++/// The wrapped builder, and the bind addresses it gets when it binds.
++///
++/// iroh's `Builder::bind_addr` takes the builder by value and drops it when it
++/// refuses the address, so bind addresses are checked on a scratch builder
++/// when they are set and applied to the real one only in
++/// [`EndpointBuilder::take_inner`].
++struct PendingBuilder {
++    builder: iroh::endpoint::Builder,
++    bind_addrs: Vec<(SocketAddr, BindOpts)>,
++}
++
++impl PendingBuilder {
++    fn add_bind_addrs(&mut self, addrs: &[(SocketAddr, BindOpts)]) -> Result<(), IrohError> {
++        // The real builder's own transports are iroh's defaults, which iroh does
++        // not count as user-defined, so an empty builder given the same list
++        // refuses exactly what the real one would.
++        let mut check = iroh::endpoint::Builder::empty();
++        for (addr, opts) in self.bind_addrs.iter().chain(addrs) {
++            check = check
++                .bind_addr_with_opts(*addr, opts.clone())
++                .map_err(|err| IrohError::invalid_input(format!("bind address {addr}: {err}")))?;
++        }
++        self.bind_addrs.extend_from_slice(addrs);
++        Ok(())
++    }
++
++    fn into_builder(self) -> Result<iroh::endpoint::Builder, IrohError> {
++        let mut builder = self.builder;
++        for (addr, opts) in self.bind_addrs {
++            builder = builder
++                .bind_addr_with_opts(addr, opts)
++                .map_err(|err| IrohError::invalid_input(format!("bind address {addr}: {err}")))?;
++        }
++        Ok(builder)
++    }
+ }
+ 
+ impl EndpointBuilder {
+     pub(crate) fn from_inner(builder: iroh::endpoint::Builder) -> Self {
+         Self {
+-            inner: std::sync::Mutex::new(Some(builder)),
++            inner: std::sync::Mutex::new(Some(PendingBuilder {
++                builder,
++                bind_addrs: Vec::new(),
++            })),
+         }
+     }
+ 
+-    fn map<F>(&self, f: F)
++    /// The builder state. A panic while it was held (there is none in this
++    /// file) must not turn every later call into a panic as well.
++    fn lock(&self) -> MutexGuard<'_, Option<PendingBuilder>> {
++        self.inner.lock().unwrap_or_else(PoisonError::into_inner)
++    }
++
++    fn consumed() -> IrohError {
++        IrohError::invalid_input("EndpointBuilder was already used by bind()")
++    }
++
++    /// Applies `f` to the builder, or fails once `bind` has used it.
++    fn map<F>(&self, f: F) -> Result<(), IrohError>
++    where
++        F: FnOnce(iroh::endpoint::Builder) -> iroh::endpoint::Builder,
++    {
++        let mut guard = self.lock();
++        let mut pending = guard.take().ok_or_else(Self::consumed)?;
++        pending.builder = f(pending.builder);
++        *guard = Some(pending);
++        Ok(())
++    }
++
++    /// [`Self::map`] for the methods whose FFI signature has no error: after
++    /// `bind` there is nothing left to configure, so the call does nothing.
++    fn map_or_ignore<F>(&self, method: &str, f: F)
+     where
+         F: FnOnce(iroh::endpoint::Builder) -> iroh::endpoint::Builder,
+     {
+-        let mut guard = self.inner.lock().unwrap();
+-        let builder = guard.take().expect("EndpointBuilder consumed");
+-        *guard = Some(f(builder));
++        if let Err(err) = self.map(f) {
++            tracing::warn!("EndpointBuilder.{method} ignored: {err}");
++        }
++    }
++
++    fn add_bind_addrs(&self, addrs: &[(SocketAddr, BindOpts)]) -> Result<(), IrohError> {
++        self.lock()
++            .as_mut()
++            .ok_or_else(Self::consumed)?
++            .add_bind_addrs(addrs)
+     }
+ 
++    /// Takes the builder, with its bind addresses applied, for binding.
+     pub(crate) fn take_inner(&self) -> Result<iroh::endpoint::Builder, IrohError> {
+-        self.inner
+-            .lock()
+-            .unwrap()
++        self.lock()
+             .take()
+-            .ok_or_else(|| anyhow::anyhow!("EndpointBuilder already consumed").into())
++            .ok_or_else(Self::consumed)?
++            .into_builder()
+     }
+ }
+ 
++fn parse_socket_addr(addr: &str) -> Result<SocketAddr, IrohError> {
++    SocketAddr::from_str(addr)
++        .map_err(|err| IrohError::invalid_input(format!("invalid socket address {addr:?}: {err}")))
++}
++
+ #[uniffi::export]
+ impl EndpointBuilder {
+     /// Create a fresh empty endpoint builder. Apply a preset (`apply_n0`,
+@@ -61,17 +148,19 @@ impl EndpointBuilder {
+ 
+     /// Replay the n0 production preset (relays + discovery + crypto provider).
+     pub fn apply_n0(&self) {
+-        self.map(|b| presets::N0.apply(b));
++        self.map_or_ignore("apply_n0", |b| presets::N0.apply(b));
+     }
+ 
+     /// Replay the minimal preset (crypto provider only, no external deps).
+     pub fn apply_minimal(&self) {
+-        self.map(|b| presets::Minimal.apply(b));
++        self.map_or_ignore("apply_minimal", |b| presets::Minimal.apply(b));
+     }
+ 
+     /// Replay the n0 preset with relays disabled.
+     pub fn apply_n0_disable_relay(&self) {
+-        self.map(|b| presets::N0DisableRelay.apply(b));
++        self.map_or_ignore("apply_n0_disable_relay", |b| {
++            presets::N0DisableRelay.apply(b)
++        });
+     }
+ 
+     /// Set the endpoint secret key (32 bytes).
+@@ -80,38 +169,33 @@ impl EndpointBuilder {
+             .try_into()
+             .map_err(|e| IrohError::invalid_input(format!("invalid secret key length: {e:?}")))?;
+         let key = iroh::SecretKey::from_bytes(&key);
+-        let mut guard = self.inner.lock().unwrap();
+-        let builder = guard.take().expect("EndpointBuilder consumed");
+-        *guard = Some(builder.secret_key(key));
+-        Ok(())
++        self.map(|b| b.secret_key(key))
+     }
+ 
+     /// Set the advertised ALPNs.
+     pub fn alpns(&self, alpns: Vec<Vec<u8>>) {
+-        self.map(|b| b.alpns(alpns));
++        self.map_or_ignore("alpns", |b| b.alpns(alpns));
+     }
+ 
+     /// Set the relay mode.
+     pub fn relay_mode(&self, mode: &RelayMode) {
+         let mode = mode.0.clone();
+-        self.map(|b| b.relay_mode(mode));
++        self.map_or_ignore("relay_mode", |b| b.relay_mode(mode));
+     }
+ 
+-    /// Set the address the endpoint binds to (`host:port`).
++    /// Set the address the endpoint binds to (`host:port`). At most one
++    /// IPv4 and one IPv6 address; a refused address leaves the builder as it was.
+     pub fn bind_addr(&self, addr: String) -> Result<(), IrohError> {
+-        let socket = std::net::SocketAddr::from_str(&addr).map_err(anyhow::Error::from)?;
+-        let builder = self.take_inner()?;
+-        let builder = builder.bind_addr(socket).map_err(anyhow::Error::from)?;
+-        *self.inner.lock().unwrap() = Some(builder);
+-        Ok(())
++        let socket = parse_socket_addr(&addr)?;
++        self.add_bind_addrs(&[(socket, BindOpts::default())])
+     }
+ 
+     /// Consume the builder and bind a new [`Endpoint`].
+     ///
+     /// The returned `Endpoint` has no protocol handlers — use
+     /// [`Endpoint::bind`] with [`EndpointOptions::protocols`] to attach them.
+-    /// The builder is single-use; a second `bind` returns
+-    /// `EndpointBuilder already consumed`.
++    /// The builder is single-use; a second `bind` fails with
++    /// `EndpointBuilder was already used by bind()`.
+     #[uniffi::method(async_runtime = "tokio")]
+     pub async fn bind(&self) -> Result<Arc<Endpoint>, IrohError> {
+         let builder = self.take_inner()?;
+@@ -954,11 +1038,45 @@ mod tests {
+         ep.close().await.unwrap();
+ 
+         match builder.bind().await {
+-            Err(e) => assert!(format!("{e}").contains("already consumed")),
++            Err(e) => assert!(format!("{e}").contains("already used by bind()")),
+             Ok(_) => panic!("expected error on second bind()"),
+         }
+     }
+ 
++    // A refused bind address used to drop the builder, and every later call
++    // then panicked ("EndpointBuilder consumed", then a poisoned mutex), which
++    // ends the process through the FFI. Calls after bind() panicked the same way.
++    #[tokio::test]
++    async fn test_builder_keeps_its_state_and_never_panics() {
++        let builder = EndpointBuilder::new();
++        builder.apply_minimal();
++        builder.bind_addr("127.0.0.1:0".to_string()).unwrap();
++        // A second IPv4 address is refused; the builder keeps the first.
++        let err = builder.bind_addr("127.0.0.1:1".to_string()).unwrap_err();
++        assert_eq!(err.kind(), crate::IrohErrorKind::InvalidInput, "{err}");
++        assert!(builder.bind_addr("not an address".to_string()).is_err());
++        builder.alpns(vec![b"after/refusal".to_vec()]);
++        builder.secret_key(vec![7; 32]).unwrap();
++        let ep = builder.bind().await.unwrap();
++        assert!(
++            ep.bound_sockets().iter().any(|a| a.starts_with("127.0.0.1:")),
++            "{:?}",
++            ep.bound_sockets()
++        );
++        assert_eq!(ep.secret_key().to_bytes(), vec![7; 32]);
++
++        // bind() used the builder: each call now fails or does nothing.
++        builder.apply_minimal();
++        builder.apply_n0();
++        builder.apply_n0_disable_relay();
++        builder.alpns(vec![]);
++        builder.relay_mode(&RelayMode::disabled());
++        assert!(builder.secret_key(vec![1; 32]).is_err());
++        assert!(builder.bind_addr("127.0.0.1:0".to_string()).is_err());
++        assert!(builder.bind().await.is_err());
++        ep.close().await.unwrap();
++    }
++
+     #[tokio::test]
+     async fn test_side_paths_compile() {
+         // Surface-level smoke test: the new accept/path types must compile and

@@ -1,0 +1,54 @@
+// CloudKit schema for container iCloud.dev.agentland, in the CloudKit Schema
+// Language that `xcrun cktool import-schema` reads. How to apply it:
+// macos/CloudKit/README.md.
+//
+// Notice (zone Notices): the layout is NoticeRecord in
+// shared/AgentLandNotifications. Indexes:
+// - kind: QUERYABLE, for the iPhone/iPad query subscriptions (kind == …).
+// - hostId: QUERYABLE and createdAt: QUERYABLE SORTABLE, for the Mac's hourly
+//   cleanup (hostId == … AND createdAt < …).
+// - ___recordID: QUERYABLE, so records can be looked up and listed by name.
+// runId and scheduleId are unused since schedules were removed on 2026-10-06;
+// they stay because a deployed field cannot be deleted.
+//
+// RemoteAccessAddress (zone RemoteAccess): the Mac's address for remote
+// access, one record per host named by its hostId (docs/HOST-API.md "When the
+// Mac's address changes"; written by the Mac's RemoteAccessAddressRecordWriter,
+// read by devices as AgentLandCore's RemoteAccessAddressRecord). Every field is
+// encrypted, so iCloud's servers do not read the Mac's address; devices fetch
+// the record by its ID, so it needs no field index.
+//
+// The three grants are the ones CloudKit gives every record type it creates
+// on first write. They govern the public database only; AgentLand keeps
+// both record types in the owner's private database.
+
+DEFINE SCHEMA
+
+    RECORD TYPE Notice (
+        "___recordID" REFERENCE QUERYABLE,
+        alertBody     STRING,
+        createdAt     TIMESTAMP QUERYABLE SORTABLE,
+        hostId        STRING QUERYABLE,
+        kind          STRING QUERYABLE,
+        projectId     STRING,
+        projectName   STRING,
+        runId         STRING,
+        scheduleId    STRING,
+        sessionId     STRING,
+        title         STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE RemoteAccessAddress (
+        "___recordID"   REFERENCE QUERYABLE,
+        directAddresses LIST<ENCRYPTED STRING>,
+        nodeId          ENCRYPTED STRING,
+        relayUrl        ENCRYPTED STRING,
+        revision        ENCRYPTED STRING,
+        sequence        ENCRYPTED INT64,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );

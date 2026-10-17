@@ -1,0 +1,24 @@
+{
+  "source": "rig-26100601.png (Pro Flash 152x96, seed 26100601)",
+  "palette": "reduce-colors onto the five day tones",
+  "rope": {
+    "row": 14,
+    "x0": 13,
+    "x1": 137
+  },
+  "bbox": [
+    3,
+    9,
+    147,
+    93
+  ],
+  "scale": "2.625 pt per px, like the tent",
+  "packaged": {
+    "ropeRow": 14,
+    "ropeStart": 13,
+    "ropeEnd": 137,
+    "ropeFreeStart": 29,
+    "ropeFreeEnd": 122,
+    "ground": 93
+  }
+}

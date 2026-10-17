@@ -1,0 +1,72 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AgentLand <agentland@localhost>
+Date: Fri, 25 Sep 2026 22:13:19 -0700
+Subject: [PATCH 4/5] set_log_level can be called more than once
+
+The first call installs the global subscriber with a reloadable level
+filter; later calls change the level. It used init(), which panics when
+a global subscriber is already set, so a second call aborted the process
+through the FFI. If the process already has a global subscriber, the
+call now does nothing.
+
+diff --git a/src/lib.rs b/src/lib.rs
+index eadef0d..62d7b04 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -43,16 +43,49 @@ impl From<LogLevel> for LevelFilter {
+     }
+ }
+ 
++type LogFilterHandle =
++    tracing_subscriber::reload::Handle<LevelFilter, tracing_subscriber::Registry>;
++
++/// Handle to the level filter of the subscriber installed by the first
++/// [`set_log_level`] call; `None` if another global subscriber was already set.
++static LOG_FILTER: std::sync::OnceLock<Option<LogFilterHandle>> = std::sync::OnceLock::new();
++
+ /// Set the logging level.
++///
++/// The first call installs a global subscriber that writes to stdout; later
++/// calls change its level. If the process already has a global subscriber,
++/// this does nothing.
+ #[uniffi::export]
+ pub fn set_log_level(level: LogLevel) {
+     use tracing_subscriber::{fmt, prelude::*, reload};
+     let filter: LevelFilter = level.into();
+-    let (filter, _) = reload::Layer::new(filter);
+-    let mut layer = fmt::Layer::default();
+-    layer.set_ansi(false);
+-    tracing_subscriber::registry()
+-        .with(filter)
+-        .with(layer)
+-        .init();
++    let handle = LOG_FILTER.get_or_init(|| {
++        let (filter_layer, handle) = reload::Layer::new(filter);
++        let mut layer = fmt::Layer::default();
++        layer.set_ansi(false);
++        tracing_subscriber::registry()
++            .with(filter_layer)
++            .with(layer)
++            .try_init()
++            .ok()
++            .map(|()| handle)
++    });
++    if let Some(handle) = handle {
++        let _ = handle.reload(filter);
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    #[test]
++    fn test_set_log_level_repeatedly() {
++        for level in [
++            super::LogLevel::Warn,
++            super::LogLevel::Debug,
++            super::LogLevel::Off,
++            super::LogLevel::Warn,
++        ] {
++            super::set_log_level(level);
++        }
++    }
+ }

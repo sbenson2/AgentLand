@@ -1,0 +1,28 @@
+{
+  "labels": [
+    {
+      "text": "Workspaces",
+      "client": 80,
+      "scroll": 80
+    },
+    {
+      "text": "Git",
+      "client": 80,
+      "scroll": 80
+    },
+    {
+      "text": "Files",
+      "client": 80,
+      "scroll": 80
+    },
+    {
+      "text": "Sessions",
+      "client": 80,
+      "scroll": 80
+    }
+  ],
+  "closeKeepsDrawer": true,
+  "reopen": true,
+  "closeOthersKeepsDrawer": true,
+  "errors": []
+}

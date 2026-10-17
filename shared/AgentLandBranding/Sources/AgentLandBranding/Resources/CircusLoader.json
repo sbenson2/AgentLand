@@ -1,0 +1,18 @@
+{
+  "side": 96,
+  "framesPerSecond": 15,
+  "idleFrames": 8,
+  "changeFrames": 20,
+  "objects": [
+    "ball",
+    "club",
+    "bigtop",
+    "star",
+    "balloon",
+    "hat",
+    "hoop",
+    "unicycle",
+    "popcorn",
+    "ticket"
+  ]
+}

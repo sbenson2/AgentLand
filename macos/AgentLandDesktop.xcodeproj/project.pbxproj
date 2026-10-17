@@ -1,0 +1,613 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		3C91170412430BC004FE1DA8 /* AgentLandBundleCheck */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 121D09A3776E805428EF3A2D /* Build configuration list for PBXAggregateTarget "AgentLandBundleCheck" */;
+			buildPhases = (
+				58FD55AD6F78A5C8C8C88276 /* Check AgentLand.app */,
+			);
+			dependencies = (
+				AFFD0EF23A97BE3DCC5EA9E9 /* PBXTargetDependency */,
+			);
+			name = AgentLandBundleCheck;
+			packageProductDependencies = (
+			);
+			productName = AgentLandBundleCheck;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		50CAA8B6B6B471498E5FA788 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = F1E48F28DFB5004EF3DD8D5C /* AppIcon.icon */; };
+		A13AC1AC526EC10272ABF505 /* AgentLandDesktop in Frameworks */ = {isa = PBXBuildFile; productRef = 655EADF1FC4E5977FC9A2E53 /* AgentLandDesktop */; };
+		D01D25D74DBD5388DF6CC158 /* AgentLandMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7692A65D0E0FB8275776FF11 /* AgentLandMain.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		8A787A4384A8B960C29DF593 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2B5D8A2156EF3F18A353FE87 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1824938B0C8CB874E06C6C07;
+			remoteInfo = AgentLand;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0C5977EBB0785064D8F9BBBB /* OpenCodeRuntime.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = OpenCodeRuntime.json; sourceTree = "<group>"; };
+		238E3FF8A337E8E0793449E5 /* go-tool.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "go-tool.sh"; sourceTree = "<group>"; };
+		35A46BD293500B1FA416B2FC /* check-app-bundle.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "check-app-bundle.sh"; sourceTree = "<group>"; };
+		3FFA470BC92CDBBFDE201A20 /* agentland-desktop.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "agentland-desktop.yml"; sourceTree = "<group>"; };
+		40529E334465D4A660B33A2B /* web-workspace.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "web-workspace.sh"; sourceTree = "<group>"; };
+		553C743EA280307BA2AF6F45 /* embed-helpers.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "embed-helpers.sh"; sourceTree = "<group>"; };
+		67949A9DCEC4E5964D266827 /* schema.ckdb */ = {isa = PBXFileReference; path = schema.ckdb; sourceTree = "<group>"; };
+		6CBECACCCB39A238053E98A7 /* macos */ = {isa = PBXFileReference; lastKnownFileType = folder; name = macos; path = .; sourceTree = SOURCE_ROOT; };
+		7692A65D0E0FB8275776FF11 /* AgentLandMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLandMain.swift; sourceTree = "<group>"; };
+		961681CE15AA01A0573BED26 /* AgentLand.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AgentLand.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		96A872BEF791FEAABCA21A85 /* stamp-helper-inputs.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "stamp-helper-inputs.sh"; sourceTree = "<group>"; };
+		989A60013F86A2BE1D906BAB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		AE2D32FF47868B4F5D4E2328 /* AgentLandDesktop.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AgentLandDesktop.entitlements; sourceTree = "<group>"; };
+		AF143B5A69F7DD1A40BE00E2 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		D712990B8475E24A06D5C7B9 /* build-host.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "build-host.sh"; sourceTree = "<group>"; };
+		D796E3DBE9513461B6236AFB /* third-party-notices.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "third-party-notices.sh"; sourceTree = "<group>"; };
+		F1E48F28DFB5004EF3DD8D5C /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EFD6E8C521EED8ACCA4A6B36 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A13AC1AC526EC10272ABF505 /* AgentLandDesktop in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		00065BFCB97336EEFAE9B106 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				6CBECACCCB39A238053E98A7 /* macos */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		190E1DA777001B3ECBB3B496 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				7692A65D0E0FB8275776FF11 /* AgentLandMain.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		34B0475A7771C6B61E4CC9B1 /* CloudKit */ = {
+			isa = PBXGroup;
+			children = (
+				AF143B5A69F7DD1A40BE00E2 /* README.md */,
+				67949A9DCEC4E5964D266827 /* schema.ckdb */,
+			);
+			path = CloudKit;
+			sourceTree = "<group>";
+		};
+		43DC25FF8DCF3FD9A97DDAA5 = {
+			isa = PBXGroup;
+			children = (
+				3FFA470BC92CDBBFDE201A20 /* agentland-desktop.yml */,
+				AE2D32FF47868B4F5D4E2328 /* AgentLandDesktop.entitlements */,
+				97503F8E9304A71E1F57CFFB /* AgentLand */,
+				190E1DA777001B3ECBB3B496 /* App */,
+				8B4859547FF750A23E265A05 /* BuildPhases */,
+				34B0475A7771C6B61E4CC9B1 /* CloudKit */,
+				00065BFCB97336EEFAE9B106 /* Packages */,
+				ADCDFDCBA0993C8D03874A55 /* Resources */,
+				A2A623ABCD0486E8B787F0FF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		8B4859547FF750A23E265A05 /* BuildPhases */ = {
+			isa = PBXGroup;
+			children = (
+				D712990B8475E24A06D5C7B9 /* build-host.sh */,
+				35A46BD293500B1FA416B2FC /* check-app-bundle.sh */,
+				553C743EA280307BA2AF6F45 /* embed-helpers.sh */,
+				238E3FF8A337E8E0793449E5 /* go-tool.sh */,
+				96A872BEF791FEAABCA21A85 /* stamp-helper-inputs.sh */,
+				D796E3DBE9513461B6236AFB /* third-party-notices.sh */,
+				40529E334465D4A660B33A2B /* web-workspace.sh */,
+			);
+			path = BuildPhases;
+			sourceTree = "<group>";
+		};
+		97503F8E9304A71E1F57CFFB /* AgentLand */ = {
+			isa = PBXGroup;
+			children = (
+				F1E48F28DFB5004EF3DD8D5C /* AppIcon.icon */,
+			);
+			name = AgentLand;
+			path = ../ios/AgentLand;
+			sourceTree = "<group>";
+		};
+		A2A623ABCD0486E8B787F0FF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				961681CE15AA01A0573BED26 /* AgentLand.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		ADCDFDCBA0993C8D03874A55 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				989A60013F86A2BE1D906BAB /* Info.plist */,
+				0C5977EBB0785064D8F9BBBB /* OpenCodeRuntime.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1824938B0C8CB874E06C6C07 /* AgentLand */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A740CE8B82D715BFF8D93C35 /* Build configuration list for PBXNativeTarget "AgentLand" */;
+			buildPhases = (
+				12F0B75EA7C9D0CB04F2E0FB /* Sources */,
+				911F97CA4ADC9C46AE12FD47 /* Resources */,
+				EFD6E8C521EED8ACCA4A6B36 /* Frameworks */,
+				153FEEAA1A2F191D79FA994D /* Stamp helper inputs */,
+				B85704B86632F8992478075F /* Build agentland-host */,
+				527742CB4DA5293992F91148 /* Embed and sign helpers */,
+				4850CF32349EB4C507C26EAA /* Third-party notices */,
+				B8971420517A8230B7F6EA25 /* Web workspace */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AgentLand;
+			packageProductDependencies = (
+				655EADF1FC4E5977FC9A2E53 /* AgentLandDesktop */,
+			);
+			productName = AgentLand;
+			productReference = 961681CE15AA01A0573BED26 /* AgentLand.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2B5D8A2156EF3F18A353FE87 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					1824938B0C8CB874E06C6C07 = {
+						DevelopmentTeam = 572969HWXM;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 3625CC447840CB85F5F7B158 /* Build configuration list for PBXProject "AgentLandDesktop" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 43DC25FF8DCF3FD9A97DDAA5;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D3813762AD3A0AC34BDB10B5 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A2A623ABCD0486E8B787F0FF /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1824938B0C8CB874E06C6C07 /* AgentLand */,
+				3C91170412430BC004FE1DA8 /* AgentLandBundleCheck */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		911F97CA4ADC9C46AE12FD47 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				50CAA8B6B6B471498E5FA788 /* AppIcon.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		153FEEAA1A2F191D79FA994D /* Stamp helper inputs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Stamp helper inputs";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/agentland-host.stamp",
+				"$(DERIVED_FILE_DIR)/helper-signing.stamp",
+				"$(DERIVED_FILE_DIR)/signing-identity",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "exec \"$SRCROOT/BuildPhases/stamp-helper-inputs.sh\"";
+		};
+		4850CF32349EB4C507C26EAA /* Third-party notices */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Third-party notices";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/ThirdPartyNotices/README.md",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "exec \"$SRCROOT/BuildPhases/third-party-notices.sh\"";
+		};
+		527742CB4DA5293992F91148 /* Embed and sign helpers */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(DERIVED_FILE_DIR)/agentland-host",
+				"$(DERIVED_FILE_DIR)/helper-signing.stamp",
+				"$(SRCROOT)/BuildPhases/embed-helpers.sh",
+			);
+			name = "Embed and sign helpers";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_FOLDER_PATH)/agentland-host",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "exec \"$SRCROOT/BuildPhases/embed-helpers.sh\"";
+		};
+		58FD55AD6F78A5C8C8C88276 /* Check AgentLand.app */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Check AgentLand.app";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "exec \"$SRCROOT/BuildPhases/check-app-bundle.sh\" \"$BUILT_PRODUCTS_DIR/AgentLand.app\" \"$(cat \"$CONFIGURATION_TEMP_DIR/AgentLand.build/DerivedSources/signing-identity\")\"";
+		};
+		B85704B86632F8992478075F /* Build agentland-host */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(DERIVED_FILE_DIR)/agentland-host.stamp",
+			);
+			name = "Build agentland-host";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/agentland-host",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "exec \"$SRCROOT/BuildPhases/build-host.sh\"";
+		};
+		B8971420517A8230B7F6EA25 /* Web workspace */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Web workspace";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AgentLandWeb/integrity.json",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "exec \"$SRCROOT/BuildPhases/web-workspace.sh\"";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		12F0B75EA7C9D0CB04F2E0FB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D01D25D74DBD5388DF6CC158 /* AgentLandMain.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AFFD0EF23A97BE3DCC5EA9E9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1824938B0C8CB874E06C6C07 /* AgentLand */;
+			targetProxy = 8A787A4384A8B960C29DF593 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		343EB4C726F1D00E41016595 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		4D0DFE89E90A4ABD4E5D8B7C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		5DD3F5E700CC9AB3501EFEAE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		6ABB1CAE552247A258FD4A19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AgentLandDesktop.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 572969HWXM;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				EXECUTABLE_NAME = AgentLandDesktop;
+				GENERATE_INFOPLIST_FILE = NO;
+				GENERATE_PKGINFO_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.agentland.desktop;
+				PRODUCT_NAME = AgentLand;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		A993B82F7B21BE82547D456E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = AgentLandDesktop.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 572969HWXM;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_DEBUG_DYLIB = NO;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				EXECUTABLE_NAME = AgentLandDesktop;
+				GENERATE_INFOPLIST_FILE = NO;
+				GENERATE_PKGINFO_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.agentland.desktop;
+				PRODUCT_NAME = AgentLand;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		C125CABFA03975BEF3887454 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		121D09A3776E805428EF3A2D /* Build configuration list for PBXAggregateTarget "AgentLandBundleCheck" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				343EB4C726F1D00E41016595 /* Debug */,
+				C125CABFA03975BEF3887454 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3625CC447840CB85F5F7B158 /* Build configuration list for PBXProject "AgentLandDesktop" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D0DFE89E90A4ABD4E5D8B7C /* Debug */,
+				5DD3F5E700CC9AB3501EFEAE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A740CE8B82D715BFF8D93C35 /* Build configuration list for PBXNativeTarget "AgentLand" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6ABB1CAE552247A258FD4A19 /* Debug */,
+				A993B82F7B21BE82547D456E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D3813762AD3A0AC34BDB10B5 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		655EADF1FC4E5977FC9A2E53 /* AgentLandDesktop */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgentLandDesktop;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 2B5D8A2156EF3F18A353FE87 /* Project object */;
+}

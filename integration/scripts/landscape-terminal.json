@@ -1,0 +1,25 @@
+{
+  "name": "A full terminal in landscape with the keyboard up",
+  "about": "B-16: with the screen full of output and the keyboard up, turning to landscape must keep the prompt line above the key bar, where the person typing can see it; back in portrait it is still there.",
+  "appearance": "light",
+  "timeout": 900,
+  "launch": {"appearance": "light", "pair": true},
+  "steps": [
+    {"do": "helper", "name": "openWorkspace"},
+    {"do": "helper", "name": "newTerminal", "argument": "shell"},
+    {"do": "terminalType", "text": "seq 1 80\n"},
+    {"do": "keyboard", "shown": true, "soft": true},
+    {"do": "rotate", "to": "landscape"},
+    {"do": "sleep", "seconds": 2},
+    {"do": "terminalType", "text": "echo LANDPROMPT$((40+2))\n"},
+    {"do": "sleep", "seconds": 1},
+    {"do": "screenshot", "name": "landscape-full-terminal"},
+    {"do": "terminalSees", "text": "LANDPROMPT42", "timeout": 10, "note": "the newest output is above the key bar, not under it"},
+    {"do": "rotate", "to": "portrait"},
+    {"do": "sleep", "seconds": 2},
+    {"do": "terminalType", "text": "echo PORTPROMPT$((40+3))\n"},
+    {"do": "screenshot", "name": "portrait-again"},
+    {"do": "terminalSees", "text": "PORTPROMPT43", "timeout": 10},
+    {"do": "invariants"}
+  ]
+}

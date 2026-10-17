@@ -1,0 +1,21 @@
+{
+  "sourceImage": "c9a98274-8770-42c9-95c6-742538698101",
+  "outputImage": "bfef90d5-1f48-426c-ad02-37ab5022191d",
+  "changes": [
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        77,
+        43
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 12,
+      "reason": "Remove the last small hollow eave pocket from the filled silhouette."
+    }
+  ]
+}

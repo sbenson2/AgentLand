@@ -1,0 +1,875 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00729BD5EA1EB704AB5FCB60 /* HostWorkspaceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B08F3B60DD3536C80483E76D /* HostWorkspaceUITests.swift */; };
+		02EBDC58B6602CF93286A04F /* NotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A91CA6EF2B3C3854F52AF7 /* NotificationTests.swift */; };
+		09A2875A8001F4BA9038BFEB /* TextSizeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F7DCB3B584A083E221F58B /* TextSizeUITests.swift */; };
+		0B4F1EA263EC90940C371CFA /* PairingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25B615AD194AD58595B57818 /* PairingView.swift */; };
+		0CB26D5DB4BDB8782B4E04A4 /* HostRoutesAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 065F6D31E203BF7D28958239 /* HostRoutesAppTests.swift */; };
+		0E4A6214F82D2415EE5E8EEC /* PairingQRScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1361E42C5D26249AFEFF554 /* PairingQRScanner.swift */; };
+		0EF2AD84B4E8361B334FE626 /* GRDB-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 42893CB32E79E46D17D6FEEC /* GRDB-LICENSE.txt */; };
+		1B7A556B424CCF603E73700B /* RemoteAccessAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F3EA5773040395B9A379133 /* RemoteAccessAppTests.swift */; };
+		200B30C82CA21E20DC24A707 /* RemoteAccessLoopbackDial.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CCF6A89C94B467F9D6D8BF1 /* RemoteAccessLoopbackDial.swift */; };
+		23E2D0F30E34DA61F7009CF0 /* agentland-silent.caf in Resources */ = {isa = PBXBuildFile; fileRef = 683F54EC48C8AB29DD866CB6 /* agentland-silent.caf */; };
+		26FFB29D63BB0EE33EA640CF /* ApprovedIPhoneUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6291F6B137D32C8F9362F9CF /* ApprovedIPhoneUITests.swift */; };
+		27B7CA1B46144CCE2BAE3588 /* AppModel+RemoteAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EAA6EE3293C1B9AA716C798 /* AppModel+RemoteAccess.swift */; };
+		291DB4310E80B5381B11DD36 /* ExploratoryCombinations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91B86650306407F847891797 /* ExploratoryCombinations.swift */; };
+		39AF1FAE29461735CEC7B0D0 /* AgentLandPairing in Frameworks */ = {isa = PBXBuildFile; productRef = 73AF9CE9CE588573DFA2CDB0 /* AgentLandPairing */; };
+		3FB2A8C1CA3B18CA080C79AA /* SettingsRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E02FCC9A6046C7E53878D2B /* SettingsRenderTests.swift */; };
+		43BF6E9D3C03532A39E40A4D /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D9C2B4CDDB12E58AEB2A3F /* AppModel.swift */; };
+		4BBD8FE365A7A7C7B3A45236 /* AppModel+Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBE319F302EA1AEF5DA71465 /* AppModel+Settings.swift */; };
+		50FC786E248AD5E6532F34F7 /* FullWorkspaceUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5325F33D774E5669C75C052 /* FullWorkspaceUITests.swift */; };
+		514BBB6B3FD8A000C9FB7ABE /* CircusAnimationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94475DCD7DD027351BAA2A44 /* CircusAnimationTests.swift */; };
+		5B24D7188807B40064F9DDD0 /* Fixture.json in Resources */ = {isa = PBXBuildFile; fileRef = E545C55244B92A3F3C50AD47 /* Fixture.json */; };
+		5C0DE6A08E8453A3B3E4DB9C /* AgentLandDesign in Frameworks */ = {isa = PBXBuildFile; productRef = 5D783FCA54E70C3143963CD3 /* AgentLandDesign */; };
+		627C703A77761422D8B4E855 /* PlainChatUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8AB89B8253ABBED52CC5D13 /* PlainChatUITests.swift */; };
+		68279AE2C0E49562FDE78D34 /* ChatScreenRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 730BBB5EFC3E917A90A373CA /* ChatScreenRenderTests.swift */; };
+		6916D5DBD8C04A004036305E /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 94D59E8FF3B5DEFDF0B52C4D /* SwiftTerm */; };
+		6C835BA001A14CAE0580E049 /* HomeActionBoxUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DCAAE6A9B26DDB3781B0C9 /* HomeActionBoxUITests.swift */; };
+		753229222F95619104106230 /* AgentLandCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7F585870341E483F4A37CBD0 /* AgentLandCore */; };
+		76DBB3572BBCC89503959A2F /* AttachmentPreviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B8C6F8FE6A0F89ECCFB2D13 /* AttachmentPreviewTests.swift */; };
+		7D3F1146EF067E272A1A612D /* HomeAndDrawerUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71B176B3F2BD86ED94F35600 /* HomeAndDrawerUITests.swift */; };
+		820B7C5EB3F9162092BABDE2 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 61A68819BE84D94D283DE97B /* Localizable.xcstrings */; };
+		84B225CE252E38EE35B59C97 /* PhoneBottomTabsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5677996D7F2167BA94ED4349 /* PhoneBottomTabsUITests.swift */; };
+		8E2830CC4C96E62255B6DCFD /* RemoteAccessLoopbackDialTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A9C6C103C5679989F063B1 /* RemoteAccessLoopbackDialTests.swift */; };
+		98249FCF4E33E79B2F4839C2 /* AppModel+Pairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C08C8CB840629276E39C679D /* AppModel+Pairing.swift */; };
+		9E0971F3B4CFE2D5B318EB9F /* SystemNoticeCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FBC20BC807D74F2F552976C /* SystemNoticeCenter.swift */; };
+		A45B9272D50A4F15319AF3B8 /* EditorContainerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F4FC7956CDC5B25D2EAB9C6 /* EditorContainerTests.swift */; };
+		A9C047B9B149C8BDF5D88DFC /* ExploratoryUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CF7788C36AC2AF69030E9A2 /* ExploratoryUITests.swift */; };
+		AA9AF45CC8CCF2188B023A84 /* AgentLandWorkspace in Frameworks */ = {isa = PBXBuildFile; productRef = F4C0E79131182B7783781C14 /* AgentLandWorkspace */; };
+		ADCC98E9DC0C2049EDF3A382 /* AgentLandBranding in Frameworks */ = {isa = PBXBuildFile; productRef = 61D59A10E0BEE77ED0555BBE /* AgentLandBranding */; };
+		AF9D90417E9597F9E2133146 /* AgentLandRemoteAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 486272313E27AED86370789B /* AgentLandRemoteAccess */; };
+		AFD4FF69D78CB9FCEFB8D7EB /* SwiftTerm-LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = C335F5A84B58477C5AD4FCAF /* SwiftTerm-LICENSE.txt */; };
+		B0641C5493BD943BF4675F5B /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 7B985A69879D9C497E4BE65A /* AppIcon.icon */; };
+		B734CAAD208160DF7ED45934 /* PlainChatRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B7F311959148F2ED2D62DDE /* PlainChatRenderTests.swift */; };
+		BADB80F47D408567B40FFCBB /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524ED6F4764BE54A55ACA8A4 /* SettingsView.swift */; };
+		C74FEDA23CC05E3241D31902 /* NotificationsSettingsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 680CBD33343828409267CC1E /* NotificationsSettingsPane.swift */; };
+		CAD21F25C35A8CE5E6663650 /* SettingsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B31746A51F4F83D554F8E3E9 /* SettingsUITests.swift */; };
+		D86D9EE9B1907B1F0EE1BEA2 /* RemoteAccessAddressBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = D948CE21F374DC25AA683151 /* RemoteAccessAddressBook.swift */; };
+		D95F9EAA30D5181FDB9FAFDA /* AgentLandNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = 66FE05017242F28A991C7466 /* AgentLandNotifications */; };
+		D986EAFDE338906580F8BEF6 /* PhoneTabsNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43BF8C8A896D14A09156084E /* PhoneTabsNavigationTests.swift */; };
+		DF3BA0E8B4F4DDC237E713EB /* AppModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04ABE8A0BA0FA3F416E234F /* AppModelTests.swift */; };
+		E07A39FD26F6F5F5EC9D9C9F /* NoticeOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD88097D06D62A9B87A08A06 /* NoticeOverlay.swift */; };
+		E0EC1F49DAA6BC69506A421D /* TerminalRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76DFEDBA7126A34DAE1D0D13 /* TerminalRendererTests.swift */; };
+		E301F465AA71A306983A2A01 /* IrohLib-NOTICES.txt in Resources */ = {isa = PBXBuildFile; fileRef = D06ABAAD161C6706C95F0C50 /* IrohLib-NOTICES.txt */; };
+		E395BD0D9C03C8FAA8238530 /* AgentsSettingsRenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57BF5295434BCDD7879C6B7D /* AgentsSettingsRenderTests.swift */; };
+		E61F00CF437D37B6F6C88F49 /* AppModel+Notices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6479F0C540EFD6B26A0BB16C /* AppModel+Notices.swift */; };
+		E9A119BB90DB0563E495F112 /* AgentLandChat in Frameworks */ = {isa = PBXBuildFile; productRef = 020F294E5BEB92FFD16D7C52 /* AgentLandChat */; };
+		EFEB4572F1CB279575FC7624 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 59303012A86B35D6117DBA2F /* Assets.xcassets */; };
+		F598FC73FE3BB6A91E47BBA1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAE56D07C787CFA561C0627 /* AppDelegate.swift */; };
+		FA203EA5AD1E3BA1BFB898FA /* AgentLandApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAC0596A7721757A5A06317 /* AgentLandApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		15F61D9055B80CD16993F135 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B114B4E455AE2A816A7D90CA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C76DC787C4E6876F469A2531;
+			remoteInfo = AgentLand;
+		};
+		B51CBDEDAE12305DD750784F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B114B4E455AE2A816A7D90CA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C76DC787C4E6876F469A2531;
+			remoteInfo = AgentLand;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		065F6D31E203BF7D28958239 /* HostRoutesAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostRoutesAppTests.swift; sourceTree = "<group>"; };
+		0840EE057F7F48491924157F /* AgentLandBranding */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AgentLandBranding; path = ../shared/AgentLandBranding; sourceTree = SOURCE_ROOT; };
+		08A91CA6EF2B3C3854F52AF7 /* NotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationTests.swift; sourceTree = "<group>"; };
+		0F4FC7956CDC5B25D2EAB9C6 /* EditorContainerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorContainerTests.swift; sourceTree = "<group>"; };
+		1CCF6A89C94B467F9D6D8BF1 /* RemoteAccessLoopbackDial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAccessLoopbackDial.swift; sourceTree = "<group>"; };
+		1F3EA5773040395B9A379133 /* RemoteAccessAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAccessAppTests.swift; sourceTree = "<group>"; };
+		1FBC20BC807D74F2F552976C /* SystemNoticeCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemNoticeCenter.swift; sourceTree = "<group>"; };
+		25B615AD194AD58595B57818 /* PairingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingView.swift; sourceTree = "<group>"; };
+		31A9C6C103C5679989F063B1 /* RemoteAccessLoopbackDialTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAccessLoopbackDialTests.swift; sourceTree = "<group>"; };
+		31F7DCB3B584A083E221F58B /* TextSizeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextSizeUITests.swift; sourceTree = "<group>"; };
+		3E02FCC9A6046C7E53878D2B /* SettingsRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRenderTests.swift; sourceTree = "<group>"; };
+		42893CB32E79E46D17D6FEEC /* GRDB-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "GRDB-LICENSE.txt"; sourceTree = "<group>"; };
+		43BF8C8A896D14A09156084E /* PhoneTabsNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneTabsNavigationTests.swift; sourceTree = "<group>"; };
+		4B7F311959148F2ED2D62DDE /* PlainChatRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainChatRenderTests.swift; sourceTree = "<group>"; };
+		4D5EAA235DCA7F3E5506B2B9 /* AgentLandPairing */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AgentLandPairing; path = ../shared/AgentLandPairing; sourceTree = SOURCE_ROOT; };
+		4E6FB6E80E48855E7BB64CBB /* AgentLandWorkspace */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AgentLandWorkspace; path = ../shared/AgentLandWorkspace; sourceTree = SOURCE_ROOT; };
+		524ED6F4764BE54A55ACA8A4 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		5677996D7F2167BA94ED4349 /* PhoneBottomTabsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneBottomTabsUITests.swift; sourceTree = "<group>"; };
+		57BF5295434BCDD7879C6B7D /* AgentsSettingsRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentsSettingsRenderTests.swift; sourceTree = "<group>"; };
+		59303012A86B35D6117DBA2F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5B8C6F8FE6A0F89ECCFB2D13 /* AttachmentPreviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPreviewTests.swift; sourceTree = "<group>"; };
+		5CF7788C36AC2AF69030E9A2 /* ExploratoryUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploratoryUITests.swift; sourceTree = "<group>"; };
+		61A68819BE84D94D283DE97B /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		6291F6B137D32C8F9362F9CF /* ApprovedIPhoneUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApprovedIPhoneUITests.swift; sourceTree = "<group>"; };
+		6479F0C540EFD6B26A0BB16C /* AppModel+Notices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Notices.swift"; sourceTree = "<group>"; };
+		680CBD33343828409267CC1E /* NotificationsSettingsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsSettingsPane.swift; sourceTree = "<group>"; };
+		683F54EC48C8AB29DD866CB6 /* agentland-silent.caf */ = {isa = PBXFileReference; path = "agentland-silent.caf"; sourceTree = "<group>"; };
+		6C7A5BE9EE158C3F5318AAFD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6CAC0596A7721757A5A06317 /* AgentLandApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLandApp.swift; sourceTree = "<group>"; };
+		6E9C43CFD46E83F2C1A4B444 /* AgentLand.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AgentLand.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		71B176B3F2BD86ED94F35600 /* HomeAndDrawerUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeAndDrawerUITests.swift; sourceTree = "<group>"; };
+		730BBB5EFC3E917A90A373CA /* ChatScreenRenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatScreenRenderTests.swift; sourceTree = "<group>"; };
+		73A5A7666F2DB56427F002A2 /* AgentLandChat */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AgentLandChat; path = ../shared/AgentLandChat; sourceTree = SOURCE_ROOT; };
+		75CEA7A3A543EE1E36673A44 /* AgentLandNotifications */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AgentLandNotifications; path = ../shared/AgentLandNotifications; sourceTree = SOURCE_ROOT; };
+		76DFEDBA7126A34DAE1D0D13 /* TerminalRendererTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalRendererTests.swift; sourceTree = "<group>"; };
+		7B985A69879D9C497E4BE65A /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		90C05E78BC8B8CE77E1CDA09 /* AgentLandTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = AgentLandTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		91B86650306407F847891797 /* ExploratoryCombinations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExploratoryCombinations.swift; sourceTree = "<group>"; };
+		94475DCD7DD027351BAA2A44 /* CircusAnimationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircusAnimationTests.swift; sourceTree = "<group>"; };
+		9EAA6EE3293C1B9AA716C798 /* AppModel+RemoteAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+RemoteAccess.swift"; sourceTree = "<group>"; };
+		A3D9C2B4CDDB12E58AEB2A3F /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		AF862620C067DCE95B72F253 /* AgentLandUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = AgentLandUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B08F3B60DD3536C80483E76D /* HostWorkspaceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostWorkspaceUITests.swift; sourceTree = "<group>"; };
+		B26FCCF7D92DF09E69536FAE /* AgentLandDesign */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AgentLandDesign; path = ../shared/AgentLandDesign; sourceTree = SOURCE_ROOT; };
+		B31746A51F4F83D554F8E3E9 /* SettingsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsUITests.swift; sourceTree = "<group>"; };
+		B8AB89B8253ABBED52CC5D13 /* PlainChatUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlainChatUITests.swift; sourceTree = "<group>"; };
+		C08C8CB840629276E39C679D /* AppModel+Pairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Pairing.swift"; sourceTree = "<group>"; };
+		C1361E42C5D26249AFEFF554 /* PairingQRScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PairingQRScanner.swift; sourceTree = "<group>"; };
+		C335F5A84B58477C5AD4FCAF /* SwiftTerm-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "SwiftTerm-LICENSE.txt"; sourceTree = "<group>"; };
+		CBE319F302EA1AEF5DA71465 /* AppModel+Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppModel+Settings.swift"; sourceTree = "<group>"; };
+		D06ABAAD161C6706C95F0C50 /* IrohLib-NOTICES.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "IrohLib-NOTICES.txt"; sourceTree = "<group>"; };
+		D12D689835E9921BD2DF91B6 /* AgentLandRemoteAccess */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AgentLandRemoteAccess; path = ../shared/AgentLandRemoteAccess; sourceTree = SOURCE_ROOT; };
+		D5325F33D774E5669C75C052 /* FullWorkspaceUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullWorkspaceUITests.swift; sourceTree = "<group>"; };
+		D948CE21F374DC25AA683151 /* RemoteAccessAddressBook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAccessAddressBook.swift; sourceTree = "<group>"; };
+		DD88097D06D62A9B87A08A06 /* NoticeOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoticeOverlay.swift; sourceTree = "<group>"; };
+		DEAE56D07C787CFA561C0627 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		E1DCAAE6A9B26DDB3781B0C9 /* HomeActionBoxUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeActionBoxUITests.swift; sourceTree = "<group>"; };
+		E545C55244B92A3F3C50AD47 /* Fixture.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Fixture.json; sourceTree = "<group>"; };
+		E8307DDF4B0E85F93A274828 /* AgentLandCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AgentLandCore; path = ../shared/AgentLandCore; sourceTree = SOURCE_ROOT; };
+		EE6AE2EDEC2617EF83C034E4 /* AgentLandIroh */ = {isa = PBXFileReference; lastKnownFileType = folder; name = AgentLandIroh; path = ../shared/AgentLandIroh; sourceTree = SOURCE_ROOT; };
+		F04ABE8A0BA0FA3F416E234F /* AppModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModelTests.swift; sourceTree = "<group>"; };
+		FEACF42B30224EEA8D432E2B /* AgentLand.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AgentLand.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A8A86183DBD23FCDE1C142DD /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ADCC98E9DC0C2049EDF3A382 /* AgentLandBranding in Frameworks */,
+				E9A119BB90DB0563E495F112 /* AgentLandChat in Frameworks */,
+				753229222F95619104106230 /* AgentLandCore in Frameworks */,
+				5C0DE6A08E8453A3B3E4DB9C /* AgentLandDesign in Frameworks */,
+				D95F9EAA30D5181FDB9FAFDA /* AgentLandNotifications in Frameworks */,
+				39AF1FAE29461735CEC7B0D0 /* AgentLandPairing in Frameworks */,
+				AF9D90417E9597F9E2133146 /* AgentLandRemoteAccess in Frameworks */,
+				AA9AF45CC8CCF2188B023A84 /* AgentLandWorkspace in Frameworks */,
+				6916D5DBD8C04A004036305E /* SwiftTerm in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		070B247C12A41E0952E6F0DA /* AgentLandUITests */ = {
+			isa = PBXGroup;
+			children = (
+				6291F6B137D32C8F9362F9CF /* ApprovedIPhoneUITests.swift */,
+				91B86650306407F847891797 /* ExploratoryCombinations.swift */,
+				5CF7788C36AC2AF69030E9A2 /* ExploratoryUITests.swift */,
+				E545C55244B92A3F3C50AD47 /* Fixture.json */,
+				D5325F33D774E5669C75C052 /* FullWorkspaceUITests.swift */,
+				E1DCAAE6A9B26DDB3781B0C9 /* HomeActionBoxUITests.swift */,
+				71B176B3F2BD86ED94F35600 /* HomeAndDrawerUITests.swift */,
+				B08F3B60DD3536C80483E76D /* HostWorkspaceUITests.swift */,
+				5677996D7F2167BA94ED4349 /* PhoneBottomTabsUITests.swift */,
+				B8AB89B8253ABBED52CC5D13 /* PlainChatUITests.swift */,
+				B31746A51F4F83D554F8E3E9 /* SettingsUITests.swift */,
+				31F7DCB3B584A083E221F58B /* TextSizeUITests.swift */,
+			);
+			path = AgentLandUITests;
+			sourceTree = "<group>";
+		};
+		0859037A1F5B355B50687033 = {
+			isa = PBXGroup;
+			children = (
+				2373B675F65D4BAFF0E4322B /* AgentLand */,
+				F4EF4C926A3D5216FA2F521D /* AgentLandTests */,
+				070B247C12A41E0952E6F0DA /* AgentLandUITests */,
+				FB294F3421600A322A3A8288 /* Packages */,
+				1FD51D59C6C4981F119740FE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		1FD51D59C6C4981F119740FE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6E9C43CFD46E83F2C1A4B444 /* AgentLand.app */,
+				90C05E78BC8B8CE77E1CDA09 /* AgentLandTests.xctest */,
+				AF862620C067DCE95B72F253 /* AgentLandUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2373B675F65D4BAFF0E4322B /* AgentLand */ = {
+			isa = PBXGroup;
+			children = (
+				683F54EC48C8AB29DD866CB6 /* agentland-silent.caf */,
+				FEACF42B30224EEA8D432E2B /* AgentLand.entitlements */,
+				6CAC0596A7721757A5A06317 /* AgentLandApp.swift */,
+				DEAE56D07C787CFA561C0627 /* AppDelegate.swift */,
+				7B985A69879D9C497E4BE65A /* AppIcon.icon */,
+				A3D9C2B4CDDB12E58AEB2A3F /* AppModel.swift */,
+				6479F0C540EFD6B26A0BB16C /* AppModel+Notices.swift */,
+				C08C8CB840629276E39C679D /* AppModel+Pairing.swift */,
+				9EAA6EE3293C1B9AA716C798 /* AppModel+RemoteAccess.swift */,
+				CBE319F302EA1AEF5DA71465 /* AppModel+Settings.swift */,
+				59303012A86B35D6117DBA2F /* Assets.xcassets */,
+				42893CB32E79E46D17D6FEEC /* GRDB-LICENSE.txt */,
+				6C7A5BE9EE158C3F5318AAFD /* Info.plist */,
+				D06ABAAD161C6706C95F0C50 /* IrohLib-NOTICES.txt */,
+				61A68819BE84D94D283DE97B /* Localizable.xcstrings */,
+				DD88097D06D62A9B87A08A06 /* NoticeOverlay.swift */,
+				680CBD33343828409267CC1E /* NotificationsSettingsPane.swift */,
+				C1361E42C5D26249AFEFF554 /* PairingQRScanner.swift */,
+				25B615AD194AD58595B57818 /* PairingView.swift */,
+				D948CE21F374DC25AA683151 /* RemoteAccessAddressBook.swift */,
+				1CCF6A89C94B467F9D6D8BF1 /* RemoteAccessLoopbackDial.swift */,
+				524ED6F4764BE54A55ACA8A4 /* SettingsView.swift */,
+				C335F5A84B58477C5AD4FCAF /* SwiftTerm-LICENSE.txt */,
+				1FBC20BC807D74F2F552976C /* SystemNoticeCenter.swift */,
+			);
+			path = AgentLand;
+			sourceTree = "<group>";
+		};
+		F4EF4C926A3D5216FA2F521D /* AgentLandTests */ = {
+			isa = PBXGroup;
+			children = (
+				57BF5295434BCDD7879C6B7D /* AgentsSettingsRenderTests.swift */,
+				F04ABE8A0BA0FA3F416E234F /* AppModelTests.swift */,
+				5B8C6F8FE6A0F89ECCFB2D13 /* AttachmentPreviewTests.swift */,
+				730BBB5EFC3E917A90A373CA /* ChatScreenRenderTests.swift */,
+				94475DCD7DD027351BAA2A44 /* CircusAnimationTests.swift */,
+				0F4FC7956CDC5B25D2EAB9C6 /* EditorContainerTests.swift */,
+				065F6D31E203BF7D28958239 /* HostRoutesAppTests.swift */,
+				08A91CA6EF2B3C3854F52AF7 /* NotificationTests.swift */,
+				43BF8C8A896D14A09156084E /* PhoneTabsNavigationTests.swift */,
+				4B7F311959148F2ED2D62DDE /* PlainChatRenderTests.swift */,
+				1F3EA5773040395B9A379133 /* RemoteAccessAppTests.swift */,
+				31A9C6C103C5679989F063B1 /* RemoteAccessLoopbackDialTests.swift */,
+				3E02FCC9A6046C7E53878D2B /* SettingsRenderTests.swift */,
+				76DFEDBA7126A34DAE1D0D13 /* TerminalRendererTests.swift */,
+			);
+			path = AgentLandTests;
+			sourceTree = "<group>";
+		};
+		FB294F3421600A322A3A8288 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				0840EE057F7F48491924157F /* AgentLandBranding */,
+				73A5A7666F2DB56427F002A2 /* AgentLandChat */,
+				E8307DDF4B0E85F93A274828 /* AgentLandCore */,
+				B26FCCF7D92DF09E69536FAE /* AgentLandDesign */,
+				EE6AE2EDEC2617EF83C034E4 /* AgentLandIroh */,
+				75CEA7A3A543EE1E36673A44 /* AgentLandNotifications */,
+				4D5EAA235DCA7F3E5506B2B9 /* AgentLandPairing */,
+				D12D689835E9921BD2DF91B6 /* AgentLandRemoteAccess */,
+				4E6FB6E80E48855E7BB64CBB /* AgentLandWorkspace */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		27DB523ECB4A3CDC7BCE6ACC /* AgentLandTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5D054D111C9D297D526D615A /* Build configuration list for PBXNativeTarget "AgentLandTests" */;
+			buildPhases = (
+				203A7BF11190ED3E3749EA5A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				498FABD4BB9C1EA14C031C9C /* PBXTargetDependency */,
+			);
+			name = AgentLandTests;
+			packageProductDependencies = (
+			);
+			productName = AgentLandTests;
+			productReference = 90C05E78BC8B8CE77E1CDA09 /* AgentLandTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		C76DC787C4E6876F469A2531 /* AgentLand */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E00F4AB6B022A45790936FF7 /* Build configuration list for PBXNativeTarget "AgentLand" */;
+			buildPhases = (
+				217DC5E845DA4DE8BD073A4C /* Sources */,
+				7A7E550449903496BF448866 /* Resources */,
+				A8A86183DBD23FCDE1C142DD /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = AgentLand;
+			packageProductDependencies = (
+				61D59A10E0BEE77ED0555BBE /* AgentLandBranding */,
+				020F294E5BEB92FFD16D7C52 /* AgentLandChat */,
+				7F585870341E483F4A37CBD0 /* AgentLandCore */,
+				5D783FCA54E70C3143963CD3 /* AgentLandDesign */,
+				66FE05017242F28A991C7466 /* AgentLandNotifications */,
+				73AF9CE9CE588573DFA2CDB0 /* AgentLandPairing */,
+				486272313E27AED86370789B /* AgentLandRemoteAccess */,
+				F4C0E79131182B7783781C14 /* AgentLandWorkspace */,
+				94D59E8FF3B5DEFDF0B52C4D /* SwiftTerm */,
+			);
+			productName = AgentLand;
+			productReference = 6E9C43CFD46E83F2C1A4B444 /* AgentLand.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EBF567490D4D0DAF36110E1B /* AgentLandUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D26636CE4B0FC9B4AD761A34 /* Build configuration list for PBXNativeTarget "AgentLandUITests" */;
+			buildPhases = (
+				BCA210775838D61D9DC86DE6 /* Sources */,
+				550335ECDC575005AB15B9C9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				53431022A2DEB33EC703D42B /* PBXTargetDependency */,
+			);
+			name = AgentLandUITests;
+			packageProductDependencies = (
+			);
+			productName = AgentLandUITests;
+			productReference = AF862620C067DCE95B72F253 /* AgentLandUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B114B4E455AE2A816A7D90CA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					27DB523ECB4A3CDC7BCE6ACC = {
+						DevelopmentTeam = "";
+					};
+					C76DC787C4E6876F469A2531 = {
+						DevelopmentTeam = "";
+					};
+					EBF567490D4D0DAF36110E1B = {
+						DevelopmentTeam = "";
+						TestTargetID = C76DC787C4E6876F469A2531;
+					};
+				};
+			};
+			buildConfigurationList = CB1460BBD92363276F46263C /* Build configuration list for PBXProject "AgentLand" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 0859037A1F5B355B50687033;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4A1C6781CFA06D90CAAFA13D /* XCRemoteSwiftPackageReference "SwiftTerm" */,
+				D594E95FF18B7EBF7C43059F /* XCLocalSwiftPackageReference "../shared/AgentLandBranding" */,
+				B3BCD152F5488D70102C9525 /* XCLocalSwiftPackageReference "../shared/AgentLandChat" */,
+				89CE1DA33D046484353EF85F /* XCLocalSwiftPackageReference "../shared/AgentLandCore" */,
+				AF910BB9EF95B3AA51B81EA2 /* XCLocalSwiftPackageReference "../shared/AgentLandDesign" */,
+				21138C356C64AFD44195C4AB /* XCLocalSwiftPackageReference "../shared/AgentLandIroh" */,
+				D9EA9A5005FA2636CA39D140 /* XCLocalSwiftPackageReference "../shared/AgentLandNotifications" */,
+				C2984105A16A020FFB5D81FE /* XCLocalSwiftPackageReference "../shared/AgentLandPairing" */,
+				69A2FE42CE2AB126CC6E8506 /* XCLocalSwiftPackageReference "../shared/AgentLandRemoteAccess" */,
+				EA400A10B29F56F66B1EA095 /* XCLocalSwiftPackageReference "../shared/AgentLandWorkspace" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 1FD51D59C6C4981F119740FE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C76DC787C4E6876F469A2531 /* AgentLand */,
+				27DB523ECB4A3CDC7BCE6ACC /* AgentLandTests */,
+				EBF567490D4D0DAF36110E1B /* AgentLandUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		550335ECDC575005AB15B9C9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B24D7188807B40064F9DDD0 /* Fixture.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7A7E550449903496BF448866 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0641C5493BD943BF4675F5B /* AppIcon.icon in Resources */,
+				EFEB4572F1CB279575FC7624 /* Assets.xcassets in Resources */,
+				0EF2AD84B4E8361B334FE626 /* GRDB-LICENSE.txt in Resources */,
+				E301F465AA71A306983A2A01 /* IrohLib-NOTICES.txt in Resources */,
+				820B7C5EB3F9162092BABDE2 /* Localizable.xcstrings in Resources */,
+				AFD4FF69D78CB9FCEFB8D7EB /* SwiftTerm-LICENSE.txt in Resources */,
+				23E2D0F30E34DA61F7009CF0 /* agentland-silent.caf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		203A7BF11190ED3E3749EA5A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E395BD0D9C03C8FAA8238530 /* AgentsSettingsRenderTests.swift in Sources */,
+				DF3BA0E8B4F4DDC237E713EB /* AppModelTests.swift in Sources */,
+				76DBB3572BBCC89503959A2F /* AttachmentPreviewTests.swift in Sources */,
+				68279AE2C0E49562FDE78D34 /* ChatScreenRenderTests.swift in Sources */,
+				514BBB6B3FD8A000C9FB7ABE /* CircusAnimationTests.swift in Sources */,
+				A45B9272D50A4F15319AF3B8 /* EditorContainerTests.swift in Sources */,
+				0CB26D5DB4BDB8782B4E04A4 /* HostRoutesAppTests.swift in Sources */,
+				02EBDC58B6602CF93286A04F /* NotificationTests.swift in Sources */,
+				D986EAFDE338906580F8BEF6 /* PhoneTabsNavigationTests.swift in Sources */,
+				B734CAAD208160DF7ED45934 /* PlainChatRenderTests.swift in Sources */,
+				1B7A556B424CCF603E73700B /* RemoteAccessAppTests.swift in Sources */,
+				8E2830CC4C96E62255B6DCFD /* RemoteAccessLoopbackDialTests.swift in Sources */,
+				3FB2A8C1CA3B18CA080C79AA /* SettingsRenderTests.swift in Sources */,
+				E0EC1F49DAA6BC69506A421D /* TerminalRendererTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		217DC5E845DA4DE8BD073A4C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA203EA5AD1E3BA1BFB898FA /* AgentLandApp.swift in Sources */,
+				F598FC73FE3BB6A91E47BBA1 /* AppDelegate.swift in Sources */,
+				E61F00CF437D37B6F6C88F49 /* AppModel+Notices.swift in Sources */,
+				98249FCF4E33E79B2F4839C2 /* AppModel+Pairing.swift in Sources */,
+				27B7CA1B46144CCE2BAE3588 /* AppModel+RemoteAccess.swift in Sources */,
+				4BBD8FE365A7A7C7B3A45236 /* AppModel+Settings.swift in Sources */,
+				43BF6E9D3C03532A39E40A4D /* AppModel.swift in Sources */,
+				E07A39FD26F6F5F5EC9D9C9F /* NoticeOverlay.swift in Sources */,
+				C74FEDA23CC05E3241D31902 /* NotificationsSettingsPane.swift in Sources */,
+				0E4A6214F82D2415EE5E8EEC /* PairingQRScanner.swift in Sources */,
+				0B4F1EA263EC90940C371CFA /* PairingView.swift in Sources */,
+				D86D9EE9B1907B1F0EE1BEA2 /* RemoteAccessAddressBook.swift in Sources */,
+				200B30C82CA21E20DC24A707 /* RemoteAccessLoopbackDial.swift in Sources */,
+				BADB80F47D408567B40FFCBB /* SettingsView.swift in Sources */,
+				9E0971F3B4CFE2D5B318EB9F /* SystemNoticeCenter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCA210775838D61D9DC86DE6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				26FFB29D63BB0EE33EA640CF /* ApprovedIPhoneUITests.swift in Sources */,
+				291DB4310E80B5381B11DD36 /* ExploratoryCombinations.swift in Sources */,
+				A9C047B9B149C8BDF5D88DFC /* ExploratoryUITests.swift in Sources */,
+				50FC786E248AD5E6532F34F7 /* FullWorkspaceUITests.swift in Sources */,
+				6C835BA001A14CAE0580E049 /* HomeActionBoxUITests.swift in Sources */,
+				7D3F1146EF067E272A1A612D /* HomeAndDrawerUITests.swift in Sources */,
+				00729BD5EA1EB704AB5FCB60 /* HostWorkspaceUITests.swift in Sources */,
+				84B225CE252E38EE35B59C97 /* PhoneBottomTabsUITests.swift in Sources */,
+				627C703A77761422D8B4E855 /* PlainChatUITests.swift in Sources */,
+				CAD21F25C35A8CE5E6663650 /* SettingsUITests.swift in Sources */,
+				09A2875A8001F4BA9038BFEB /* TextSizeUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		498FABD4BB9C1EA14C031C9C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C76DC787C4E6876F469A2531 /* AgentLand */;
+			targetProxy = B51CBDEDAE12305DD750784F /* PBXContainerItemProxy */;
+		};
+		53431022A2DEB33EC703D42B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C76DC787C4E6876F469A2531 /* AgentLand */;
+			targetProxy = 15F61D9055B80CD16993F135 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		002F400C0DE3C0330DED57D7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AgentLand/AgentLand.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = AgentLand/Info.plist;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.agentland.client;
+				PRODUCT_NAME = AgentLand;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		2599BAD342BA1B256EB93634 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		3743317F22E677950CCB907D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.agentland.client.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AgentLand.app/AgentLand";
+			};
+			name = Release;
+		};
+		60B1E092B6C8CE9870887D5B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		723C9EC7C1C359CFA73BBFD8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.agentland.client.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = AgentLand;
+			};
+			name = Debug;
+		};
+		C57A6284C3CD8443E5DBEDA9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AgentLand/AgentLand.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = AgentLand/Info.plist;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.agentland.client;
+				PRODUCT_NAME = AgentLand;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E7CA39C92887D5A3DD727BCD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.agentland.client.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = AgentLand;
+			};
+			name = Release;
+		};
+		F76A38AC7D69475DA709252D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = dev.agentland.client.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/AgentLand.app/AgentLand";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5D054D111C9D297D526D615A /* Build configuration list for PBXNativeTarget "AgentLandTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F76A38AC7D69475DA709252D /* Debug */,
+				3743317F22E677950CCB907D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CB1460BBD92363276F46263C /* Build configuration list for PBXProject "AgentLand" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60B1E092B6C8CE9870887D5B /* Debug */,
+				2599BAD342BA1B256EB93634 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D26636CE4B0FC9B4AD761A34 /* Build configuration list for PBXNativeTarget "AgentLandUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				723C9EC7C1C359CFA73BBFD8 /* Debug */,
+				E7CA39C92887D5A3DD727BCD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E00F4AB6B022A45790936FF7 /* Build configuration list for PBXNativeTarget "AgentLand" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				002F400C0DE3C0330DED57D7 /* Debug */,
+				C57A6284C3CD8443E5DBEDA9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		21138C356C64AFD44195C4AB /* XCLocalSwiftPackageReference "../shared/AgentLandIroh" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared/AgentLandIroh;
+		};
+		69A2FE42CE2AB126CC6E8506 /* XCLocalSwiftPackageReference "../shared/AgentLandRemoteAccess" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared/AgentLandRemoteAccess;
+		};
+		89CE1DA33D046484353EF85F /* XCLocalSwiftPackageReference "../shared/AgentLandCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared/AgentLandCore;
+		};
+		AF910BB9EF95B3AA51B81EA2 /* XCLocalSwiftPackageReference "../shared/AgentLandDesign" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared/AgentLandDesign;
+		};
+		B3BCD152F5488D70102C9525 /* XCLocalSwiftPackageReference "../shared/AgentLandChat" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared/AgentLandChat;
+		};
+		C2984105A16A020FFB5D81FE /* XCLocalSwiftPackageReference "../shared/AgentLandPairing" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared/AgentLandPairing;
+		};
+		D594E95FF18B7EBF7C43059F /* XCLocalSwiftPackageReference "../shared/AgentLandBranding" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared/AgentLandBranding;
+		};
+		D9EA9A5005FA2636CA39D140 /* XCLocalSwiftPackageReference "../shared/AgentLandNotifications" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared/AgentLandNotifications;
+		};
+		EA400A10B29F56F66B1EA095 /* XCLocalSwiftPackageReference "../shared/AgentLandWorkspace" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../shared/AgentLandWorkspace;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4A1C6781CFA06D90CAAFA13D /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm.git";
+			requirement = {
+				kind = revision;
+				revision = 5d14406844143538cd8f8851d2d8a67c1fe443e5;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		020F294E5BEB92FFD16D7C52 /* AgentLandChat */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgentLandChat;
+		};
+		486272313E27AED86370789B /* AgentLandRemoteAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgentLandRemoteAccess;
+		};
+		5D783FCA54E70C3143963CD3 /* AgentLandDesign */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgentLandDesign;
+		};
+		61D59A10E0BEE77ED0555BBE /* AgentLandBranding */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgentLandBranding;
+		};
+		66FE05017242F28A991C7466 /* AgentLandNotifications */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgentLandNotifications;
+		};
+		73AF9CE9CE588573DFA2CDB0 /* AgentLandPairing */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgentLandPairing;
+		};
+		7F585870341E483F4A37CBD0 /* AgentLandCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgentLandCore;
+		};
+		94D59E8FF3B5DEFDF0B52C4D /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4A1C6781CFA06D90CAAFA13D /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
+		};
+		F4C0E79131182B7783781C14 /* AgentLandWorkspace */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AgentLandWorkspace;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = B114B4E455AE2A816A7D90CA /* Project object */;
+}

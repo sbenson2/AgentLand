@@ -1,0 +1,90 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "notice.body" : {
+      "comment" : "Push alert body. Its one argument is the notice record's alertBody field, which the Mac composes with notice.body.titleAndProject or the project name alone. The iOS app must carry this key.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@"
+          }
+        }
+      }
+    },
+    "notice.body.titleAndProject" : {
+      "comment" : "Composed on the Mac into the alertBody field: the chat's title, then the project name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "notice.test.title" : {
+      "comment" : "Chat title of the notice that Send Test Notification writes on the Mac.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test from AgentLand"
+          }
+        }
+      }
+    },
+    "notice.title.chat.approval.needed" : {
+      "comment" : "Push alert title: an agent is waiting for the user to allow or deny an action. The iOS app must carry this key.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs your approval"
+          }
+        }
+      }
+    },
+    "notice.title.chat.question.needed" : {
+      "comment" : "Push alert title: an agent asked the user a question and waits for the answer. The iOS app must carry this key.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Question for you"
+          }
+        }
+      }
+    },
+    "notice.title.chat.turn.failed" : {
+      "comment" : "Push alert title: an agent's reply ended with an error. The iOS app must carry this key.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply failed"
+          }
+        }
+      }
+    },
+    "notice.title.chat.turn.finished" : {
+      "comment" : "Push alert title: an agent finished its reply. The iOS app must carry this key.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reply ready"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

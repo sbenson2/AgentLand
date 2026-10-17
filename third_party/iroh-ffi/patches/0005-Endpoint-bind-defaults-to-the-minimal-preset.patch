@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AgentLand <agentland@localhost>
+Date: Fri, 25 Sep 2026 23:23:05 -0700
+Subject: [PATCH 5/5] Endpoint::bind defaults to the minimal preset
+
+EndpointOptions.preset defaulted to preset_n0, so an endpoint whose
+options leave the preset unset used n0's relays and published its
+endpoint ID and home relay to n0's DNS. It now defaults to
+preset_minimal: no relays and no address lookup. n0 is used only when
+preset_n0 or a relay mode that names its relays is chosen.
+
+diff --git a/src/endpoint.rs b/src/endpoint.rs
+index 7459e35..4a3fb93 100644
+--- a/src/endpoint.rs
++++ b/src/endpoint.rs
+@@ -354,8 +354,11 @@ pub fn preset_n0_disable_relay() -> Arc<dyn Preset> {
+ /// Options passed to [`Endpoint::bind`].
+ #[derive(derive_more::Debug, Default, uniffi::Record)]
+ pub struct EndpointOptions {
+-    /// Preset that configures the endpoint builder. Defaults to [`preset_n0`].
+-    /// Implement the [`Preset`] trait in your language for full control.
++    /// Preset that configures the endpoint builder. Defaults to
++    /// [`preset_minimal`]: no relays and no address lookup, so nothing is
++    /// published to or looked up from n0's servers unless [`preset_n0`] (or a
++    /// relay mode) is chosen explicitly. Implement the [`Preset`] trait in your
++    /// language for full control.
+     #[debug(skip)]
+     #[uniffi(default = None)]
+     pub preset: Option<Arc<dyn Preset>>,
+@@ -488,7 +491,7 @@ impl Endpoint {
+         // (crucially, the crypto provider). Explicit option fields are then
+         // layered on top so they always win.
+         let wrapper = Arc::new(EndpointBuilder::from_inner(iroh::endpoint::Builder::empty()));
+-        let preset = options.preset.unwrap_or_else(preset_n0);
++        let preset = options.preset.unwrap_or_else(preset_minimal);
+         preset.apply(wrapper.clone());
+ 
+         if let Some(secret_key) = options.secret_key {
+@@ -1603,6 +1606,25 @@ mod tests {
+         ));
+     }
+ 
++    // Options left unset must not use n0: the n0 preset adds its pkarr and
++    // DNS address lookups (and n0's relays); the minimal preset adds nothing.
++    #[tokio::test]
++    async fn test_unset_preset_is_minimal() {
++        let ep = Endpoint::bind(EndpointOptions::default()).await.unwrap();
++        assert!(ep.inner.address_lookup().unwrap().is_empty());
++        assert!(ep.addr().relay_url().is_none());
++        ep.close().await.unwrap();
++
++        let ep = Endpoint::bind(EndpointOptions {
++            relay_mode: Some(Arc::new(RelayMode::disabled())),
++            ..Default::default()
++        })
++        .await
++        .unwrap();
++        assert!(ep.inner.address_lookup().unwrap().is_empty());
++        ep.close().await.unwrap();
++    }
++
+     // Regression: watch_* must not require a tokio handle in the caller's TLS.
+     #[tokio::test]
+     async fn test_watch_apis_from_non_runtime_thread() {

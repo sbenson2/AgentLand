@@ -1,0 +1,9 @@
+(version 1)
+; Run the AgentLandIroh tests under this profile (see README.md). It refuses UDP to
+; the ports of router port mapping, for IPv4, IPv6 and multicast alike: UPnP discovery
+; (SSDP, 1900), NAT-PMP and PCP (5351) and their announcements (5350). Nothing a test
+; process does can then ask the router for a mapping. Everything else is allowed.
+(allow default)
+(deny network-outbound (remote udp "*:1900"))
+(deny network-outbound (remote udp "*:5350"))
+(deny network-outbound (remote udp "*:5351"))

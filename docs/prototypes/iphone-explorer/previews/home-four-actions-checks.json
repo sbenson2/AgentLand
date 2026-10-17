@@ -1,0 +1,48 @@
+{
+  "passed": true,
+  "geometry": {
+    "bottomGap": 76,
+    "scrollHeight": 748,
+    "clientHeight": 748
+  },
+  "widths": [
+    {
+      "viewport": 320,
+      "columns": [
+        80,
+        80,
+        80,
+        80
+      ]
+    },
+    {
+      "viewport": 375,
+      "columns": [
+        82.25,
+        82.25,
+        82.25,
+        82.25
+      ]
+    },
+    {
+      "viewport": 402,
+      "columns": [
+        89,
+        89,
+        89,
+        89
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "checks": [
+    "Four Home actions",
+    "Inline replacement and Escape focus",
+    "Sample chat and terminal creation",
+    "Sample workspace creation and file ownership",
+    "Workspace restoration",
+    "Header Settings",
+    "Equal explorer columns",
+    "Reduced motion"
+  ]
+}

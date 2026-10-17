@@ -1,0 +1,18 @@
+{
+  "name": "OpenCode",
+  "version": "1.18.31",
+  "source": "https://github.com/anomalyco/opencode",
+  "license": "MIT",
+  "architectures": {
+    "arm64": {
+      "url": "https://github.com/anomalyco/opencode/releases/download/v1.18.31/opencode-darwin-arm64.zip",
+      "size": 46273106,
+      "sha256": "caf7f31fa1aec2353ea859d4ef9ab824c6273d941b016e88d51193fa3028d34e"
+    },
+    "x86_64": {
+      "url": "https://github.com/anomalyco/opencode/releases/download/v1.18.31/opencode-darwin-x64.zip",
+      "size": 48467280,
+      "sha256": "f8510eaf400f07c3a2014e3a517e3650c705bcd6ac3e6740351b723ee685042f"
+    }
+  }
+}

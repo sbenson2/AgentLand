@@ -1,0 +1,121 @@
+{
+  "sourceJob": "ffaf1ead-06d4-4e7c-9dd2-f5670e7af4c8",
+  "sourceImage": "933bdb0f-7560-5dcf-b6ef-61dd39566443",
+  "inspectionImage": "0b268d2b-83fb-44fa-8278-5ec018c775a2",
+  "outputImage": "42b79fff-cc77-487b-9641-79839daf730d",
+  "seed": 202609223,
+  "dimensions": [
+    96,
+    96
+  ],
+  "foregroundPixels": 1734,
+  "styleReference": "be9aa9f6-958b-44cc-9f46-585b0488b193",
+  "measuredSpriteCoordinates": {
+    "facing": "right",
+    "leftPalm": [
+      22,
+      31
+    ],
+    "rightPalm": [
+      73,
+      27
+    ],
+    "wheelCenter": [
+      42,
+      83
+    ],
+    "wheelInnerRadius": 9
+  },
+  "changes": [
+    {
+      "operation": "select_mask",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "name": "open_details",
+      "selector": {
+        "kind": "color",
+        "colors": [
+          "#ffffffff"
+        ],
+        "tolerance": 127
+      },
+      "reason": "Keep the face, collar and costume details open in a monochrome mark."
+    },
+    {
+      "operation": "brush",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "mask": "open_details",
+      "points": [
+        [
+          31,
+          31
+        ],
+        [
+          64,
+          31
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          31,
+          64
+        ]
+      ],
+      "size": 64,
+      "shape": "square",
+      "mode": "erase",
+      "reason": "Make the light details transparent."
+    },
+    {
+      "operation": "select_mask",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "name": "ink",
+      "selector": {
+        "kind": "alpha",
+        "min": 1,
+        "max": 255
+      },
+      "reason": "Select the clown and unicycle silhouette."
+    },
+    {
+      "operation": "brush",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "mask": "ink",
+      "points": [
+        [
+          31,
+          31
+        ],
+        [
+          64,
+          31
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          31,
+          64
+        ]
+      ],
+      "size": 64,
+      "shape": "square",
+      "color": "#ffffffff",
+      "reason": "Use crisp white ink matching the tent."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "folder": true,
+  "fileOpen": true,
+  "close": true,
+  "reopen": true,
+  "closeOthers": true,
+  "workspaceIsolation": true,
+  "diff": true,
+  "theme": {
+    "header": "rgb(244, 240, 231)",
+    "content": "rgb(244, 240, 231)"
+  },
+  "errors": []
+}

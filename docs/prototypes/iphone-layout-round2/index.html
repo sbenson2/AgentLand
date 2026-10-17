@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>AgentLand · Home layout round 2</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="page-head">
+    <div>
+      <p class="page-kicker">AgentLand · Home layout comparison · Round 2</p>
+      <h1>Three different Home layouts</h1>
+      <p class="page-summary">The same single navigation bar and six actions, with compact, continuation-led, and full-width compositions.</p>
+    </div>
+    <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark appearance">
+      <span class="theme-glyph" aria-hidden="true">◐</span><span class="theme-label">Dark appearance</span>
+    </button>
+  </header>
+  <p class="sample-note">Interactive prototype · all names, tasks and status shown here are sample data.</p>
+  <p class="comparison-note">In each layout, resume “Fix sign-in callback,” switch to Website refresh, and browse README.md. Which layout makes these paths easiest to find, and the current workspace clearest?</p>
+  <main class="concept-grid" aria-label="Three interactive iPhone concepts">
+    <section class="concept" data-concept="a">
+      <div class="concept-heading"><span class="concept-letter">A</span><div><h2>Compact launcher</h2><p>A small brand lockup, then the six actions higher on screen.</p></div></div>
+      <div class="phone" aria-label="Compact launcher iPhone preview"><div class="screen" data-screen>
+        <div class="status"><span>9:41</span><span class="status-icons" aria-hidden="true"><i></i><i></i><b></b></span></div>
+        <nav class="nav nav-a" aria-label="Open work and task navigation">
+          <button class="open-work" data-open-work aria-expanded="false"><svg class="open-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Open Work</span></button>
+          <div class="tab-row" data-tabs aria-label="Open tasks"></div>
+          <button class="more-button" data-task-menu aria-label="Current task actions" aria-haspopup="dialog" aria-expanded="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+        </nav>
+        <div class="view" data-view></div>
+        <div class="home-indicator" aria-hidden="true"><span></span></div>
+        <div class="sheet-layer" data-sheet hidden></div>
+      </div></div>
+      <p class="outside-caption">Hypothesis: a compact header brings equal-priority actions into view sooner. The artwork has less presence.</p>
+    </section>
+    <section class="concept" data-concept="b">
+      <div class="concept-heading"><span class="concept-letter">B</span><div><h2>Continue first</h2><p>A named recent task anchors Home before starting new work.</p></div></div>
+      <div class="phone" aria-label="Continue first iPhone preview"><div class="screen" data-screen>
+        <div class="status"><span>9:41</span><span class="status-icons" aria-hidden="true"><i></i><i></i><b></b></span></div>
+        <nav class="nav nav-b" aria-label="Open work and task navigation">
+          <button class="open-work" data-open-work aria-expanded="false"><svg class="open-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Open Work</span></button>
+          <div class="tab-row" data-tabs aria-label="Open tasks"></div>
+          <button class="more-button" data-task-menu aria-label="Current task actions" aria-haspopup="dialog" aria-expanded="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+        </nav>
+        <div class="view" data-view></div>
+        <div class="home-indicator" aria-hidden="true"><span></span></div>
+        <div class="sheet-layer" data-sheet hidden></div>
+      </div></div>
+      <p class="outside-caption">Hypothesis: a named task helps people resume with context. It depends on having relevant recent work.</p>
+    </section>
+    <section class="concept" data-concept="c">
+      <div class="concept-heading"><span class="concept-letter">C</span><div><h2>Action list</h2><p>Full-width rows separate starting, continuing, and tools.</p></div></div>
+      <div class="phone" aria-label="Action list iPhone preview"><div class="screen" data-screen>
+        <div class="status"><span>9:41</span><span class="status-icons" aria-hidden="true"><i></i><i></i><b></b></span></div>
+        <nav class="nav nav-c" aria-label="Open work and task navigation">
+          <button class="open-work" data-open-work aria-expanded="false"><svg class="open-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Open Work</span></button>
+          <div class="tab-row" data-tabs aria-label="Open tasks"></div>
+          <button class="more-button" data-task-menu aria-label="Current task actions" aria-haspopup="dialog" aria-expanded="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+        </nav>
+        <div class="view" data-view></div>
+        <div class="home-indicator" aria-hidden="true"><span></span></div>
+        <div class="sheet-layer" data-sheet hidden></div>
+      </div></div>
+      <p class="outside-caption">Hypothesis: full-width labels and clear groups help scanning. Six rows use more vertical space than a grid.</p>
+    </section>
+  </main>
+  <footer class="page-foot">Sample screens are for navigation comparison. Nothing here connects to a host or saves changes.</footer>
+  <script src="app.js"></script>
+</body>
+</html>

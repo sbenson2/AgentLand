@@ -1,0 +1,102 @@
+{
+  "results": [
+    {
+      "concept": "a",
+      "action": "New Chat",
+      "heading": "New Chat"
+    },
+    {
+      "concept": "a",
+      "action": "New Terminal",
+      "heading": "Terminal"
+    },
+    {
+      "concept": "a",
+      "action": "Browse Files",
+      "heading": "Files"
+    },
+    {
+      "concept": "a",
+      "action": "Resume Work",
+      "heading": "Fix sign-in callback"
+    },
+    {
+      "concept": "a",
+      "action": "Settings",
+      "heading": "Settings"
+    },
+    {
+      "concept": "b",
+      "action": "New Chat",
+      "heading": "New Chat"
+    },
+    {
+      "concept": "b",
+      "action": "New Terminal",
+      "heading": "Terminal"
+    },
+    {
+      "concept": "b",
+      "action": "Browse Files",
+      "heading": "Files"
+    },
+    {
+      "concept": "b",
+      "action": "Resume Work",
+      "heading": "Fix sign-in callback"
+    },
+    {
+      "concept": "b",
+      "action": "Settings",
+      "heading": "Settings"
+    },
+    {
+      "concept": "c",
+      "action": "New Chat",
+      "heading": "New Chat"
+    },
+    {
+      "concept": "c",
+      "action": "New Terminal",
+      "heading": "Terminal"
+    },
+    {
+      "concept": "c",
+      "action": "Browse Files",
+      "heading": "Files"
+    },
+    {
+      "concept": "c",
+      "action": "Resume Work",
+      "heading": "Fix sign-in callback"
+    },
+    {
+      "concept": "c",
+      "action": "Settings",
+      "heading": "Settings"
+    }
+  ],
+  "dimensions": [
+    {
+      "width": 320,
+      "documentWidth": 320,
+      "smallTargets": []
+    },
+    {
+      "width": 375,
+      "documentWidth": 375,
+      "smallTargets": []
+    },
+    {
+      "width": 402,
+      "documentWidth": 402,
+      "smallTargets": []
+    },
+    {
+      "width": 844,
+      "documentWidth": 844,
+      "smallTargets": []
+    }
+  ],
+  "errors": []
+}

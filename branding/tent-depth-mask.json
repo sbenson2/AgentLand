@@ -1,0 +1,172 @@
+{
+  "sourceImage": "64f4521a-c588-4ca0-ba75-95814030778f",
+  "outputImage": "ea5704d4-a4ca-4ae6-9c7f-91c1915f9d02",
+  "purpose": "Background-colored depth mask only; never use as the visible logo.",
+  "changes": [
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        41,
+        23
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 266,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        49,
+        23
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 299,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        76,
+        46
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 2,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        15,
+        47
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 7,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        72,
+        49
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 15,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        22,
+        51
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 23,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        63,
+        52
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 30,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        32,
+        54
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 32,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        18,
+        55
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 295,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        45,
+        55
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 26,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    },
+    {
+      "operation": "flood_fill",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "seed": [
+        67,
+        57
+      ],
+      "expected": "#00000000",
+      "color": "#000000ff",
+      "max_pixels": 500,
+      "reason": "Opaque depth mask only: hide the rider behind the tent panels."
+    }
+  ]
+}

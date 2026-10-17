@@ -1,0 +1,27 @@
+{
+  "headerStable": true,
+  "panes": [
+    "workspaces",
+    "git",
+    "files",
+    "sessions"
+  ],
+  "widths": [
+    {
+      "width": 320,
+      "documentWidth": 320,
+      "smallTargets": []
+    },
+    {
+      "width": 375,
+      "documentWidth": 375,
+      "smallTargets": []
+    },
+    {
+      "width": 402,
+      "documentWidth": 402,
+      "smallTargets": []
+    }
+  ],
+  "errors": []
+}

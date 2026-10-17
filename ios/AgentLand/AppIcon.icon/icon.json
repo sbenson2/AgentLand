@@ -1,0 +1,58 @@
+{
+ "fill": {
+  "linear-gradient": [
+   "srgb:0.23922,0.29020,0.36078,1.00000",
+   "srgb:0.13333,0.16863,0.21569,1.00000"
+  ],
+  "orientation": {
+   "start": {
+    "x": 0.5,
+    "y": 0
+   },
+   "stop": {
+    "x": 0.5,
+    "y": 1
+   }
+  }
+ },
+ "groups": [
+  {
+   "name": "Tent",
+   "layers": [
+    {
+     "name": "tent",
+     "image-name": "tent.png",
+     "glass": true,
+     "image-name-specializations": [
+      {
+       "appearance": "tinted",
+       "value": "tent-mono.png"
+      }
+     ]
+    }
+   ],
+   "shadow": {
+    "kind": "neutral",
+    "opacity": 0.5
+   },
+   "specular": true,
+   "translucency": {
+    "enabled": false,
+    "value": 0.0
+   }
+  },
+  {
+   "name": "Background",
+   "layers": [
+    {
+     "name": "bg",
+     "image-name": "bg.png",
+     "glass": false
+    }
+   ]
+  }
+ ],
+ "supported-platforms": {
+  "squares": "shared"
+ }
+}

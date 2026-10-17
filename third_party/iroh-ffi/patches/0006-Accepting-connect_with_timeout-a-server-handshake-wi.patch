@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AgentLand <agentland@localhost>
+Date: Sat, 26 Sep 2026 00:26:32 -0700
+Subject: [PATCH] Accepting::connect_with_timeout: a server handshake with a
+ deadline
+
+A server-side handshake ends only when it completes, fails or goes idle,
+and every authenticated packet from the peer, Initial packets included,
+restarts the idle timers (noq-proto 1.3.0 connection/mod.rs,
+on_packet_authenticated). A peer can therefore hold a handshake open for
+as long as it keeps sending, and an FFI caller cannot stop it: Swift
+cannot cancel the future of Accepting::connect.
+
+connect_with_timeout(timeout_ms) gives up after timeout_ms. The iroh
+Accepting is dropped with the timed-out future, and dropping the last
+reference to a noq connection closes it (noq 1.3.0 connection.rs,
+ConnectionRef::drop -> implicit_close), so nothing of the attempt is
+left in the endpoint.
+
+diff --git a/src/accept.rs b/src/accept.rs
+index a3ee54c..2ac8341 100644
+--- a/src/accept.rs
++++ b/src/accept.rs
+@@ -217,6 +217,30 @@ impl Accepting {
+         Ok(Connection::wrap(conn))
+     }
+ 
++    /// Like [`Self::connect`], but gives up when the handshake has not
++    /// completed within `timeout_ms` milliseconds.
++    ///
++    /// On timeout the handshake is dropped, which closes the connection
++    /// attempt on this side: nothing of it stays in the endpoint until the
++    /// QUIC idle timeout, which a peer that keeps sending packets can put off.
++    /// FFI calls cannot be cancelled from Swift, so this is the way to bound
++    /// how long a server-side handshake can hold resources.
++    #[uniffi::method(async_runtime = "tokio")]
++    pub async fn connect_with_timeout(&self, timeout_ms: u64) -> Result<Connection, IrohError> {
++        let inner = self
++            .0
++            .lock()
++            .await
++            .take()
++            .ok_or_else(|| anyhow::anyhow!("Accepting has already been consumed"))?;
++        let timeout = std::time::Duration::from_millis(timeout_ms);
++        let conn = tokio::time::timeout(timeout, inner)
++            .await
++            .map_err(|_| anyhow::anyhow!("handshake not completed within {timeout_ms} ms"))?
++            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
++        Ok(Connection::wrap(conn))
++    }
++
+     /// Read the ALPN protocol from the peer's handshake data (resolves once
+     /// the ClientHello has been received).
+     #[uniffi::method(async_runtime = "tokio")]

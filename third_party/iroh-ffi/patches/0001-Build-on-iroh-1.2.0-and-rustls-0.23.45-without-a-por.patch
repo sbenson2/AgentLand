@@ -1,0 +1,2279 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AgentLand <agentland@localhost>
+Date: Fri, 25 Sep 2026 22:08:11 -0700
+Subject: [PATCH 1/5] Build on iroh 1.2.0 and rustls 0.23.45, without a port
+ mapper
+
+iroh, iroh-base and iroh-relay 1.2.0 (netwatch 0.19.3 without the
+RTM_MISS rescans, noq 1.3.0, relay reconnect and drain fixes).
+rustls 0.23.45 and rustls-webpki 0.103.15.
+
+No code that asks the router for a port mapping is compiled:
+- iroh is built without its default "portmapper" feature (metrics,
+  fast-apple-datapath and tls-ring stay), so its port mapper is the
+  no-op stub whatever an endpoint is configured with.
+- iroh-services is removed with the services module (ServicesClient,
+  preset_iroh_services): it depends on the portmapper crate itself,
+  its network diagnostics probe the router with UPnP, PCP and NAT-PMP,
+  its client pushes metrics to services.iroh.computer, and through
+  irpc-iroh it turned iroh's default features back on.
+- iroh-js leaves the workspace: it depends on iroh with default
+  features and is not built here.
+
+Cargo.lock only loses packages (portmapper, igd-next, iroh-services,
+irpc, the napi crates among them).
+
+diff --git a/Cargo.lock b/Cargo.lock
+index 00a1d02..90bdb77 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -136,45 +136,6 @@ dependencies = [
+  "winnow 0.7.15",
+ ]
+ 
+-[[package]]
+-name = "asn1-rs"
+-version = "0.7.2"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "b7f43a50ac4fdca5df8e885c21b835997f0a1cdee65494a6847694a98652d9d8"
+-dependencies = [
+- "asn1-rs-derive",
+- "asn1-rs-impl",
+- "displaydoc",
+- "nom",
+- "num-traits",
+- "rusticata-macros",
+- "thiserror 2.0.18",
+- "time",
+-]
+-
+-[[package]]
+-name = "asn1-rs-derive"
+-version = "0.6.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "3109e49b1e4909e9db6515a30c633684d68cdeaa252f215214cb4fa1a5bfee2c"
+-dependencies = [
+- "proc-macro2",
+- "quote",
+- "syn",
+- "synstructure",
+-]
+-
+-[[package]]
+-name = "asn1-rs-impl"
+-version = "0.2.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "7b18050c2cd6fe86c3a76584ef5e0baf286d038cda203eb6223df2cc413565f7"
+-dependencies = [
+- "proc-macro2",
+- "quote",
+- "syn",
+-]
+-
+ [[package]]
+ name = "async-compat"
+ version = "0.2.5"
+@@ -225,18 +186,6 @@ version = "1.1.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
+ 
+-[[package]]
+-name = "attohttpc"
+-version = "0.30.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "16e2cdb6d5ed835199484bb92bb8b3edd526effe995c61732580439c1a67e2e9"
+-dependencies = [
+- "base64",
+- "http",
+- "log",
+- "url",
+-]
+-
+ [[package]]
+ name = "autocfg"
+ version = "1.5.1"
+@@ -281,15 +230,6 @@ dependencies = [
+  "serde",
+ ]
+ 
+-[[package]]
+-name = "bit-vec"
+-version = "0.9.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "b71798fca2c1fe1086445a7258a4bc81e6e49dcd24c8d0dd9a1e57395b603f51"
+-dependencies = [
+- "serde",
+-]
+-
+ [[package]]
+ name = "bitflags"
+ version = "2.13.1"
+@@ -328,15 +268,6 @@ dependencies = [
+  "objc2",
+ ]
+ 
+-[[package]]
+-name = "built"
+-version = "0.8.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "5c0e531d93d39c34eef561e929e8a7f86d77a5af08aac4f6d6e39976c51858e9"
+-dependencies = [
+- "cargo-lock",
+-]
+-
+ [[package]]
+ name = "bumpalo"
+ version = "3.20.3"
+@@ -354,9 +285,6 @@ name = "bytes"
+ version = "1.12.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
+-dependencies = [
+- "serde",
+-]
+ 
+ [[package]]
+ name = "camino"
+@@ -367,18 +295,6 @@ dependencies = [
+  "serde_core",
+ ]
+ 
+-[[package]]
+-name = "cargo-lock"
+-version = "11.0.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "63585cdf8572aa7adf0e30a253f988f2b77233bfac1973d52efb6dd53a75920e"
+-dependencies = [
+- "semver",
+- "serde",
+- "toml",
+- "url",
+-]
+-
+ [[package]]
+ name = "cargo-platform"
+ version = "0.1.9"
+@@ -426,9 +342,9 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
+ 
+ [[package]]
+ name = "cfg_aliases"
+-version = "0.2.1"
++version = "0.2.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
++checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
+ 
+ [[package]]
+ name = "chacha20"
+@@ -548,15 +464,6 @@ dependencies = [
+  "unicode-segmentation",
+ ]
+ 
+-[[package]]
+-name = "convert_case"
+-version = "0.11.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "affbf0190ed2caf063e3def54ff444b449371d55c58e513a95ab98eca50adb49"
+-dependencies = [
+- "unicode-segmentation",
+-]
+-
+ [[package]]
+ name = "cordyceps"
+ version = "0.3.4"
+@@ -567,16 +474,6 @@ dependencies = [
+  "tracing",
+ ]
+ 
+-[[package]]
+-name = "core-foundation"
+-version = "0.9.4"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "91e195e091a93c46f7102ec7818a2aa394e1e1771c3ab4825963fa03e45afb8f"
+-dependencies = [
+- "core-foundation-sys",
+- "libc",
+-]
+-
+ [[package]]
+ name = "core-foundation"
+ version = "0.10.1"
+@@ -617,30 +514,6 @@ version = "1.2.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "790eea4361631c5e7d22598ecd5723ff611904e3344ce8720784c93e3d83d40b"
+ 
+-[[package]]
+-name = "crossbeam-channel"
+-version = "0.5.16"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "d85363c37faeca707aef026efa9f3b34d077bce547e48f770770625c6013679e"
+-dependencies = [
+- "crossbeam-utils",
+-]
+-
+-[[package]]
+-name = "crossbeam-epoch"
+-version = "0.9.20"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "2d6914041f254d6e9176c01941b21115dcfb7089e55135a35411081bd106ef3f"
+-dependencies = [
+- "crossbeam-utils",
+-]
+-
+-[[package]]
+-name = "crossbeam-utils"
+-version = "0.8.22"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "61803da095bee82a81bb1a452ecc25d3b2f1416d1897eb86430c6159ef717c17"
+-
+ [[package]]
+ name = "crypto-common"
+ version = "0.1.7"
+@@ -660,12 +533,6 @@ dependencies = [
+  "hybrid-array",
+ ]
+ 
+-[[package]]
+-name = "ctor"
+-version = "1.0.9"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "a394189d59f9befacce833f337f7b1eca5e9a91221bcdd4d28e0114d96e597b3"
+-
+ [[package]]
+ name = "ctr"
+ version = "0.9.2"
+@@ -713,41 +580,6 @@ dependencies = [
+  "syn",
+ ]
+ 
+-[[package]]
+-name = "darling"
+-version = "0.20.11"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "fc7f46116c46ff9ab3eb1597a45688b6715c6e628b5c133e288e709a29bcb4ee"
+-dependencies = [
+- "darling_core",
+- "darling_macro",
+-]
+-
+-[[package]]
+-name = "darling_core"
+-version = "0.20.11"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "0d00b9596d185e565c2207a0b01f8bd1a135483d02d9b7b0a54b11da8d53412e"
+-dependencies = [
+- "fnv",
+- "ident_case",
+- "proc-macro2",
+- "quote",
+- "strsim",
+- "syn",
+-]
+-
+-[[package]]
+-name = "darling_macro"
+-version = "0.20.11"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "fc34b93ccb385b40dc71c6fceac4b2ad23662c7eeb248cf10d529b7e055b6ead"
+-dependencies = [
+- "darling_core",
+- "quote",
+- "syn",
+-]
+-
+ [[package]]
+ name = "data-encoding"
+ version = "2.11.0"
+@@ -785,57 +617,12 @@ dependencies = [
+  "zeroize",
+ ]
+ 
+-[[package]]
+-name = "der-parser"
+-version = "10.0.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "07da5016415d5a3c4dd39b11ed26f915f52fc4e0dc197d87908bc916e51bc1a6"
+-dependencies = [
+- "asn1-rs",
+- "displaydoc",
+- "nom",
+- "num-bigint",
+- "num-traits",
+- "rusticata-macros",
+-]
+-
+ [[package]]
+ name = "deranged"
+ version = "0.5.8"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "7cd812cc2bc1d69d4764bd80df88b4317eaef9e773c75226407d9bc0876b211c"
+ 
+-[[package]]
+-name = "derive_builder"
+-version = "0.20.2"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "507dfb09ea8b7fa618fcf76e953f4f5e192547945816d5358edffe39f6f94947"
+-dependencies = [
+- "derive_builder_macro",
+-]
+-
+-[[package]]
+-name = "derive_builder_core"
+-version = "0.20.2"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "2d5bcf7b024d6835cfb3d473887cd966994907effbe9227e8c8219824d06c4e8"
+-dependencies = [
+- "darling",
+- "proc-macro2",
+- "quote",
+- "syn",
+-]
+-
+-[[package]]
+-name = "derive_builder_macro"
+-version = "0.20.2"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "ab63b0e2bf4d5928aff72e83a7dace85d7bba5fe12dcc3c5a572d78caffd3f3c"
+-dependencies = [
+- "derive_builder_core",
+- "syn",
+-]
+-
+ [[package]]
+ name = "derive_more"
+ version = "2.1.1"
+@@ -851,7 +638,7 @@ version = "2.1.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "799a97264921d8623a957f6c3b9011f3b5492f557bbb7a5a19b7fa6d06ba8dcb"
+ dependencies = [
+- "convert_case 0.10.0",
++ "convert_case",
+  "proc-macro2",
+  "quote",
+  "rustc_version",
+@@ -936,12 +723,6 @@ dependencies = [
+  "zeroize",
+ ]
+ 
+-[[package]]
+-name = "either"
+-version = "1.16.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
+-
+ [[package]]
+ name = "embedded-io"
+ version = "0.4.0"
+@@ -999,12 +780,6 @@ version = "0.1.9"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
+ 
+-[[package]]
+-name = "fnv"
+-version = "1.0.7"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
+-
+ [[package]]
+ name = "foldhash"
+ version = "0.2.0"
+@@ -1181,20 +956,6 @@ dependencies = [
+  "wasm-bindgen",
+ ]
+ 
+-[[package]]
+-name = "getrandom"
+-version = "0.3.4"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
+-dependencies = [
+- "cfg-if",
+- "js-sys",
+- "libc",
+- "r-efi 5.3.0",
+- "wasip2",
+- "wasm-bindgen",
+-]
+-
+ [[package]]
+ name = "getrandom"
+ version = "0.4.3"
+@@ -1204,7 +965,7 @@ dependencies = [
+  "cfg-if",
+  "js-sys",
+  "libc",
+- "r-efi 6.0.0",
++ "r-efi",
+  "rand_core",
+  "wasm-bindgen",
+ ]
+@@ -1248,25 +1009,6 @@ dependencies = [
+  "scroll",
+ ]
+ 
+-[[package]]
+-name = "h2"
+-version = "0.4.15"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "6cb093c84e8bd9b188d4c4a8cb6579fc016968d14c99882163cd3ff402a4f155"
+-dependencies = [
+- "atomic-waker",
+- "bytes",
+- "fnv",
+- "futures-core",
+- "futures-sink",
+- "http",
+- "indexmap",
+- "slab",
+- "tokio",
+- "tokio-util",
+- "tracing",
+-]
+-
+ [[package]]
+ name = "hash32"
+ version = "0.2.1"
+@@ -1307,89 +1049,6 @@ version = "0.5.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+ 
+-[[package]]
+-name = "hex"
+-version = "0.4.3"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+-
+-[[package]]
+-name = "hickory-net"
+-version = "0.26.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "e2295ed2f9c31e471e1428a8f88a3f0e1f4b27c15049592138d1eebe9c35b183"
+-dependencies = [
+- "async-trait",
+- "bytes",
+- "cfg-if",
+- "data-encoding",
+- "futures-channel",
+- "futures-io",
+- "futures-util",
+- "h2",
+- "hickory-proto",
+- "http",
+- "idna",
+- "ipnet",
+- "jni 0.22.4",
+- "rand",
+- "rustls",
+- "thiserror 2.0.18",
+- "tinyvec",
+- "tokio",
+- "tokio-rustls",
+- "tracing",
+- "url",
+-]
+-
+-[[package]]
+-name = "hickory-proto"
+-version = "0.26.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "0bab31817bfb44672a252e97fe81cd0c18d1b2cf892108922f6818820df8c643"
+-dependencies = [
+- "data-encoding",
+- "idna",
+- "ipnet",
+- "jni 0.22.4",
+- "once_cell",
+- "prefix-trie",
+- "rand",
+- "ring",
+- "thiserror 2.0.18",
+- "tinyvec",
+- "tracing",
+- "url",
+-]
+-
+-[[package]]
+-name = "hickory-resolver"
+-version = "0.26.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "f0d58d28879ceecde6607729660c2667a081ccdc082e082675042793960f178c"
+-dependencies = [
+- "cfg-if",
+- "futures-util",
+- "hickory-net",
+- "hickory-proto",
+- "ipconfig",
+- "ipnet",
+- "jni 0.22.4",
+- "moka",
+- "ndk-context",
+- "once_cell",
+- "parking_lot",
+- "rand",
+- "resolv-conf",
+- "rustls",
+- "smallvec",
+- "system-configuration",
+- "thiserror 2.0.18",
+- "tokio",
+- "tokio-rustls",
+- "tracing",
+-]
+-
+ [[package]]
+ name = "http"
+ version = "1.4.2"
+@@ -1454,7 +1113,6 @@ dependencies = [
+  "bytes",
+  "futures-channel",
+  "futures-core",
+- "h2",
+  "http",
+  "http-body",
+  "httparse",
+@@ -1610,12 +1268,6 @@ dependencies = [
+  "zerovec",
+ ]
+ 
+-[[package]]
+-name = "ident_case"
+-version = "1.0.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
+-
+ [[package]]
+ name = "identity-hash"
+ version = "0.1.0"
+@@ -1643,26 +1295,6 @@ dependencies = [
+  "icu_properties",
+ ]
+ 
+-[[package]]
+-name = "igd-next"
+-version = "0.17.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "de7238d487a9aff61f81b5ab41c0a841532a115a398b5fa92a2fadd0885e2581"
+-dependencies = [
+- "attohttpc",
+- "bytes",
+- "futures",
+- "http",
+- "http-body-util",
+- "hyper",
+- "hyper-util",
+- "log",
+- "rand",
+- "tokio",
+- "url",
+- "xmltree",
+-]
+-
+ [[package]]
+ name = "indexmap"
+ version = "2.14.0"
+@@ -1702,15 +1334,12 @@ name = "ipnet"
+ version = "2.12.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "d98f6fed1fde3f8c21bc40a1abb88dd75e67924f9cffc3ef95607bad8017f8e2"
+-dependencies = [
+- "serde",
+-]
+ 
+ [[package]]
+ name = "iroh"
+-version = "1.0.2"
++version = "1.2.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "5fca9b4b462c343ff88fc0af4096c186f939b602a0bc08723536ef2c31c93971"
++checksum = "b2f8d1cfffc83efe39a1031aab423ce09cb8048071baba550508931e9a81ce46"
+ dependencies = [
+  "backon",
+  "blake3",
+@@ -1722,7 +1351,6 @@ dependencies = [
+  "ed25519-dalek",
+  "futures-util",
+  "getrandom 0.4.3",
+- "hickory-resolver",
+  "http",
+  "ipnet",
+  "iroh-base",
+@@ -1739,7 +1367,6 @@ dependencies = [
+  "papaya",
+  "pin-project",
+  "portable-atomic",
+- "portmapper",
+  "rand",
+  "reqwest",
+  "rustc-hash",
+@@ -1759,9 +1386,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "iroh-base"
+-version = "1.0.2"
++version = "1.2.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "830a582cd54410dc1aa71d4786a82c3297d7b0165accd8b6dbbb3b240b48140d"
++checksum = "ffd1efd1aaecd68d4d1b0727a30c5811f43fb822843e48f65f6e5db3b7256cc9"
+ dependencies = [
+  "curve25519-dalek",
+  "data-encoding",
+@@ -1778,18 +1405,17 @@ dependencies = [
+ 
+ [[package]]
+ name = "iroh-dns"
+-version = "1.0.2"
++version = "1.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "516e4eedc38e33ab69a6bd325520332dc3d67b25454e2d590ebb84a25240dd9a"
++checksum = "80276761b56e904e26ea71d0863beef0bb8d5ab6b639cbd1338e4b615209e3a1"
+ dependencies = [
+  "arc-swap",
+  "cfg_aliases",
+  "derive_more",
+- "hickory-resolver",
+  "iroh-base",
++ "n0-dns-resolver",
+  "n0-error",
+  "n0-future",
+- "ndk-context",
+  "portable-atomic",
+  "rand",
+  "rustls",
+@@ -1811,7 +1437,6 @@ dependencies = [
+  "iroh-base",
+  "iroh-metrics",
+  "iroh-relay",
+- "iroh-services",
+  "iroh-tickets",
+  "jni 0.22.4",
+  "n0-error",
+@@ -1856,9 +1481,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "iroh-relay"
+-version = "1.0.2"
++version = "1.2.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "8149bb6a57126225a07d6928846d82dcedfd24ea0f863ef7b2eb475e1d726354"
++checksum = "beb2294a9749d6a25fd7cd8bcf0fccd932f20716d4f967d85d3f23c7135ae6a2"
+ dependencies = [
+  "blake3",
+  "bytes",
+@@ -1866,7 +1491,6 @@ dependencies = [
+  "data-encoding",
+  "derive_more",
+  "getrandom 0.4.3",
+- "hickory-resolver",
+  "http",
+  "http-body-util",
+  "hyper",
+@@ -1895,47 +1519,10 @@ dependencies = [
+  "tokio-websockets",
+  "tracing",
+  "url",
+- "vergen-gitcl",
+  "webpki-roots",
+  "ws_stream_wasm",
+ ]
+ 
+-[[package]]
+-name = "iroh-services"
+-version = "1.0.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "a1a88cd95fbd20abd9eadc4df91c722915dc943412b964e915f35b0b0a46a1fd"
+-dependencies = [
+- "anyhow",
+- "base64",
+- "built",
+- "bytes",
+- "data-encoding",
+- "derive_more",
+- "ed25519-dalek",
+- "futures-buffered",
+- "getrandom 0.4.3",
+- "iroh",
+- "iroh-metrics",
+- "iroh-tickets",
+- "irpc",
+- "irpc-iroh",
+- "n0-error",
+- "n0-future",
+- "portmapper",
+- "postcard",
+- "rand",
+- "rcan",
+- "serde",
+- "serde_json",
+- "strum",
+- "thiserror 2.0.18",
+- "tokio",
+- "tracing",
+- "tracing-subscriber",
+- "uuid",
+-]
+-
+ [[package]]
+ name = "iroh-tickets"
+ version = "1.0.0"
+@@ -1950,57 +1537,6 @@ dependencies = [
+  "serde",
+ ]
+ 
+-[[package]]
+-name = "irpc"
+-version = "0.17.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "3623d6ff582b415904b29bbe6ebcb4a4f9a262ccdee05a45fdd003ef0950c386"
+-dependencies = [
+- "futures-buffered",
+- "futures-util",
+- "irpc-derive",
+- "n0-error",
+- "n0-future",
+- "noq",
+- "postcard",
+- "rcgen",
+- "rustls",
+- "serde",
+- "smallvec",
+- "tokio",
+- "tokio-util",
+- "tracing",
+-]
+-
+-[[package]]
+-name = "irpc-derive"
+-version = "0.17.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "35c254013736de16472140d26904e6ac98e8f3887284dcf4af40f88c77411b56"
+-dependencies = [
+- "proc-macro2",
+- "quote",
+- "syn",
+-]
+-
+-[[package]]
+-name = "irpc-iroh"
+-version = "0.17.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "2342daed629b312f61e57e452b0750a59da162f261b97f260a6354de61d4fb0e"
+-dependencies = [
+- "getrandom 0.3.4",
+- "iroh",
+- "iroh-base",
+- "irpc",
+- "n0-error",
+- "n0-future",
+- "postcard",
+- "serde",
+- "tokio",
+- "tracing",
+-]
+-
+ [[package]]
+ name = "itoa"
+ version = "1.0.18"
+@@ -2104,16 +1640,6 @@ version = "0.2.186"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
+ 
+-[[package]]
+-name = "libloading"
+-version = "0.9.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "754ca22de805bb5744484a5b151a9e1a8e837d5dc232c2d7d8c2e3492edc8b60"
+-dependencies = [
+- "cfg-if",
+- "windows-link",
+-]
+-
+ [[package]]
+ name = "linux-raw-sys"
+ version = "0.12.1"
+@@ -2208,20 +1734,28 @@ dependencies = [
+ ]
+ 
+ [[package]]
+-name = "moka"
+-version = "0.12.15"
++name = "n0-dns-resolver"
++version = "0.1.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "957228ad12042ee839f93c8f257b62b4c0ab5eaae1d4fa60de53b27c9d7c5046"
++checksum = "535c99c9a786bee714155d2ee4fc2477405c2c43536e1bc6a51de09a0d1448f7"
+ dependencies = [
+- "crossbeam-channel",
+- "crossbeam-epoch",
+- "crossbeam-utils",
+- "equivalent",
+- "parking_lot",
+- "portable-atomic",
+- "smallvec",
+- "tagptr",
+- "uuid",
++ "derive_more",
++ "ipconfig",
++ "jni 0.22.4",
++ "lru",
++ "n0-error",
++ "n0-future",
++ "ndk-context",
++ "rand",
++ "reqwest",
++ "rustc-hash",
++ "rustls",
++ "simple-dns",
++ "system-configuration",
++ "tokio",
++ "tokio-rustls",
++ "tracing",
++ "webpki-roots",
+ ]
+ 
+ [[package]]
+@@ -2277,65 +1811,6 @@ dependencies = [
+  "n0-future",
+ ]
+ 
+-[[package]]
+-name = "napi"
+-version = "3.10.5"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "6826e5ddc15589b2d68c8ad5321c18e85d40488e93e32962f362e572669bccf6"
+-dependencies = [
+- "anyhow",
+- "bitflags",
+- "ctor",
+- "futures",
+- "napi-build",
+- "napi-sys",
+- "nohash-hasher",
+- "rustc-hash",
+- "tokio",
+-]
+-
+-[[package]]
+-name = "napi-build"
+-version = "2.3.2"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "c9c366d2c8c60b86fa632df75f745509b52f9128f91a6bad4c796e44abb505e1"
+-
+-[[package]]
+-name = "napi-derive"
+-version = "3.5.10"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "b0fe526e81c105d3640516fcde83909dd1afe757c0d7a15af58830b5bc0fb9a1"
+-dependencies = [
+- "convert_case 0.11.0",
+- "ctor",
+- "napi-derive-backend",
+- "proc-macro2",
+- "quote",
+- "syn",
+-]
+-
+-[[package]]
+-name = "napi-derive-backend"
+-version = "5.1.2"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "514281397bcddd9ea9a876c7a21a57bff2374237a000ca9a64ea0211ec1993e2"
+-dependencies = [
+- "convert_case 0.11.0",
+- "proc-macro2",
+- "quote",
+- "semver",
+- "syn",
+-]
+-
+-[[package]]
+-name = "napi-sys"
+-version = "3.2.3"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "73e43cf2eb0bd1bf95a43c07c076ebd2da5d1e015a71c3d201faeffffcc0ecac"
+-dependencies = [
+- "libloading",
+-]
+-
+ [[package]]
+ name = "ndk-context"
+ version = "0.1.1"
+@@ -2356,13 +1831,37 @@ dependencies = [
+  "libc",
+  "mac-addr",
+  "ndk-context",
+- "netlink-packet-core",
+- "netlink-packet-route",
+- "netlink-sys",
++ "netlink-packet-core 0.8.1",
++ "netlink-packet-route 0.31.0",
++ "netlink-sys 0.8.8",
+  "objc2",
+  "objc2-core-foundation",
+- "objc2-core-wlan",
+- "objc2-foundation",
++ "objc2-core-wlan",
++ "objc2-foundation",
++ "objc2-system-configuration",
++ "once_cell",
++ "plist",
++ "windows-sys 0.61.2",
++]
++
++[[package]]
++name = "netdev"
++version = "0.46.3"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c3c52c2584961c68f5a6e3356797344061f818c93b8acc9cd6d7e284795e563e"
++dependencies = [
++ "block2",
++ "dispatch2",
++ "dlopen2",
++ "ipnet",
++ "jni 0.21.1",
++ "libc",
++ "mac-addr",
++ "ndk-context",
++ "netlink-packet-core 0.9.0",
++ "netlink-packet-route 0.33.0",
++ "netlink-sys 0.9.0",
++ "objc2-core-foundation",
+  "objc2-system-configuration",
+  "once_cell",
+  "plist",
+@@ -2378,6 +1877,12 @@ dependencies = [
+  "paste",
+ ]
+ 
++[[package]]
++name = "netlink-packet-core"
++version = "0.9.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "2d6e2daf9a8c2e21302714706860a0e6be02e03d17294ecc66b354ea7d4059dd"
++
+ [[package]]
+ name = "netlink-packet-route"
+ version = "0.31.0"
+@@ -2387,7 +1892,20 @@ dependencies = [
+  "bitflags",
+  "libc",
+  "log",
+- "netlink-packet-core",
++ "netlink-packet-core 0.8.1",
++]
++
++[[package]]
++name = "netlink-packet-route"
++version = "0.33.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "59d48ffc8b73a506e1ff0878528c72668f2bfbc3d875b6be890a96be5d0d5576"
++dependencies = [
++ "bitflags",
++ "libc",
++ "log",
++ "netlink-packet-core 0.9.0",
++ "zerocopy",
+ ]
+ 
+ [[package]]
+@@ -2399,8 +1917,8 @@ dependencies = [
+  "bytes",
+  "futures",
+  "log",
+- "netlink-packet-core",
+- "netlink-sys",
++ "netlink-packet-core 0.8.1",
++ "netlink-sys 0.8.8",
+  "thiserror 2.0.18",
+ ]
+ 
+@@ -2417,11 +1935,22 @@ dependencies = [
+  "tokio",
+ ]
+ 
++[[package]]
++name = "netlink-sys"
++version = "0.9.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c99d38e00b420df49e940fe0826e667c3dad82ac68eb4c2bbf754c1c14a83a10"
++dependencies = [
++ "bytes",
++ "libc",
++ "log",
++]
++
+ [[package]]
+ name = "netwatch"
+-version = "0.19.1"
++version = "0.19.3"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "4d9cbe01741347ef750d743d6690603f5eed8341e679fb51c8e629337aa11976"
++checksum = "39da9cad5f23aa43401f09497d3b280e51b5feba115d9ffbf38ca35d6ff95e96"
+ dependencies = [
+  "atomic-waker",
+  "bytes",
+@@ -2433,11 +1962,12 @@ dependencies = [
+  "n0-error",
+  "n0-future",
+  "n0-watcher",
+- "netdev",
+- "netlink-packet-core",
+- "netlink-packet-route",
++ "netdev 0.45.0",
++ "netdev 0.46.3",
++ "netlink-packet-core 0.8.1",
++ "netlink-packet-route 0.31.0",
+  "netlink-proto",
+- "netlink-sys",
++ "netlink-sys 0.8.8",
+  "noq-udp",
+  "objc2-core-foundation",
+  "objc2-system-configuration",
+@@ -2454,12 +1984,6 @@ dependencies = [
+  "wmi",
+ ]
+ 
+-[[package]]
+-name = "nohash-hasher"
+-version = "0.2.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
+-
+ [[package]]
+ name = "nom"
+ version = "7.1.3"
+@@ -2472,9 +1996,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "noq"
+-version = "1.0.1"
++version = "1.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "4bf95190af1bd4a00a10e8255ca0c8ddd9e9a9f5e79151d7a7eb6d56aff5dc89"
++checksum = "b78be567e796cfa74bb9bdc4117790af2d505eb887019cf8803244353eb09d89"
+ dependencies = [
+  "bytes",
+  "cfg_aliases",
+@@ -2494,9 +2018,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "noq-proto"
+-version = "1.0.1"
++version = "1.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "aa6c890013591e709a3e45dd53501351b7e27e7ff3c7e9fc3dce43e300e7e9d3"
++checksum = "7c1e5b6fe668491eca022f745a0a9402585626c73a7b839b3424ace15d6a9c8f"
+ dependencies = [
+  "aes-gcm",
+  "bytes",
+@@ -2521,9 +2045,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "noq-udp"
+-version = "1.0.1"
++version = "1.3.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "3137a52df66c20090a889828d1c655f21f52294cba64e5c4fbb04fc83eee7c8e"
++checksum = "4dc50afea61aff926e150a36c31f06094608848e114a3fe667d76ec233163b1c"
+ dependencies = [
+  "cfg_aliases",
+  "libc",
+@@ -2541,31 +2065,12 @@ dependencies = [
+  "windows-sys 0.61.2",
+ ]
+ 
+-[[package]]
+-name = "num-bigint"
+-version = "0.4.8"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "c89e69e7e0f03bea5ef08013795c25018e101932225a656383bd384495ecc367"
+-dependencies = [
+- "num-integer",
+- "num-traits",
+-]
+-
+ [[package]]
+ name = "num-conv"
+ version = "0.2.2"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "521739c6d2bac4aa25192232afe6841231376b2b26d4d9fae5ecf8ca5772e441"
+ 
+-[[package]]
+-name = "num-integer"
+-version = "0.1.46"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "7969661fd2958a5cb096e56c8e1ad0444ac2bbcd0061bd28660485a44879858f"
+-dependencies = [
+- "num-traits",
+-]
+-
+ [[package]]
+ name = "num-traits"
+ version = "0.2.19"
+@@ -2597,36 +2102,6 @@ dependencies = [
+  "syn",
+ ]
+ 
+-[[package]]
+-name = "num_threads"
+-version = "0.1.7"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "5c7398b9c8b70908f6371f47ed36737907c87c52af34c268fed0bf0ceb92ead9"
+-dependencies = [
+- "libc",
+-]
+-
+-[[package]]
+-name = "number0_iroh"
+-version = "1.1.0"
+-dependencies = [
+- "anyhow",
+- "iroh",
+- "iroh-base",
+- "iroh-metrics",
+- "iroh-relay",
+- "iroh-services",
+- "iroh-tickets",
+- "n0-future",
+- "napi",
+- "napi-build",
+- "napi-derive",
+- "tokio",
+- "tracing",
+- "tracing-subscriber",
+- "url",
+-]
+-
+ [[package]]
+ name = "objc2"
+ version = "0.6.4"
+@@ -2717,24 +2192,11 @@ dependencies = [
+  "objc2-security",
+ ]
+ 
+-[[package]]
+-name = "oid-registry"
+-version = "0.8.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "12f40cff3dde1b6087cc5d5f5d4d65712f34016a03ed60e9c08dcc392736b5b7"
+-dependencies = [
+- "asn1-rs",
+-]
+-
+ [[package]]
+ name = "once_cell"
+ version = "1.21.4"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
+-dependencies = [
+- "critical-section",
+- "portable-atomic",
+-]
+ 
+ [[package]]
+ name = "opaque-debug"
+@@ -2793,16 +2255,6 @@ version = "1.0.15"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+ 
+-[[package]]
+-name = "pem"
+-version = "3.0.6"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "1d30c53c26bc5b31a98cd02d20f25a7c8567146caf63ed593a9d87b2775291be"
+-dependencies = [
+- "base64",
+- "serde_core",
+-]
+-
+ [[package]]
+ name = "pem-rfc7468"
+ version = "1.0.0"
+@@ -2904,35 +2356,6 @@ dependencies = [
+  "serde",
+ ]
+ 
+-[[package]]
+-name = "portmapper"
+-version = "0.19.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "eb3713e4977408279158444a18c1a01ac9bf2e7eaf1fbfd1a19ac9cd18d90721"
+-dependencies = [
+- "base64",
+- "bytes",
+- "derive_more",
+- "hyper-util",
+- "igd-next",
+- "iroh-metrics",
+- "libc",
+- "n0-error",
+- "n0-future",
+- "netwatch",
+- "num_enum",
+- "rand",
+- "serde",
+- "smallvec",
+- "socket2",
+- "time",
+- "tokio",
+- "tokio-util",
+- "tower-layer",
+- "tracing",
+- "url",
+-]
+-
+ [[package]]
+ name = "postcard"
+ version = "1.1.3"
+@@ -2973,17 +2396,6 @@ version = "0.2.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
+ 
+-[[package]]
+-name = "prefix-trie"
+-version = "0.8.4"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "4cf6e3177f0684016a5c209b00882e15f8bdd3f3bb48f0491df10cd102d0c6e7"
+-dependencies = [
+- "either",
+- "ipnet",
+- "num-traits",
+-]
+-
+ [[package]]
+ name = "proc-macro-crate"
+ version = "3.5.0"
+@@ -3020,12 +2432,6 @@ dependencies = [
+  "proc-macro2",
+ ]
+ 
+-[[package]]
+-name = "r-efi"
+-version = "5.3.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
+-
+ [[package]]
+ name = "r-efi"
+ version = "6.0.0"
+@@ -3058,36 +2464,6 @@ dependencies = [
+  "rand_core",
+ ]
+ 
+-[[package]]
+-name = "rcan"
+-version = "0.4.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "12a624a4a4742f8c6e58fba99712e606cea0491b76f5b2345f06af5802101027"
+-dependencies = [
+- "anyhow",
+- "derive_more",
+- "ed25519-dalek",
+- "hex",
+- "n0-future",
+- "postcard",
+- "serde",
+- "serdect",
+-]
+-
+-[[package]]
+-name = "rcgen"
+-version = "0.14.8"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "57f6d249aad744e274e682777a50283a225a32705394ee6d5fcc01efa25e4055"
+-dependencies = [
+- "pem",
+- "ring",
+- "rustls-pki-types",
+- "time",
+- "x509-parser",
+- "yasna",
+-]
+-
+ [[package]]
+ name = "redox_syscall"
+ version = "0.5.18"
+@@ -3151,12 +2527,6 @@ dependencies = [
+  "web-sys",
+ ]
+ 
+-[[package]]
+-name = "resolv-conf"
+-version = "0.7.6"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "1e061d1b48cb8d38042de4ae0a7a6401009d6143dc80d2e2d6f31f0bdd6470c7"
+-
+ [[package]]
+ name = "ring"
+ version = "0.17.14"
+@@ -3186,15 +2556,6 @@ dependencies = [
+  "semver",
+ ]
+ 
+-[[package]]
+-name = "rusticata-macros"
+-version = "4.1.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "faf0c4a6ece9950b9abdb62b1cfcf2a68b3b67a10ba445b3bb85be2a293d0632"
+-dependencies = [
+- "nom",
+-]
+-
+ [[package]]
+ name = "rustix"
+ version = "1.1.4"
+@@ -3210,9 +2571,9 @@ dependencies = [
+ 
+ [[package]]
+ name = "rustls"
+-version = "0.23.42"
++version = "0.23.45"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "3c54fcab019b409d04215d3a17cb438fd7fbf192ee61461f20f4fe18704bc138"
++checksum = "0d41d731c7d2f962d1ccc364cec258de3c0e93b38c2fb3ba97ac74513048d634"
+ dependencies = [
+  "log",
+  "once_cell",
+@@ -3251,7 +2612,7 @@ version = "0.7.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "26d1e2536ce4f35f4846aa13bff16bd0ff40157cdb14cc056c7b14ba41233ba0"
+ dependencies = [
+- "core-foundation 0.10.1",
++ "core-foundation",
+  "core-foundation-sys",
+  "jni 0.22.4",
+  "log",
+@@ -3274,9 +2635,9 @@ checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
+ 
+ [[package]]
+ name = "rustls-webpki"
+-version = "0.103.13"
++version = "0.103.15"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "61c429a8649f110dddef65e2a5ad240f747e85f7758a6bccc7e5777bd33f756e"
++checksum = "f3c3cf1d8b1e7d4927e2d154c3fcb02979afb9939629c62cd9048d4f07b60ac2"
+ dependencies = [
+  "ring",
+  "rustls-pki-types",
+@@ -3352,7 +2713,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "b7f4bc775c73d9a02cde8bf7b2ec4c9d12743edf609006c7facc23998404cd1d"
+ dependencies = [
+  "bitflags",
+- "core-foundation 0.10.1",
++ "core-foundation",
+  "core-foundation-sys",
+  "libc",
+  "security-framework-sys",
+@@ -3532,9 +2893,9 @@ checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
+ 
+ [[package]]
+ name = "simple-dns"
+-version = "0.11.3"
++version = "0.12.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "7a75cbde1bf934313596a004973e462f9a82caa814dcf1a5f507bdf51597eeb4"
++checksum = "2b6f884fa9a8d48101774bfbd3aeb81e968dd22cffd19a372da69f183db22c1a"
+ dependencies = [
+  "bitflags",
+ ]
+@@ -3693,12 +3054,12 @@ dependencies = [
+ 
+ [[package]]
+ name = "system-configuration"
+-version = "0.7.0"
++version = "0.8.0"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "a13f3d0daba03132c0aa9767f98351b3488edc2c100cda2d2ec2b04f3d8d3c8b"
++checksum = "501336eb7ba9e417300a6a0fa985721065467aa83a6dcf0422a8e43e4c0328fa"
+ dependencies = [
+  "bitflags",
+- "core-foundation 0.9.4",
++ "core-foundation",
+  "system-configuration-sys",
+ ]
+ 
+@@ -3712,12 +3073,6 @@ dependencies = [
+  "libc",
+ ]
+ 
+-[[package]]
+-name = "tagptr"
+-version = "0.2.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "7b2093cf4c8eb1e67749a6762251bc9cd836b6fc171623bd0a9d324d37af2417"
+-
+ [[package]]
+ name = "tempfile"
+ version = "3.27.0"
+@@ -3797,9 +3152,7 @@ checksum = "18dfaaeddcb932337b5e7866ee7d0ce9b76d2fd092997146f187ec09b4558a50"
+ dependencies = [
+  "deranged",
+  "js-sys",
+- "libc",
+  "num-conv",
+- "num_threads",
+  "powerfmt",
+  "serde_core",
+  "time-core",
+@@ -4083,16 +3436,6 @@ dependencies = [
+  "tracing-core",
+ ]
+ 
+-[[package]]
+-name = "tracing-serde"
+-version = "0.2.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "704b1aeb7be0d0a84fc9828cae51dab5970fee5088f83d1dd7ee6f6246fc6ff1"
+-dependencies = [
+- "serde",
+- "tracing-core",
+-]
+-
+ [[package]]
+ name = "tracing-subscriber"
+ version = "0.3.23"
+@@ -4103,15 +3446,12 @@ dependencies = [
+  "nu-ansi-term",
+  "once_cell",
+  "regex-automata",
+- "serde",
+- "serde_json",
+  "sharded-slab",
+  "smallvec",
+  "thread_local",
+  "tracing",
+  "tracing-core",
+  "tracing-log",
+- "tracing-serde",
+ ]
+ 
+ [[package]]
+@@ -4313,61 +3653,12 @@ version = "1.0.4"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
+ 
+-[[package]]
+-name = "uuid"
+-version = "1.24.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "bf3923a6f5c4c6382e0b653c4117f48d631ea17f38ed86e2a828e6f7412f5239"
+-dependencies = [
+- "getrandom 0.4.3",
+- "js-sys",
+- "serde_core",
+- "wasm-bindgen",
+-]
+-
+ [[package]]
+ name = "valuable"
+ version = "0.1.1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
+ 
+-[[package]]
+-name = "vergen"
+-version = "9.1.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "b849a1f6d8639e8de261e81ee0fc881e3e3620db1af9f2e0da015d4382ceaf75"
+-dependencies = [
+- "anyhow",
+- "derive_builder",
+- "rustversion",
+- "vergen-lib",
+-]
+-
+-[[package]]
+-name = "vergen-gitcl"
+-version = "9.1.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "77ff3b5300a085d6bcd8fc96a507f706a28ae3814693236c9b409db71a1d15b9"
+-dependencies = [
+- "anyhow",
+- "derive_builder",
+- "rustversion",
+- "time",
+- "vergen",
+- "vergen-lib",
+-]
+-
+-[[package]]
+-name = "vergen-lib"
+-version = "9.1.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "b34a29ba7e9c59e62f229ae1932fb1b8fb8a6fdcc99215a641913f5f5a59a569"
+-dependencies = [
+- "anyhow",
+- "derive_builder",
+- "rustversion",
+-]
+-
+ [[package]]
+ name = "version_check"
+ version = "0.9.5"
+@@ -4399,15 +3690,6 @@ version = "0.11.1+wasi-snapshot-preview1"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+ checksum = "ccf3ec651a847eb01de73ccad15eb7d99f80485de043efb2f370cd654f4ea44b"
+ 
+-[[package]]
+-name = "wasip2"
+-version = "1.0.4+wasi-0.2.12"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "b67efb37e106e55ce722a510d6b5f9c17f083e5fc79afc2badeb12cc313d9487"
+-dependencies = [
+- "wit-bindgen",
+-]
+-
+ [[package]]
+ name = "wasm-bindgen"
+ version = "0.2.126"
+@@ -4847,12 +4129,6 @@ dependencies = [
+  "memchr",
+ ]
+ 
+-[[package]]
+-name = "wit-bindgen"
+-version = "0.57.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
+-
+ [[package]]
+ name = "wmi"
+ version = "0.18.4"
+@@ -4893,49 +4169,6 @@ dependencies = [
+  "web-sys",
+ ]
+ 
+-[[package]]
+-name = "x509-parser"
+-version = "0.18.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "d43b0f71ce057da06bc0851b23ee24f3f86190b07203dd8f567d0b706a185202"
+-dependencies = [
+- "asn1-rs",
+- "data-encoding",
+- "der-parser",
+- "lazy_static",
+- "nom",
+- "oid-registry",
+- "ring",
+- "rusticata-macros",
+- "thiserror 2.0.18",
+- "time",
+-]
+-
+-[[package]]
+-name = "xml-rs"
+-version = "0.8.28"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "3ae8337f8a065cfc972643663ea4279e04e7256de865aa66fe25cec5fb912d3f"
+-
+-[[package]]
+-name = "xmltree"
+-version = "0.10.3"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "d7d8a75eaf6557bb84a65ace8609883db44a29951042ada9b393151532e41fcb"
+-dependencies = [
+- "xml-rs",
+-]
+-
+-[[package]]
+-name = "yasna"
+-version = "0.6.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "b5f6765e852b9b4dc8e2a76843e4d64d1cea8e79bcde0b6901aea8e7c7f08282"
+-dependencies = [
+- "bit-vec",
+- "time",
+-]
+-
+ [[package]]
+ name = "yoke"
+ version = "0.8.3"
+@@ -4959,6 +4192,26 @@ dependencies = [
+  "synstructure",
+ ]
+ 
++[[package]]
++name = "zerocopy"
++version = "0.8.59"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "6df92bf3d9227be3d53173901ddbffac2babc27ae50f397776ffd6dc33f800cb"
++dependencies = [
++ "zerocopy-derive",
++]
++
++[[package]]
++name = "zerocopy-derive"
++version = "0.8.59"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "ac4f328cf2f05d084e496c3e9c3f33ed0a183656a16e1fcec4d464d8373aec82"
++dependencies = [
++ "proc-macro2",
++ "quote",
++ "syn",
++]
++
+ [[package]]
+ name = "zerofrom"
+ version = "0.1.8"
+diff --git a/Cargo.toml b/Cargo.toml
+index 9bdbea0..338aeca 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -13,8 +13,10 @@ documentation = "https://docs.iroh.computer"
+ 
+ rust-version = "1.91"
+ 
++# AgentLand builds only the Swift bindings. iroh-js depends on iroh with its default
++# features (the port mapper included), so it stays out of this workspace.
+ [workspace]
+-members = ["iroh-js"]
++exclude = ["iroh-js"]
+ 
+ [package.metadata.maturin]
+ name = "iroh"
+@@ -34,11 +36,12 @@ jni = "0.22"
+ [dependencies]
+ anyhow = "1.0.69"
+ async-trait = "0.1.80"
+-iroh = { version = "1.0.0" }
+-iroh-base = { version = "1.0.0" }
++# Without iroh's "portmapper" feature: AgentLand makes its own router mappings,
++# and an endpoint must never ask the router for one (UPnP, PCP, NAT-PMP).
++iroh = { version = "1.2.0", default-features = false, features = ["metrics", "fast-apple-datapath", "tls-ring"] }
++iroh-base = { version = "1.2.0" }
+ iroh-metrics = { version = "1.0.0" }
+-iroh-relay = { version = "1.0.0", default-features = false }
+-iroh-services = { version = "1.0.0", default-features = false }
++iroh-relay = { version = "1.2.0", default-features = false }
+ iroh-tickets = { version = "1.0.0" }
+ n0-error = { version = "1.0.0" }
+ thiserror = "2.0"
+diff --git a/src/endpoint.rs b/src/endpoint.rs
+index 88ce75a..baead38 100644
+--- a/src/endpoint.rs
++++ b/src/endpoint.rs
+@@ -22,29 +22,15 @@ use crate::{
+ #[derive(uniffi::Object)]
+ pub struct EndpointBuilder {
+     inner: std::sync::Mutex<Option<iroh::endpoint::Builder>>,
+-    key_pinned: std::sync::atomic::AtomicBool,
+ }
+ 
+ impl EndpointBuilder {
+     pub(crate) fn from_inner(builder: iroh::endpoint::Builder) -> Self {
+         Self {
+             inner: std::sync::Mutex::new(Some(builder)),
+-            key_pinned: std::sync::atomic::AtomicBool::new(false),
+         }
+     }
+ 
+-    /// Record that a preset minted a credential scoped to the key it just set,
+-    /// so a later [`Self::secret_key`] would invalidate that credential rather
+-    /// than simply changing the endpoint's identity.
+-    ///
+-    /// Takes the builder mutex so the flag becomes visible atomically with any
+-    /// subsequent [`Self::secret_key`] check, closing the check-then-act window.
+-    pub(crate) fn pin_secret_key(&self) {
+-        let _guard = self.inner.lock().unwrap();
+-        self.key_pinned
+-            .store(true, std::sync::atomic::Ordering::Relaxed);
+-    }
+-
+     fn map<F>(&self, f: F)
+     where
+         F: FnOnce(iroh::endpoint::Builder) -> iroh::endpoint::Builder,
+@@ -54,13 +40,6 @@ impl EndpointBuilder {
+         *guard = Some(f(builder));
+     }
+ 
+-    /// Replay an upstream `iroh::endpoint::presets::Preset` on the wrapped
+-    /// builder. Lets a Rust-side [`Preset`] impl delegate to a real iroh preset
+-    /// instead of re-implementing it against [`EndpointBuilder`].
+-    pub(crate) fn apply_iroh_preset(&self, preset: impl presets::Preset) {
+-        self.map(|b| preset.apply(b));
+-    }
+-
+     pub(crate) fn take_inner(&self) -> Result<iroh::endpoint::Builder, IrohError> {
+         self.inner
+             .lock()
+@@ -96,22 +75,12 @@ impl EndpointBuilder {
+     }
+ 
+     /// Set the endpoint secret key (32 bytes).
+-    ///
+-    /// Errors if a preset already pinned the key because it minted a credential
+-    /// scoped to it — see `preset_iroh_services`.
+     pub fn secret_key(&self, bytes: Vec<u8>) -> Result<(), IrohError> {
+         let key: [u8; 32] = AsRef::<[u8]>::as_ref(&bytes)
+             .try_into()
+             .map_err(|e| IrohError::invalid_input(format!("invalid secret key length: {e:?}")))?;
+         let key = iroh::SecretKey::from_bytes(&key);
+         let mut guard = self.inner.lock().unwrap();
+-        if self.key_pinned.load(std::sync::atomic::Ordering::Relaxed) {
+-            return Err(IrohError::invalid_input(
+-                "endpoint secret key is pinned by preset_iroh_services: its relay access token is \
+-                 scoped to that key, so replacing it would make the relays reject this endpoint. \
+-                 Set the key via ServicesPresetOptions.endpoint_secret_key instead.",
+-            ));
+-        }
+         let builder = guard.take().expect("EndpointBuilder consumed");
+         *guard = Some(builder.secret_key(key));
+         Ok(())
+@@ -319,10 +288,6 @@ impl Endpoint {
+             tokio_handle: tokio::runtime::Handle::current(),
+         }
+     }
+-
+-    pub(crate) fn raw(&self) -> &endpoint::Endpoint {
+-        &self.inner
+-    }
+ }
+ 
+ #[uniffi::export]
+diff --git a/src/lib.rs b/src/lib.rs
+index 3d77cb7..eadef0d 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -7,14 +7,13 @@ mod key;
+ mod net;
+ mod path;
+ mod relay;
+-mod services;
+ mod ticket;
+ mod watch;
+ 
+ use tracing_subscriber::filter::LevelFilter;
+ 
+ pub use self::{
+-    accept::*, endpoint::*, error::*, key::*, net::*, path::*, relay::*, services::*, ticket::*,
++    accept::*, endpoint::*, error::*, key::*, net::*, path::*, relay::*, ticket::*,
+     watch::*,
+ };
+ 
+diff --git a/src/services.rs b/src/services.rs
+deleted file mode 100644
+index 41984ae..0000000
+--- a/src/services.rs
++++ /dev/null
+@@ -1,521 +0,0 @@
+-//! Binding for `iroh-services` — push metrics to services.iroh.computer.
+-//!
+-//! Mirrors `iroh_services::Client`. Construct via [`ServicesClient::create`] with
+-//! a built [`Endpoint`] plus credentials supplied through [`ServicesOptions`].
+-//!
+-//! [`preset_iroh_services`] mirrors `iroh_services::preset()`: an endpoint
+-//! preset that points at your project's dedicated relays and authenticates to
+-//! them with a token minted from your API key.
+-
+-use std::{sync::Arc, time::Duration};
+-
+-use iroh_services::{Client, ClientBuilder};
+-
+-use crate::{Endpoint, EndpointBuilder, IrohError, Preset};
+-
+-/// Build options for [`ServicesClient`].
+-///
+-/// Supply *exactly one* of `api_secret`, `api_secret_from_env`, or
+-/// `ssh_key_pem` for the credential. `api_secret_from_env` (when true) reads
+-/// the `IROH_SERVICES_API_SECRET` environment variable. If a name is provided
+-/// it is registered with the service; the name must be 2–128 UTF-8 bytes.
+-#[derive(derive_more::Debug, Default, uniffi::Record)]
+-pub struct ServicesOptions {
+-    /// Encoded API secret string (`services1...`). Sets both the remote endpoint
+-    /// to dial and the per-client capability.
+-    #[uniffi(default = None)]
+-    pub api_secret: Option<String>,
+-    /// If true, read the API secret from `IROH_SERVICES_API_SECRET`.
+-    #[uniffi(default = None)]
+-    pub api_secret_from_env: Option<bool>,
+-    /// Unencrypted PEM-encoded OpenSSH ed25519 private key. Grants full
+-    /// capabilities; used by node operators / project owners.
+-    #[uniffi(default = None)]
+-    pub ssh_key_pem: Option<String>,
+-    /// Optional endpoint name to register cloud-side.
+-    #[uniffi(default = None)]
+-    pub name: Option<String>,
+-    /// How often (in milliseconds) to push metrics to the service. `0` disables
+-    /// automatic interval pushes; if omitted the upstream default applies.
+-    #[uniffi(default = None)]
+-    pub metrics_interval_ms: Option<u64>,
+-}
+-
+-/// Options for [`preset_iroh_services`].
+-///
+-/// Supply *exactly one* of `api_secret` or `api_secret_from_env`.
+-#[derive(derive_more::Debug, Default, uniffi::Record)]
+-pub struct ServicesPresetOptions {
+-    /// Your project's relay URLs. Defaults to the n0 public relays when
+-    /// omitted, matching `iroh_services::preset()`. Passing an empty list is an
+-    /// error rather than a silent fallback — that is nearly always a filtered
+-    /// list that came back empty.
+-    #[uniffi(default = None)]
+-    pub relays: Option<Vec<String>>,
+-    /// Encoded API secret string (`services1...`). The relay access token is
+-    /// minted from this.
+-    #[uniffi(default = None)]
+-    pub api_secret: Option<String>,
+-    /// If true, read the API secret from `IROH_SERVICES_API_SECRET`.
+-    #[uniffi(default = None)]
+-    pub api_secret_from_env: Option<bool>,
+-    /// The endpoint's own identity key (32 bytes) — not your API secret. The
+-    /// access token is scoped to it, so pass the same key you persist for your
+-    /// endpoint's identity. A fresh key is generated when omitted.
+-    ///
+-    /// Set the key *here*, not via `EndpointOptions::secret_key` or
+-    /// `EndpointBuilder::secret_key`: both are layered on top of the preset and
+-    /// would replace the one the token is scoped to. Doing that is an error,
+-    /// not a silent auth failure — this preset pins the key.
+-    #[uniffi(default = None)]
+-    pub endpoint_secret_key: Option<Vec<u8>>,
+-}
+-
+-/// Wraps `iroh_services::IrohServicesPreset` as a foreign-visible [`Preset`].
+-struct ServicesPreset(iroh_services::IrohServicesPreset);
+-
+-impl Preset for ServicesPreset {
+-    fn apply(&self, builder: Arc<EndpointBuilder>) {
+-        builder.apply_iroh_preset(self.0.clone());
+-        // The access token is scoped to the key the preset just set, so a later
+-        // `secret_key` call must fail rather than silently break relay auth.
+-        builder.pin_secret_key();
+-    }
+-}
+-
+-/// Build an endpoint preset for your project's dedicated relays.
+-///
+-/// Mirrors `iroh_services::preset()`: mints a short-lived access token scoped to
+-/// the endpoint's key and to relay use only, then configures the endpoint to use
+-/// your relays with that token. Pass the result as `EndpointOptions::preset`.
+-///
+-/// The token is minted here, at preset-build time, so build the preset shortly
+-/// before binding the endpoint.
+-#[uniffi::export]
+-pub fn preset_iroh_services(options: ServicesPresetOptions) -> Result<Arc<dyn Preset>, IrohError> {
+-    let mut builder = iroh_services::preset();
+-
+-    builder = match (
+-        options.api_secret,
+-        options.api_secret_from_env.unwrap_or(false),
+-    ) {
+-        (Some(_), true) => {
+-            return Err(anyhow::anyhow!(
+-                "ServicesPresetOptions: supply only one of api_secret / api_secret_from_env"
+-            )
+-            .into());
+-        }
+-        (None, false) => {
+-            return Err(anyhow::anyhow!(
+-                "ServicesPresetOptions requires one of api_secret or api_secret_from_env=true"
+-            )
+-            .into());
+-        }
+-        (Some(secret), false) => builder
+-            .api_secret_from_str(&secret)
+-            .map_err(|e| anyhow::anyhow!("invalid api secret: {e:?}"))?,
+-        (None, true) => builder
+-            .api_secret_from_env()
+-            .map_err(|e| anyhow::anyhow!("api secret env var: {e:?}"))?,
+-    };
+-
+-    // Omitted relays keep the builder's n0 default; an empty list does not.
+-    if let Some(relays) = options.relays {
+-        if relays.is_empty() {
+-            return Err(anyhow::anyhow!(
+-                "ServicesPresetOptions: relays is empty; omit it to use the n0 relays"
+-            )
+-            .into());
+-        }
+-        builder = builder
+-            .relays(relays)
+-            .map_err(|e| anyhow::anyhow!("invalid relay url: {e:?}"))?;
+-    }
+-
+-    if let Some(bytes) = options.endpoint_secret_key {
+-        let key: [u8; 32] = AsRef::<[u8]>::as_ref(&bytes).try_into().map_err(|e| {
+-            IrohError::invalid_input(format!("invalid endpoint secret key length: {e:?}"))
+-        })?;
+-        builder = builder.secret_key(iroh::SecretKey::from_bytes(&key));
+-    }
+-
+-    let preset = builder
+-        .build()
+-        .map_err(|e| anyhow::anyhow!("services preset build failed: {e:?}"))?;
+-    Ok(Arc::new(ServicesPreset(preset)))
+-}
+-
+-/// Flattened summary of an `iroh_services::net_diagnostics::DiagnosticsReport`.
+-///
+-/// Net-report and portmap details are dropped from the FFI surface (they have
+-/// deep, non-uniffi-friendly shapes); use the iroh-services dashboard to read
+-/// the full report after `submit_network_diagnostics(send=true)`.
+-#[derive(Debug, Clone, uniffi::Record)]
+-pub struct DiagnosticsSummary {
+-    /// Endpoint id of the local endpoint.
+-    pub endpoint_id: String,
+-    /// Direct addresses (ip:port) that the endpoint reports.
+-    pub direct_addrs: Vec<String>,
+-    /// iroh crate version this report was produced with.
+-    pub iroh_version: String,
+-    /// iroh-services crate version this report was produced with.
+-    pub iroh_services_version: String,
+-    /// True if the local net-report probe returned a result.
+-    pub has_net_report: bool,
+-    /// UPnP availability, if a portmap probe was run.
+-    pub upnp: Option<bool>,
+-    /// PCP availability, if a portmap probe was run.
+-    pub pcp: Option<bool>,
+-    /// NAT-PMP availability, if a portmap probe was run.
+-    pub nat_pmp: Option<bool>,
+-}
+-
+-impl From<iroh_services::net_diagnostics::DiagnosticsReport> for DiagnosticsSummary {
+-    fn from(r: iroh_services::net_diagnostics::DiagnosticsReport) -> Self {
+-        let (upnp, pcp, nat_pmp) = match r.portmap_probe {
+-            Some(p) => (Some(p.upnp), Some(p.pcp), Some(p.nat_pmp)),
+-            None => (None, None, None),
+-        };
+-        Self {
+-            endpoint_id: r.endpoint_id.to_string(),
+-            direct_addrs: r.direct_addrs.into_iter().map(|s| s.to_string()).collect(),
+-            iroh_version: r.iroh_version,
+-            iroh_services_version: r.iroh_services_version,
+-            has_net_report: r.net_report.is_some(),
+-            upnp,
+-            pcp,
+-            nat_pmp,
+-        }
+-    }
+-}
+-
+-/// Client for services.iroh.computer.
+-///
+-/// Construct with [`Self::create`]; metrics are pushed automatically while the
+-/// client is alive. Drop the client (or let it go out of scope) to stop.
+-#[derive(Clone, uniffi::Object)]
+-pub struct ServicesClient {
+-    inner: Client,
+-}
+-
+-#[uniffi::export]
+-impl ServicesClient {
+-    /// Build a new client bound to the given endpoint.
+-    #[uniffi::constructor(async_runtime = "tokio")]
+-    pub async fn create(endpoint: &Endpoint, options: ServicesOptions) -> Result<Self, IrohError> {
+-        let mut builder: ClientBuilder = Client::builder(endpoint.raw());
+-
+-        let creds_set = [
+-            options.api_secret.is_some(),
+-            options.api_secret_from_env.unwrap_or(false),
+-            options.ssh_key_pem.is_some(),
+-        ]
+-        .into_iter()
+-        .filter(|x| *x)
+-        .count();
+-        if creds_set == 0 {
+-            return Err(anyhow::anyhow!(
+-                "ServicesOptions requires one of api_secret, api_secret_from_env=true, or ssh_key_pem"
+-            )
+-            .into());
+-        }
+-        if creds_set > 1 {
+-            return Err(anyhow::anyhow!(
+-                "ServicesOptions: supply only one of api_secret / api_secret_from_env / ssh_key_pem"
+-            )
+-            .into());
+-        }
+-
+-        if let Some(secret) = options.api_secret {
+-            builder = builder
+-                .api_secret_from_str(&secret)
+-                .map_err(|e| anyhow::anyhow!("invalid api secret: {e:?}"))?;
+-        } else if options.api_secret_from_env.unwrap_or(false) {
+-            builder = builder
+-                .api_secret_from_env()
+-                .map_err(|e| anyhow::anyhow!("api secret env var: {e:?}"))?;
+-        } else if let Some(pem) = options.ssh_key_pem {
+-            builder = builder
+-                .ssh_key(&pem)
+-                .map_err(|e| anyhow::anyhow!("invalid ssh key: {e:?}"))?;
+-        }
+-
+-        if let Some(name) = options.name {
+-            builder = builder
+-                .name(name)
+-                .map_err(|e| anyhow::anyhow!("invalid name: {e:?}"))?;
+-        }
+-        if let Some(ms) = options.metrics_interval_ms {
+-            if ms == 0 {
+-                builder = builder.disable_metrics_interval();
+-            } else {
+-                builder = builder.metrics_interval(Duration::from_millis(ms));
+-            }
+-        }
+-
+-        let inner = builder
+-            .build()
+-            .await
+-            .map_err(|e| anyhow::anyhow!("services build failed: {e:?}"))?;
+-        Ok(ServicesClient { inner })
+-    }
+-
+-    /// Read the current endpoint name from the local client.
+-    #[uniffi::method(async_runtime = "tokio")]
+-    pub async fn name(&self) -> Result<Option<String>, IrohError> {
+-        self.inner
+-            .name()
+-            .await
+-            .map_err(|e| anyhow::anyhow!("{e:?}").into())
+-    }
+-
+-    /// Set the endpoint name cloud-side. Must be 2–128 UTF-8 bytes.
+-    #[uniffi::method(async_runtime = "tokio")]
+-    pub async fn set_name(&self, name: String) -> Result<(), IrohError> {
+-        self.inner
+-            .set_name(name)
+-            .await
+-            .map_err(|e| anyhow::anyhow!("{e:?}").into())
+-    }
+-
+-    /// Ping the remote service to confirm connectivity.
+-    #[uniffi::method(async_runtime = "tokio")]
+-    pub async fn ping(&self) -> Result<(), IrohError> {
+-        self.inner
+-            .ping()
+-            .await
+-            .map(|_| ())
+-            .map_err(|e| anyhow::anyhow!("{e:?}").into())
+-    }
+-
+-    /// Push the current metrics snapshot now. (Metrics are also pushed on the
+-    /// interval configured at build time; this lets you force a flush.)
+-    #[uniffi::method(async_runtime = "tokio")]
+-    pub async fn push_metrics(&self) -> Result<(), IrohError> {
+-        self.inner
+-            .push_metrics()
+-            .await
+-            .map_err(|e| anyhow::anyhow!("{e:?}").into())
+-    }
+-
+-    /// Run a local network-diagnostics report. When `send` is true the report
+-    /// is also submitted to iroh-services for storage.
+-    #[uniffi::method(async_runtime = "tokio")]
+-    pub async fn submit_network_diagnostics(
+-        &self,
+-        send: bool,
+-    ) -> Result<DiagnosticsSummary, IrohError> {
+-        let report = self
+-            .inner
+-            .net_diagnostics(send)
+-            .await
+-            .map_err(|e| anyhow::anyhow!("{e:?}"))?;
+-        Ok(report.into())
+-    }
+-}
+-
+-#[cfg(test)]
+-mod tests {
+-    use super::*;
+-    use crate::{Endpoint, EndpointOptions};
+-
+-    /// A well-formed (but fake) `services1...` API secret. The remote it points
+-    /// at does not exist, so no connection will ever succeed — but the client
+-    /// connects lazily, so construction must still succeed. This validates the
+-    /// whole options -> builder -> client plumbing without network.
+-    const FAKE_API_SECRET: &str = "servicesaaqaobyha4dqobyha4dqobyha4dqobyha4dqobyha4dqobyha4dqob75c4sdqwvay5nwj63yzvqc7iozsh66x53lcpcy5vyc5ledl2pwdaaa";
+-
+-    async fn minimal_endpoint() -> Endpoint {
+-        Endpoint::bind(EndpointOptions {
+-            preset: Some(crate::preset_minimal()),
+-            ..Default::default()
+-        })
+-        .await
+-        .unwrap()
+-    }
+-
+-    #[tokio::test]
+-    async fn test_services_client_boots_with_fake_secret() {
+-        let ep = minimal_endpoint().await;
+-        let client = ServicesClient::create(
+-            &ep,
+-            ServicesOptions {
+-                api_secret: Some(FAKE_API_SECRET.to_string()),
+-                ..Default::default()
+-            },
+-        )
+-        .await
+-        .expect("client should construct (lazy connection)");
+-        // Drop the client; never call ping() — that needs a live service.
+-        drop(client);
+-        ep.close().await.unwrap();
+-    }
+-
+-    #[tokio::test]
+-    async fn test_services_client_rejects_no_credentials() {
+-        let ep = minimal_endpoint().await;
+-        let res = ServicesClient::create(&ep, ServicesOptions::default()).await;
+-        assert!(res.is_err(), "must reject when no credential is supplied");
+-        ep.close().await.unwrap();
+-    }
+-
+-    #[tokio::test]
+-    async fn test_services_client_rejects_two_credentials() {
+-        let ep = minimal_endpoint().await;
+-        let res = ServicesClient::create(
+-            &ep,
+-            ServicesOptions {
+-                api_secret: Some(FAKE_API_SECRET.to_string()),
+-                api_secret_from_env: Some(true),
+-                ..Default::default()
+-            },
+-        )
+-        .await;
+-        assert!(res.is_err(), "must reject when >1 credentials supplied");
+-        ep.close().await.unwrap();
+-    }
+-
+-    /// Options with a valid credential + relay, for tests that vary one field.
+-    fn preset_options() -> ServicesPresetOptions {
+-        ServicesPresetOptions {
+-            relays: Some(vec!["https://relay.example.org/".to_string()]),
+-            api_secret: Some(FAKE_API_SECRET.to_string()),
+-            ..Default::default()
+-        }
+-    }
+-
+-    #[tokio::test]
+-    async fn test_services_preset_binds_with_custom_relays() {
+-        let preset = preset_iroh_services(preset_options()).expect("preset should build");
+-
+-        // No connection is attempted at bind time, so the unreachable relay is
+-        // fine — this checks the mint -> relay map -> builder plumbing.
+-        let ep = Endpoint::bind(EndpointOptions {
+-            preset: Some(preset),
+-            ..Default::default()
+-        })
+-        .await
+-        .unwrap();
+-        assert!(!ep.bound_sockets().is_empty());
+-        ep.close().await.unwrap();
+-    }
+-
+-    #[test]
+-    fn test_services_preset_rejects_bad_credentials() {
+-        assert!(
+-            preset_iroh_services(ServicesPresetOptions {
+-                api_secret: None,
+-                ..preset_options()
+-            })
+-            .is_err(),
+-            "must reject when no credential is supplied"
+-        );
+-        assert!(
+-            preset_iroh_services(ServicesPresetOptions {
+-                api_secret_from_env: Some(true),
+-                ..preset_options()
+-            })
+-            .is_err(),
+-            "must reject when >1 credentials supplied"
+-        );
+-        assert!(
+-            preset_iroh_services(ServicesPresetOptions {
+-                api_secret: Some("not-a-valid-ticket".to_string()),
+-                ..preset_options()
+-            })
+-            .is_err(),
+-            "must reject a malformed api key"
+-        );
+-    }
+-
+-    #[tokio::test]
+-    async fn test_services_preset_pins_the_endpoint_key() {
+-        let preset = preset_iroh_services(preset_options()).unwrap();
+-
+-        // The token is scoped to the preset's key, so an EndpointOptions key —
+-        // layered on top of the preset — must fail loudly, not break relay auth
+-        // at connect time.
+-        let res = Endpoint::bind(EndpointOptions {
+-            preset: Some(preset),
+-            secret_key: Some(vec![7u8; 32]),
+-            ..Default::default()
+-        })
+-        .await;
+-        assert!(res.is_err(), "must reject a key set outside the preset");
+-    }
+-
+-    #[tokio::test]
+-    async fn test_services_preset_pins_even_identical_key() {
+-        // The pin is unconditional: even bit-identical bytes are rejected. The
+-        // policy is "set it in exactly one place," not "set it to the same
+-        // value" — the latter invites a future reader to relax the guard.
+-        let key_bytes = vec![7u8; 32];
+-        let preset = preset_iroh_services(ServicesPresetOptions {
+-            endpoint_secret_key: Some(key_bytes.clone()),
+-            ..preset_options()
+-        })
+-        .unwrap();
+-        let res = Endpoint::bind(EndpointOptions {
+-            preset: Some(preset),
+-            secret_key: Some(key_bytes),
+-            ..Default::default()
+-        })
+-        .await;
+-        assert!(res.is_err(), "identical key must still be rejected");
+-    }
+-
+-    #[test]
+-    fn test_services_preset_rejects_short_endpoint_key() {
+-        assert!(
+-            preset_iroh_services(ServicesPresetOptions {
+-                endpoint_secret_key: Some(vec![0u8; 16]),
+-                ..preset_options()
+-            })
+-            .is_err(),
+-            "must reject an endpoint key that is not 32 bytes"
+-        );
+-    }
+-
+-    #[test]
+-    fn test_services_preset_relays() {
+-        assert!(
+-            preset_iroh_services(ServicesPresetOptions {
+-                relays: None,
+-                ..preset_options()
+-            })
+-            .is_ok(),
+-            "omitted relays must fall back to the n0 relays, as in Rust"
+-        );
+-        assert!(
+-            preset_iroh_services(ServicesPresetOptions {
+-                relays: Some(vec![]),
+-                ..preset_options()
+-            })
+-            .is_err(),
+-            "an explicitly empty list must error, not silently fall back"
+-        );
+-        assert!(
+-            preset_iroh_services(ServicesPresetOptions {
+-                relays: Some(vec!["not a url".to_string()]),
+-                ..preset_options()
+-            })
+-            .is_err(),
+-            "must reject a malformed relay url"
+-        );
+-    }
+-
+-    #[tokio::test]
+-    async fn test_services_client_rejects_malformed_secret() {
+-        let ep = minimal_endpoint().await;
+-        let res = ServicesClient::create(
+-            &ep,
+-            ServicesOptions {
+-                api_secret: Some("not-a-valid-ticket".to_string()),
+-                ..Default::default()
+-            },
+-        )
+-        .await;
+-        assert!(res.is_err(), "must reject a malformed api secret");
+-        ep.close().await.unwrap();
+-    }
+-}

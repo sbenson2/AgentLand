@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>AgentLand · Workspace explorer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="selected-layout">
+  <svg class="art-filters" aria-hidden="true" width="0" height="0"><defs><filter id="wordmark-thicker" color-interpolation-filters="sRGB"><feMorphology operator="erode" radius="0.65"/></filter></defs></svg>
+  <header class="page-head">
+    <div>
+      <p class="page-kicker">AgentLand · Selected Home layout</p>
+      <h1>A · Workspace explorer</h1>
+      <p class="page-summary">Four Home actions share one area with their options. Workspaces, Git, files, and sessions stay in the left drawer; Settings opens from the header gear.</p>
+    </div>
+    <div class="preview-controls">
+      <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark appearance"><span class="theme-glyph" aria-hidden="true">◐</span><span class="theme-label">Dark appearance</span></button>
+      <button class="tone-toggle" type="button" aria-pressed="true" aria-label="Show original artwork tones">Show original tones</button>
+    </div>
+  </header>
+  <p class="sample-note">Interactive prototype · names, tasks and status are sample data. The artwork is a static view of the existing native scene.</p>
+  <main class="concept-grid" aria-label="Selected A iPhone layout">
+    <section class="concept" data-concept="a">
+      <div class="phone" aria-label="A with workspace explorer iPhone preview"><div class="screen" data-screen>
+        <div class="status"><span>9:41</span><span class="status-icons" aria-hidden="true"><i></i><i></i><b></b></span></div>
+        <nav class="nav nav-a" aria-label="Open work and task navigation">
+          <button class="open-work" data-open-work aria-expanded="false" aria-controls="workspace-explorer" aria-label="Open workspace explorer" title="Open workspace explorer"><svg class="open-icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M9 4.5v15M5.5 8h1M5.5 11h1M5.5 14h1"/></svg></button>
+          <button class="current-task-button" data-task-menu aria-haspopup="menu" aria-expanded="false" aria-controls="workspace-task-menu" aria-label="Open tabs in AgentLand"><span class="current-task-label"><span class="workspace-title" data-workspace-title>AgentLand</span><span aria-hidden="true">: </span><span data-current-task-title>Home</span></span><svg class="task-down-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 8 7 7 7-7"/></svg></button>
+          <button class="settings-button" data-open-settings aria-expanded="false" aria-controls="workspace-settings" aria-label="Open Settings" title="Settings"><svg class="open-icon" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4L17 17.4a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 1 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2A1.7 1.7 0 0 0 5.4 5.8l-.1-.1a1.7 1.7 0 1 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V4a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 1 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 1.2Z"/></svg></button>
+        </nav>
+        <div class="task-popover" id="workspace-task-menu" data-task-menu-panel role="menu" aria-label="Tabs in this workspace" hidden></div>
+        <div class="content-slot"><div class="view" data-view></div><aside class="explorer" id="workspace-explorer" data-explorer aria-label="Workspace explorer" hidden></aside><aside class="settings-panel" id="workspace-settings" data-settings-panel aria-label="Settings" hidden></aside></div>
+        <div class="home-indicator" aria-hidden="true"><span></span></div>
+        <div class="sheet-layer" data-sheet hidden></div>
+      </div></div>
+      <p class="outside-caption">Sample work only. Try opening a file, closing its task tab, and reopening it from the explorer. Closing a tab does not stop remote work.</p>
+    </section>
+  </main>
+  <footer class="page-foot">Nothing here connects to a host or saves changes. Native animation and accessibility behavior require separate implementation checks.</footer>
+  <script src="git-prototype.js"></script>
+  <script src="git-ui.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

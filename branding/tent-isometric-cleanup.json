@@ -1,0 +1,97 @@
+{
+  "sourceJob": "85e43bb0-af6e-4edd-8cb3-f9ac851302dd",
+  "sourceImage": "dbf627a1-e08c-4112-a548-32a5d301f1e1",
+  "outputImage": "75943e09-6ca1-45b5-954e-9114d4f024e1",
+  "changes": [
+    {
+      "operation": "select_mask",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "name": "paper",
+      "selector": {
+        "kind": "color",
+        "colors": [
+          "#ffffffff"
+        ],
+        "tolerance": 127
+      },
+      "reason": "Remove the white canvas and white interior panels."
+    },
+    {
+      "operation": "brush",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "mask": "paper",
+      "points": [
+        [
+          31,
+          31
+        ],
+        [
+          64,
+          31
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          31,
+          64
+        ]
+      ],
+      "size": 64,
+      "shape": "square",
+      "mode": "erase",
+      "reason": "Make the paper and roof cutouts truly transparent."
+    },
+    {
+      "operation": "select_mask",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "name": "ink",
+      "selector": {
+        "kind": "alpha",
+        "min": 1,
+        "max": 255
+      },
+      "reason": "Keep the existing dark tent silhouette."
+    },
+    {
+      "operation": "brush",
+      "layer": "image",
+      "frames": [
+        1
+      ],
+      "mask": "ink",
+      "points": [
+        [
+          31,
+          31
+        ],
+        [
+          64,
+          31
+        ],
+        [
+          64,
+          64
+        ],
+        [
+          31,
+          64
+        ]
+      ],
+      "size": 64,
+      "shape": "square",
+      "color": "#000000ff",
+      "reason": "Use one solid ink color for native template rendering."
+    }
+  ]
+}

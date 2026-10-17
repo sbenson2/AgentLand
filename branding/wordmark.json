@@ -1,0 +1,226 @@
+{
+  "date": "2026-10-02",
+  "decision": "Owner requested tent, all six clowns and title revised together as rubber-hose 8-bit animation using PixelLab.",
+  "font": {
+    "family": "AgentLand Rubber Hose",
+    "postScriptName": "AgentLandRubberHose",
+    "source": "PixelLab create_font",
+    "job": "325cd550-a0cc-4f71-959e-e343543e7c8f",
+    "seed": 26100250,
+    "glyphPixels": 16,
+    "weight": "Bold",
+    "files": [
+      {
+        "path": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/AgentLandRubberHose.ttf",
+        "sha256": "f765284ab4c402536e1545184eb4a5d823e6b2938bd5f09606dd90aff19b90a8",
+        "bytes": 18416
+      }
+    ],
+    "ownership": "Generated for AgentLand; follows the repository artwork ownership. Previous Holtwood font and OFL notice remain packaged."
+  },
+  "geometry": {
+    "date": "2026-10-02",
+    "why": "Home redesign: broader pixel letters on a shallower arch, preserving the circus clock and per-letter animations.",
+    "units": "circus scene units (the 336x360 scene; tent 252x252 at (42, 54)), y down",
+    "word": "AGENTLAND",
+    "arch": {
+      "centre": [
+        168,
+        640
+      ],
+      "baselineRadius": 680,
+      "sweepDegrees": 42,
+      "glyphCentres": "spread by advance over the sweep; first at -21 degrees, last at +21 degrees",
+      "letterTurn": "each glyph turned to the circle's normal"
+    },
+    "capHeight": 48,
+    "fontSize": 54.857142857142854,
+    "tracking": 9.268254296197568,
+    "pixelGrid": "the tent's art-pixel grid: 2.625 units per pixel, anchored at the tent's origin (42, 54); a pixel is on when at least half covered",
+    "canvas": "scene x -107.625 to 443.625, y -98.25 to 14.625 (551.25 x 112.875 units); symmetric about x=168",
+    "bulbs": "33 bulbs of 2x2 pixels on an arc of radius 736 over the same sweep, dark at rest",
+    "quip": "not in the arch: Home shows the quip under the tent (AgentLandTitleBlock keeps showsQuip only so existing layouts compile)",
+    "placement": "HomeLauncherLayout measures title, tent, quip and actions against safe-area height, with at least 32 points below actions; short-wide layouts place artwork beside actions; accessibility sizes may scroll.",
+    "clearance": "WordmarkTests samples every clown and ball on the ring and doorway paths and requires at least 8 scene units.",
+    "roundOne": "centre (168, 40), baseline radius 112, 160\u00b0, cap height 34, font size 45.33, tracking 1.01, canvas x 13.125-322.875 y -116.625-38.25, the quip in the hollow",
+    "letterWidthScale": 1.12
+  },
+  "rendering": {
+    "component": "Rounded PixelLab font rasterized on the tent grid; existing native per-letter Core Animation and shared five-tone ramp.",
+    "tint": "Work surfaces use the same fixed day/night ramps as tent and clowns; tint remains available for explicit monochrome callers.",
+    "animation": "Core Animation keyframes on the render server, like the opening circus, on transform.*, opacity and contents only (never position, which identifies the clown's orbit)",
+    "entrances": [
+      "dropAndBounce",
+      "marqueeLightUp",
+      "flipIn",
+      "arcUnfurl",
+      "pixelAssemble",
+      "curtainWipe"
+    ],
+    "entranceLength": "0.9-1.4 s, played when Home is revealed (uncovered or selected), never on the opening cover",
+    "flourishes": [
+      "bulbChase",
+      "ripple",
+      "looseLetter",
+      "juggleHop",
+      "marqueeBlink"
+    ],
+    "flourishTiming": "every 20-30 s while Home stays visible, and on a tap (which also shows the next quip); started on the circus clock's next 0.3 s beat",
+    "photosensitivity": "marquee blink: two dips to 40% opacity, 0.6 s apart (under 2 Hz); each bulb in the chase lights at most twice a second",
+    "picker": "seeded random choice, never the same animation twice in a row, and never the previous launch's last entrance (UserDefaults agentland.wordmark.lastEntrance, read defensively)",
+    "motionGate": "a still resting pose under Reduce Motion, when hidden, covered, inactive or in the background (macOS: when the app is inactive), and with -AgentLandUITestsDisableAnimations"
+  },
+  "quips": {
+    "store": "QuipStore: a saved ring of at least 8 quips in UserDefaults (agentland.quips.*), read synchronously; the last 50 shown are never shown again while remembered",
+    "onDevice": "FoundationModelsQuipProvider: SystemLanguageModel.default, batches of 8 around a random circus theme with guided generation, validated (one line, 3-36 characters, no emoji, quotation marks, markup or links, not among the last 50 shown)",
+    "fallback": "GrammarQuipProvider: an in-house Tracery-style grammar with a seeded generator and 145,922 derivations of 3-36 characters (counted, not listed), used when Apple Intelligence is off or unavailable and on any error or guardrail refusal",
+    "prefetch": "about 2 s after Home is revealed, in a detached task at utility priority; never on the main thread and never before the opening clears",
+    "testArgument": "-AgentLandFixedQuip \"<text>\" pins one quip for UI tests"
+  },
+  "redesign": {
+    "date": "2026-10-02",
+    "description": "Rounded PixelLab rubber-hose title shapes; preserve established shallow arch and motion lifecycle.",
+    "centre": [
+      168,
+      640
+    ],
+    "baselineRadius": 680,
+    "sweepDegrees": 42,
+    "capHeight": 48,
+    "letterWidthScale": 1.12,
+    "shading": "One-pixel outline and stepped bevel, white upper/left highlights, dark lower/right edges; quantized on the tent grid.",
+    "previousRecord": "archive/2026-10-02-circus-before-rubber-hose/wordmark.json",
+    "canvas": [
+      567,
+      112.875
+    ]
+  },
+  "previousFont": {
+    "family": "Holtwood One SC",
+    "postScriptName": "HoltwoodOneSC-Regular",
+    "license": "SIL Open Font License 1.1",
+    "copyright": "Copyright 2011 The Holtwood Project Authors (https://github.com/googlefonts/HoltwoodFont)",
+    "source": "https://github.com/google/fonts",
+    "commit": "b5efa9c32e8f9b63005f5cdb1ad5527a77d2cd04",
+    "files": [
+      {
+        "path": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/HoltwoodOneSC-Regular.ttf",
+        "url": "https://raw.githubusercontent.com/google/fonts/b5efa9c32e8f9b63005f5cdb1ad5527a77d2cd04/ofl/holtwoodonesc/HoltwoodOneSC-Regular.ttf",
+        "bytes": 58448,
+        "sha256": "17c8ed01cc4557554749f9435798a7d18afbc97fd0c866405edd38a40470d96c"
+      },
+      {
+        "path": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/HoltwoodOneSC-OFL.txt",
+        "url": "https://raw.githubusercontent.com/google/fonts/b5efa9c32e8f9b63005f5cdb1ad5527a77d2cd04/ofl/holtwoodonesc/OFL.txt",
+        "bytes": 4487,
+        "sha256": "5908f18552502712eec2363a96d1ac001748d649e6526fd28a84748588b81283"
+      }
+    ],
+    "copies": [
+      "branding/fonts/HoltwoodOneSC/ (the round-1 download, byte-identical)",
+      "macos/licenses/HoltwoodOneSC-OFL.txt (bundled in the Mac app's ThirdPartyNotices by scripts/build-desktop-app.sh)"
+    ],
+    "registration": "AgentLandWordmarkFont registers the packaged file once per process (CTFontManagerRegisterFontsForURL, .process, in a static initializer) and checks that CoreText resolves the PostScript name HoltwoodOneSC-Regular to it; nothing is installed on a device.",
+    "notices": "iOS Settings > About AgentLand > Open source notices shows the OFL text beside SwiftTerm's; the Mac app bundles it in Contents/Resources/ThirdPartyNotices/."
+  },
+  "faces": {
+    "date": "2026-10-04",
+    "why": "Owner's request: a title font per Home load and font-morph flourishes; open-licence faces chosen on the Title Lab sheet (.evidence/title-fonts-20261004/candidates.png).",
+    "list": [
+      {
+        "id": "rubberHose",
+        "displayName": "AgentLand Rubber Hose",
+        "file": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/AgentLandRubberHose.ttf",
+        "source": "PixelLab create_font (see \"font\")",
+        "licence": "AgentLand artwork"
+      },
+      {
+        "id": "holtwood",
+        "displayName": "Holtwood One SC",
+        "file": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/HoltwoodOneSC-Regular.ttf",
+        "sha256": "17c8ed01cc4557554749f9435798a7d18afbc97fd0c866405edd38a40470d96c",
+        "bytes": 58448,
+        "source": "Bundled before this change (Google Fonts ofl/holtwoodonesc); kept as the earlier title face",
+        "licence": "SIL Open Font License 1.1",
+        "licenceFile": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/HoltwoodOneSC-OFL.txt"
+      },
+      {
+        "id": "bungee",
+        "displayName": "Bungee",
+        "file": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/Bungee-Regular.ttf",
+        "sha256": "c4f5361ce120af3e6b9156d0bf379fa19cda2ea0cd18ac01fd99596c6bf66e3f",
+        "bytes": 118996,
+        "source": "https://github.com/google/fonts/raw/main/ofl/bungee/Bungee-Regular.ttf",
+        "licence": "SIL Open Font License 1.1",
+        "licenceFile": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/Bungee-OFL.txt",
+        "licenceSource": "https://github.com/google/fonts/raw/main/ofl/bungee/OFL.txt"
+      },
+      {
+        "id": "chango",
+        "displayName": "Chango",
+        "file": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/Chango-Regular.ttf",
+        "sha256": "3e566f4b881f24198fe1b6525aae970f9200078136e3416abc7ba0272d2f80d9",
+        "bytes": 40732,
+        "source": "https://github.com/google/fonts/raw/main/ofl/chango/Chango-Regular.ttf",
+        "licence": "SIL Open Font License 1.1",
+        "licenceFile": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/Chango-OFL.txt",
+        "licenceSource": "https://github.com/google/fonts/raw/main/ofl/chango/OFL.txt"
+      },
+      {
+        "id": "alfaSlabOne",
+        "displayName": "Alfa Slab One",
+        "file": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/AlfaSlabOne-Regular.ttf",
+        "sha256": "28664afa698a3393bd5a29eec750230a0645c5301d62200e5f2d3a027fb2299d",
+        "bytes": 97376,
+        "source": "https://github.com/google/fonts/raw/main/ofl/alfaslabone/AlfaSlabOne-Regular.ttf",
+        "licence": "SIL Open Font License 1.1",
+        "licenceFile": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/AlfaSlabOne-OFL.txt",
+        "licenceSource": "https://github.com/google/fonts/raw/main/ofl/alfaslabone/OFL.txt"
+      },
+      {
+        "id": "titanOne",
+        "displayName": "Titan One",
+        "file": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/TitanOne-Regular.ttf",
+        "sha256": "563ff6de179bbd44bcd7d2a6c448d6dc3bf935834237cf1250e506e65cd86ff1",
+        "bytes": 55712,
+        "source": "https://github.com/google/fonts/raw/main/ofl/titanone/TitanOne-Regular.ttf",
+        "licence": "SIL Open Font License 1.1",
+        "licenceFile": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/TitanOne-OFL.txt",
+        "licenceSource": "https://github.com/google/fonts/raw/main/ofl/titanone/OFL.txt"
+      },
+      {
+        "id": "bowlbyOneSC",
+        "displayName": "Bowlby One SC",
+        "file": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/BowlbyOneSC-Regular.ttf",
+        "sha256": "dc9f2325fb6bab327c26619a752b274b8f0f4022756d896450911e885609f071",
+        "bytes": 55200,
+        "source": "https://github.com/google/fonts/raw/main/ofl/bowlbyonesc/BowlbyOneSC-Regular.ttf",
+        "licence": "SIL Open Font License 1.1",
+        "licenceFile": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/BowlbyOneSC-OFL.txt",
+        "licenceSource": "https://github.com/google/fonts/raw/main/ofl/bowlbyonesc/OFL.txt"
+      },
+      {
+        "id": "shrikhand",
+        "displayName": "Shrikhand",
+        "file": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/Shrikhand-Regular.ttf",
+        "sha256": "8ba32f6d6a96fb8dbc92fc1acfbc4d2123d5348063d89b2c3dd784e7afcb81af",
+        "bytes": 220804,
+        "source": "https://github.com/google/fonts/raw/main/ofl/shrikhand/Shrikhand-Regular.ttf",
+        "licence": "SIL Open Font License 1.1",
+        "licenceFile": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/Shrikhand-OFL.txt",
+        "licenceSource": "https://github.com/google/fonts/raw/main/ofl/shrikhand/OFL.txt"
+      },
+      {
+        "id": "coiny",
+        "displayName": "Coiny",
+        "file": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/Coiny-Regular.ttf",
+        "sha256": "ef02d723a54abe4819bea54ea8b2ecf72d77d258010bb336cd4862a37705eac7",
+        "bytes": 156520,
+        "source": "https://github.com/google/fonts/raw/main/ofl/coiny/Coiny-Regular.ttf",
+        "licence": "SIL Open Font License 1.1",
+        "licenceFile": "shared/AgentLandBranding/Sources/AgentLandBranding/Resources/Fonts/Coiny-OFL.txt",
+        "licenceSource": "https://github.com/google/fonts/raw/main/ofl/coiny/OFL.txt"
+      }
+    ]
+  }
+}

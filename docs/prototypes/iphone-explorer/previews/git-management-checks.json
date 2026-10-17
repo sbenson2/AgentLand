@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "checks": [
+    "staging and diff",
+    "staged-only commit",
+    "branch protection and stash",
+    "publish sample branch",
+    "stash apply and cancel drop",
+    "workspace isolation",
+    "discard confirmation",
+    "no repository initialization",
+    "320/375/402 widths"
+  ],
+  "errors": []
+}

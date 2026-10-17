@@ -1,0 +1,535 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AgentLand <agentland@localhost>
+Date: Fri, 25 Sep 2026 23:22:20 -0700
+Subject: [PATCH 3/5] Endpoint options: relay TLS roots, fixed port, external
+ addresses
+
+- EndpointOptions.relay_tls_roots / EndpointBuilder.relay_tls_roots
+  (iroh's Builder::ca_tls_config, as proposed in iroh-ffi PR #288):
+  - RelayTlsRoots.custom trusts only the given DER certificates (a
+    private CA, or a relay's self-signed certificate).
+  - RelayTlsRoots.embeddedPlus trusts the Mozilla roots and the given
+    certificates, so one endpoint can use a relay with a private
+    certificate and publicly trusted relays (iroh applies one setting
+    to every relay of an endpoint). A public CA can then also vouch
+    for the private relay's name.
+  - An empty list or an unparsable certificate fails instead of being
+    skipped.
+- EndpointOptions.bind_port / EndpointBuilder.bind_port: bind 0.0.0.0
+  and [::] to a fixed UDP port; refused with another bind address.
+- EndpointOptions.external_addrs / EndpointBuilder.external_addr:
+  advertise addresses such as the application's own router mapping
+  (Endpoint.add_external_addr does this at runtime).
+
+Tests check which chains each RelayTlsRoots accepts with the verifier
+iroh builds from it: letsencrypt.org's chain (from
+rustls-platform-verifier 0.7.0's test data, at a time it was valid)
+and a certificate from a private test CA valid until 2126.
+
+diff --git a/Cargo.lock b/Cargo.lock
+index 90bdb77..cc60be2 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -1442,6 +1442,7 @@ dependencies = [
+  "n0-error",
+  "n0-future",
+  "ndk-context",
++ "rustls",
+  "serde",
+  "tempfile",
+  "thiserror 2.0.18",
+diff --git a/Cargo.toml b/Cargo.toml
+index 338aeca..22f4630 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -53,6 +53,7 @@ tracing-subscriber = { version = "0.3.17" }
+ serde = { version = "1.0.196", features = ["derive"] }
+ derive_more = { version = "2.0", features = ["debug"] }
+ n0-future = "0.3"
++rustls = { version = "0.23.33", default-features = false }
+ 
+ 
+ [dev-dependencies]
+diff --git a/src/endpoint.rs b/src/endpoint.rs
+index 05d17bf..7459e35 100644
+--- a/src/endpoint.rs
++++ b/src/endpoint.rs
+@@ -1,7 +1,7 @@
+ use std::{
+     collections::HashMap,
+     fmt::Debug,
+-    net::SocketAddr,
++    net::{Ipv4Addr, Ipv6Addr, SocketAddr},
+     str::FromStr,
+     sync::{Arc, MutexGuard, PoisonError},
+ };
+@@ -10,6 +10,8 @@ use iroh::{
+     endpoint::{self, BindOpts, presets, presets::Preset as _},
+     protocol::AcceptError,
+ };
++use iroh_relay::tls::CaTlsConfig;
++use rustls::pki_types::CertificateDer;
+ use tokio::sync::Mutex;
+ 
+ use crate::{
+@@ -131,6 +133,63 @@ impl EndpointBuilder {
+     }
+ }
+ 
++/// Trust roots for the endpoint's TLS connections to relays (and any other
++/// non-iroh TLS it makes, such as DNS-over-HTTPS). Connections between
++/// endpoints are authenticated by endpoint id and do not use these roots.
++///
++/// iroh applies one setting to every relay of the endpoint.
++#[derive(Debug, Clone, uniffi::Enum)]
++pub enum RelayTlsRoots {
++    /// The Mozilla roots compiled into iroh (iroh's default).
++    Embedded,
++    /// Only these DER-encoded certificates: a private CA, or a relay's own
++    /// self-signed certificate to pin it. Public roots are not trusted.
++    /// Hostname and validity are still checked.
++    Custom { certs: Vec<Vec<u8>> },
++    /// The Mozilla roots and these DER-encoded certificates, for a relay map
++    /// that mixes a relay with a private certificate and publicly trusted
++    /// relays (such as n0's). A public CA can then also vouch for the private
++    /// relay's name; `Custom` does not allow that.
++    EmbeddedPlus { certs: Vec<Vec<u8>> },
++}
++
++impl RelayTlsRoots {
++    fn ca_tls_config(&self) -> Result<CaTlsConfig, IrohError> {
++        match self {
++            RelayTlsRoots::Embedded => Ok(CaTlsConfig::embedded()),
++            RelayTlsRoots::Custom { certs } => {
++                Ok(CaTlsConfig::custom_roots(parse_roots("custom", certs)?))
++            }
++            RelayTlsRoots::EmbeddedPlus { certs } => Ok(CaTlsConfig::embedded()
++                .with_extra_roots(parse_roots("embeddedPlus", certs)?)),
++        }
++    }
++}
++
++/// The certificates as trust roots. iroh skips certificates it cannot parse;
++/// they are refused here so a bad pin fails the bind instead of silently
++/// trusting fewer roots.
++fn parse_roots(case: &str, certs: &[Vec<u8>]) -> Result<Vec<CertificateDer<'static>>, IrohError> {
++    if certs.is_empty() {
++        return Err(IrohError::invalid_input(format!(
++            "RelayTlsRoots.{case} needs at least one certificate"
++        )));
++    }
++    let certs: Vec<CertificateDer<'static>> = certs
++        .iter()
++        .map(|der| CertificateDer::from(der.clone()))
++        .collect();
++    let mut check = rustls::RootCertStore::empty();
++    for (index, cert) in certs.iter().enumerate() {
++        check.add(cert.clone()).map_err(|err| {
++            IrohError::invalid_input(format!(
++                "relay TLS certificate {index} is not a usable DER certificate: {err}"
++            ))
++        })?;
++    }
++    Ok(certs)
++}
++
+ fn parse_socket_addr(addr: &str) -> Result<SocketAddr, IrohError> {
+     SocketAddr::from_str(addr)
+         .map_err(|err| IrohError::invalid_input(format!("invalid socket address {addr:?}: {err}")))
+@@ -190,6 +249,41 @@ impl EndpointBuilder {
+         self.add_bind_addrs(&[(socket, BindOpts::default())])
+     }
+ 
++    /// Bind the endpoint's UDP sockets to a fixed port on all interfaces:
++    /// `0.0.0.0:port` (required) and `[::]:port` (used when IPv6 is available).
++    /// Binding fails if the IPv4 port is taken. Cannot be combined with
++    /// `bind_addr`; a refusal leaves the builder as it was.
++    pub fn bind_port(&self, port: u16) -> Result<(), IrohError> {
++        if port == 0 {
++            return Err(IrohError::invalid_input(
++                "bind_port must be 1-65535; leave it unset for a random port",
++            ));
++        }
++        self.add_bind_addrs(&[
++            (
++                SocketAddr::from((Ipv4Addr::UNSPECIFIED, port)),
++                BindOpts::default(),
++            ),
++            (
++                SocketAddr::from((Ipv6Addr::UNSPECIFIED, port)),
++                BindOpts::default().set_is_required(false),
++            ),
++        ])
++    }
++
++    /// Set the trust roots for TLS to relays. See [`RelayTlsRoots`].
++    pub fn relay_tls_roots(&self, roots: RelayTlsRoots) -> Result<(), IrohError> {
++        let config = roots.ca_tls_config()?;
++        self.map(|b| b.ca_tls_config(config))
++    }
++
++    /// Advertise an address (`host:port`) on which this endpoint is directly
++    /// reachable, such as a router mapping the application made itself.
++    pub fn external_addr(&self, addr: String) -> Result<(), IrohError> {
++        let socket = parse_socket_addr(&addr)?;
++        self.map(|b| b.external_addr(socket))
++    }
++
+     /// Consume the builder and bind a new [`Endpoint`].
+     ///
+     /// The returned `Endpoint` has no protocol handlers — use
+@@ -286,6 +380,17 @@ pub struct EndpointOptions {
+     /// supplied handlers.
+     #[uniffi(default = None)]
+     pub protocols: Option<HashMap<Vec<u8>, Arc<dyn ProtocolCreator>>>,
++    /// Bind the UDP sockets to this fixed port (`0.0.0.0` and `[::]`).
++    /// Cannot be combined with `bind_addr`.
++    #[uniffi(default = None)]
++    pub bind_port: Option<u16>,
++    /// Trust roots for TLS to relays. Defaults to the preset's (Mozilla roots).
++    #[uniffi(default = None)]
++    pub relay_tls_roots: Option<RelayTlsRoots>,
++    /// Addresses (`host:port`) to advertise as directly reachable in addition
++    /// to the discovered ones, such as the application's own router mapping.
++    #[uniffi(default = None)]
++    pub external_addrs: Option<Vec<String>>,
+ }
+ 
+ #[uniffi::export(with_foreign)]
+@@ -395,9 +500,23 @@ impl Endpoint {
+         if let Some(relay_mode) = options.relay_mode {
+             wrapper.relay_mode(&relay_mode);
+         }
++        if options.bind_addr.is_some() && options.bind_port.is_some() {
++            return Err(IrohError::invalid_input(
++                "set either bind_addr or bind_port, not both",
++            ));
++        }
+         if let Some(addr) = options.bind_addr {
+             wrapper.bind_addr(addr)?;
+         }
++        if let Some(port) = options.bind_port {
++            wrapper.bind_port(port)?;
++        }
++        if let Some(roots) = options.relay_tls_roots {
++            wrapper.relay_tls_roots(roots)?;
++        }
++        for addr in options.external_addrs.unwrap_or_default() {
++            wrapper.external_addr(addr)?;
++        }
+ 
+         let builder = wrapper.take_inner()?;
+         let endpoint = builder.bind().await?;
+@@ -1284,6 +1403,206 @@ mod tests {
+         server.close().await.unwrap();
+     }
+ 
++    #[tokio::test]
++    async fn test_agentland_options() {
++        let port = {
++            let probe = std::net::UdpSocket::bind("0.0.0.0:0").unwrap();
++            probe.local_addr().unwrap().port()
++        };
++        let ep = Endpoint::bind(EndpointOptions {
++            preset: Some(crate::preset_minimal()),
++            bind_port: Some(port),
++            relay_tls_roots: Some(RelayTlsRoots::Embedded),
++            external_addrs: Some(vec!["203.0.113.7:4242".to_string()]),
++            ..Default::default()
++        })
++        .await
++        .unwrap();
++        assert!(
++            ep.bound_sockets()
++                .iter()
++                .any(|a| a == &format!("0.0.0.0:{port}")),
++            "{:?}",
++            ep.bound_sockets()
++        );
++        assert!(
++            ep.addr()
++                .direct_addresses()
++                .contains(&"203.0.113.7:4242".to_string())
++        );
++        ep.add_external_addr("198.51.100.9:5000".to_string())
++            .await
++            .unwrap();
++        // The endpoint republishes its addresses asynchronously.
++        let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
++        while !ep
++            .addr()
++            .direct_addresses()
++            .contains(&"198.51.100.9:5000".to_string())
++        {
++            assert!(
++                tokio::time::Instant::now() < deadline,
++                "{:?}",
++                ep.addr().direct_addresses()
++            );
++            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
++        }
++        ep.close().await.unwrap();
++    }
++
++    #[tokio::test]
++    async fn test_agentland_options_refuse_bad_input() {
++        let ca = include_bytes!("../testdata/relay-tls/private-ca.pem");
++        for options in [
++            EndpointOptions {
++                relay_tls_roots: Some(RelayTlsRoots::Custom { certs: vec![] }),
++                ..Default::default()
++            },
++            EndpointOptions {
++                relay_tls_roots: Some(RelayTlsRoots::Custom {
++                    certs: vec![b"not a certificate".to_vec()],
++                }),
++                ..Default::default()
++            },
++            EndpointOptions {
++                relay_tls_roots: Some(RelayTlsRoots::EmbeddedPlus { certs: vec![] }),
++                ..Default::default()
++            },
++            EndpointOptions {
++                // PEM, not DER.
++                relay_tls_roots: Some(RelayTlsRoots::EmbeddedPlus {
++                    certs: vec![ca.to_vec()],
++                }),
++                ..Default::default()
++            },
++            EndpointOptions {
++                bind_port: Some(0),
++                ..Default::default()
++            },
++            EndpointOptions {
++                bind_port: Some(4000),
++                bind_addr: Some("0.0.0.0:4001".to_string()),
++                ..Default::default()
++            },
++            EndpointOptions {
++                external_addrs: Some(vec!["not an address".to_string()]),
++                ..Default::default()
++            },
++        ] {
++            let options = EndpointOptions {
++                preset: Some(crate::preset_minimal()),
++                ..options
++            };
++            let err = Endpoint::bind(options).await.err().expect("bind succeeded");
++            assert_eq!(err.kind(), crate::IrohErrorKind::InvalidInput, "{err}");
++        }
++    }
++
++    // The case that crashed the Swift app: bindPort refused after bindAddr,
++    // then another builder call.
++    #[tokio::test]
++    async fn test_refused_bind_port_keeps_the_builder() {
++        let builder = EndpointBuilder::new();
++        builder.apply_minimal();
++        builder.bind_addr("127.0.0.1:0".to_string()).unwrap();
++        assert!(builder.bind_port(45124).is_err());
++        builder.relay_tls_roots(RelayTlsRoots::Embedded).unwrap();
++        builder
++            .external_addr("203.0.113.7:4242".to_string())
++            .unwrap();
++        let ep = builder.bind().await.unwrap();
++        assert!(
++            ep.bound_sockets()
++                .iter()
++                .any(|a| a.starts_with("127.0.0.1:")),
++            "{:?}",
++            ep.bound_sockets()
++        );
++        assert!(builder.relay_tls_roots(RelayTlsRoots::Embedded).is_err());
++        assert!(
++            builder
++                .external_addr("203.0.113.7:4242".to_string())
++                .is_err()
++        );
++        assert!(builder.bind_port(45124).is_err());
++        ep.close().await.unwrap();
++    }
++
++    // Which relay certificates each RelayTlsRoots accepts, checked with the
++    // verifier iroh builds from it. letsencrypt.org's chain (Let's Encrypt E8,
++    // ISRG Root X1; the copy in rustls-platform-verifier 0.7.0's tests, checked
++    // at a time it was valid) stands for a publicly trusted relay such as n0's;
++    // a certificate from a private CA for AgentLand's own relay.
++    #[test]
++    fn test_relay_tls_roots_trust() {
++        use rustls::pki_types::{ServerName, UnixTime, pem::PemObject};
++
++        fn pem(text: &[u8]) -> Vec<CertificateDer<'static>> {
++            CertificateDer::pem_slice_iter(text)
++                .collect::<Result<_, _>>()
++                .unwrap()
++        }
++        let public_chain = pem(include_bytes!(
++            "../testdata/relay-tls/letsencrypt-org-chain.pem"
++        ));
++        // 2026-04-08, inside the letsencrypt.org certificate's validity.
++        let public_time = UnixTime::since_unix_epoch(std::time::Duration::from_secs(1_775_649_786));
++        let private_ca = pem(include_bytes!("../testdata/relay-tls/private-ca.pem"))[0].to_vec();
++        let other_ca = pem(include_bytes!("../testdata/relay-tls/other-ca.pem"))[0].to_vec();
++        let private_chain = pem(include_bytes!("../testdata/relay-tls/private-relay.pem"));
++        // 2028-01-01; the private certificates are valid from 2026 to 2126.
++        let private_time = UnixTime::since_unix_epoch(std::time::Duration::from_secs(1_830_297_600));
++
++        let accepts = |roots: &RelayTlsRoots,
++                       chain: &[CertificateDer<'static>],
++                       name: &str,
++                       now: UnixTime|
++         -> bool {
++            let verifier = roots
++                .ca_tls_config()
++                .unwrap()
++                .server_cert_verifier(Arc::new(rustls::crypto::ring::default_provider()))
++                .unwrap();
++            let name = ServerName::try_from(name.to_string()).unwrap();
++            verifier
++                .verify_server_cert(&chain[0], &chain[1..], &name, &[], now)
++                .is_ok()
++        };
++        let public = |roots: &RelayTlsRoots| {
++            accepts(roots, &public_chain, "letsencrypt.org", public_time)
++        };
++        let private = |roots: &RelayTlsRoots| {
++            accepts(roots, &private_chain, "relay.agentland.test", private_time)
++        };
++
++        let embedded = RelayTlsRoots::Embedded;
++        let custom = RelayTlsRoots::Custom {
++            certs: vec![private_ca.clone()],
++        };
++        let both = RelayTlsRoots::EmbeddedPlus {
++            certs: vec![private_ca.clone()],
++        };
++        let other = RelayTlsRoots::EmbeddedPlus {
++            certs: vec![other_ca],
++        };
++
++        assert!(public(&embedded));
++        assert!(!private(&embedded));
++        assert!(!public(&custom));
++        assert!(private(&custom));
++        // Our relay and a public relay on the same endpoint.
++        assert!(public(&both));
++        assert!(private(&both));
++        // Only the given CA is added, and names are still checked.
++        assert!(!private(&other));
++        assert!(!accepts(
++            &both,
++            &private_chain,
++            "other.agentland.test",
++            private_time
++        ));
++    }
++
+     // Regression: watch_* must not require a tokio handle in the caller's TLS.
+     #[tokio::test]
+     async fn test_watch_apis_from_non_runtime_thread() {
+diff --git a/testdata/relay-tls/letsencrypt-org-chain.pem b/testdata/relay-tls/letsencrypt-org-chain.pem
+new file mode 100644
+index 0000000..cffaffc
+--- /dev/null
++++ b/testdata/relay-tls/letsencrypt-org-chain.pem
+@@ -0,0 +1,51 @@
++-----BEGIN CERTIFICATE-----
++MIIEQzCCA8mgAwIBAgISBiIQkC6Br+XUvmis7p44YFKFMAoGCCqGSM49BAMDMDIx
++CzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MQswCQYDVQQDEwJF
++ODAeFw0yNjAzMDgxNzA0MzBaFw0yNjA2MDYxNzA0MjlaMBoxGDAWBgNVBAMTD2xl
++dHNlbmNyeXB0Lm9yZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABBFaPZEsy5Vs
++zGOYos4s8gc1biL2qfCqchzmM9/1z4GYVsEYGFJlBcf2ZWcQpjW+9/NZUG8qe3CW
++ECkh4dG4rZujggLVMIIC0TAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYIKwYB
++BQUHAwEwDAYDVR0TAQH/BAIwADAdBgNVHQ4EFgQUGbo3pLEp0HFa9KjM2/G0NQOM
++z40wHwYDVR0jBBgwFoAUjw0TovYuftFQbDMYOF1ZjiNykcowMgYIKwYBBQUHAQEE
++JjAkMCIGCCsGAQUFBzAChhZodHRwOi8vZTguaS5sZW5jci5vcmcvMIHTBgNVHREE
++gcswgciCEmNwLmxldHNlbmNyeXB0Lm9yZ4IaY3Aucm9vdC14MS5sZXRzZW5jcnlw
++dC5vcmeCE2Nwcy5sZXRzZW5jcnlwdC5vcmeCG2Nwcy5yb290LXgxLmxldHNlbmNy
++eXB0Lm9yZ4IJbGVuY3Iub3Jngg9sZXRzZW5jcnlwdC5jb22CD2xldHNlbmNyeXB0
++Lm9yZ4INd3d3LmxlbmNyLm9yZ4ITd3d3LmxldHNlbmNyeXB0LmNvbYITd3d3Lmxl
++dHNlbmNyeXB0Lm9yZzATBgNVHSAEDDAKMAgGBmeBDAECATAsBgNVHR8EJTAjMCGg
++H6AdhhtodHRwOi8vZTguYy5sZW5jci5vcmcvNi5jcmwwggENBgorBgEEAdZ5AgQC
++BIH+BIH7APkAdgDLOPcViXyEoURfW8Hd+8lu8ppZzUcKaQWFsMsUwxRY5wAAAZzO
++neXnAAAEAwBHMEUCIB3UegX+9a4D9ABceFNduKf7Vn+L/6I/JXR2L1mlf58wAiEA
+++42hZDroiyNB4cSjL9YYwH3eGye5dsuhFr9m3Mcpr8cAfwBxfpXzwjiKbbHjhEk9
++MeFaqWIIdi1CAOAFDNBntaZh4gAAAZzOneaAAAgAAAUACzG/uQQDAEgwRgIhAMPT
++OgCe6SAmY2FHMzMk8OIdUej2T+/RoJfFQbK6pcAzAiEAwsUHDp/oRItTNY1ghDIC
++dVwzuOebfLmCrk7HF2YpeGEwCgYIKoZIzj0EAwMDaAAwZQIwHf8Cw0UoMPHkHDuk
++mRWZ2f8wMiN/SY0aUVokjrVRw17QsV0eg5C7FrrJapqNYVcvAjEA0E0sB2GMngjI
++CT1wywN+vSiRndKhz4pE15eqApt9Dfcpqr+xvYF9U0svyFRbXny5
++-----END CERTIFICATE-----
++-----BEGIN CERTIFICATE-----
++MIIEVjCCAj6gAwIBAgIQY5WTY8JOcIJxWRi/w9ftVjANBgkqhkiG9w0BAQsFADBP
++MQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJuZXQgU2VjdXJpdHkgUmVzZWFy
++Y2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBYMTAeFw0yNDAzMTMwMDAwMDBa
++Fw0yNzAzMTIyMzU5NTlaMDIxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBF
++bmNyeXB0MQswCQYDVQQDEwJFODB2MBAGByqGSM49AgEGBSuBBAAiA2IABNFl8l7c
++S7QMApzSsvru6WyrOq44ofTUOTIzxULUzDMMNMchIJBwXOhiLxxxs0LXeb5GDcHb
++R6EToMffgSZjO9SNHfY9gjMy9vQr5/WWOrQTZxh7az6NSNnq3u2ubT6HTKOB+DCB
++9TAOBgNVHQ8BAf8EBAMCAYYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMB
++MBIGA1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0OBBYEFI8NE6L2Ln7RUGwzGDhdWY4j
++cpHKMB8GA1UdIwQYMBaAFHm0WeZ7tuXkAXOACIjIGlj26ZtuMDIGCCsGAQUFBwEB
++BCYwJDAiBggrBgEFBQcwAoYWaHR0cDovL3gxLmkubGVuY3Iub3JnLzATBgNVHSAE
++DDAKMAgGBmeBDAECATAnBgNVHR8EIDAeMBygGqAYhhZodHRwOi8veDEuYy5sZW5j
++ci5vcmcvMA0GCSqGSIb3DQEBCwUAA4ICAQBnE0hGINKsCYWi0Xx1ygxD5qihEjZ0
++RI3tTZz1wuATH3ZwYPIp97kWEayanD1j0cDhIYzy4CkDo2jB8D5t0a6zZWzlr98d
++AQFNh8uKJkIHdLShy+nUyeZxc5bNeMp1Lu0gSzE4McqfmNMvIpeiwWSYO9w82Ob8
++otvXcO2JUYi3svHIWRm3+707DUbL51XMcY2iZdlCq4Wa9nbuk3WTU4gr6LY8MzVA
++aDQG2+4U3eJ6qUF10bBnR1uuVyDYs9RhrwucRVnfuDj29CMLTsplM5f5wSV5hUpm
++Uwp/vV7M4w4aGunt74koX71n4EdagCsL/Yk5+mAQU0+tue0JOfAV/R6t1k+Xk9s2
++HMQFeoxppfzAVC04FdG9M+AC2JWxmFSt6BCuh3CEey3fE52Qrj9YM75rtvIjsm/1
++Hl+u//Wqxnu1ZQ4jpa+VpuZiGOlWrqSP9eogdOhCGisnyewWJwRQOqK16wiGyZeR
++xs/Bekw65vwSIaVkBruPiTfMOo0Zh4gVa8/qJgMbJbyrwwG97z/PRgmLKCDl8z3d
++tA0Z7qq7fta0Gl24uyuB05dqI5J1LvAzKuWdIjT1tP8qCoxSE/xpix8hX2dt3h+/
++jujUgFPFZ0EVZ0xSyBNRF3MboGZnYXFUxpNjTWPKpagDHJQmqrAcDmWJnMsFY3jS
++u1igv3OefnWjSQ==
++-----END CERTIFICATE-----
+diff --git a/testdata/relay-tls/other-ca.pem b/testdata/relay-tls/other-ca.pem
+new file mode 100644
+index 0000000..1c8fd82
+--- /dev/null
++++ b/testdata/relay-tls/other-ca.pem
+@@ -0,0 +1,10 @@
++-----BEGIN CERTIFICATE-----
++MIIBczCCARqgAwIBAgIJAJDsBYW56KV1MAoGCCqGSM49BAMCMCwxKjAoBgNVBAMM
++IUFnZW50TGFuZCByZWxheSBUTFMgdGVzdCBvdGhlci1jYTAgFw0yNjA5MjYwNjE3
++NTVaGA8yMTI2MDkwMjA2MTc1NVowLDEqMCgGA1UEAwwhQWdlbnRMYW5kIHJlbGF5
++IFRMUyB0ZXN0IG90aGVyLWNhMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsPy0
+++poxRNAaPZ+ZXTzvziGVYQmqnIC2oBsSe006iURF6rzD5wSnBWslArCh/EuZ7IbG
++5yhISgGxO39BSq8bNKMjMCEwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMC
++AQYwCgYIKoZIzj0EAwIDRwAwRAIgO5HnO3R0/eCTELtRS2deO1Nw7FgiMwyCUKf3
++D8FWzr4CIHSH8Te0MV/r8uOT7cEIVXr6QfuDdYhflHD86tyXoFhe
++-----END CERTIFICATE-----
+diff --git a/testdata/relay-tls/private-ca.pem b/testdata/relay-tls/private-ca.pem
+new file mode 100644
+index 0000000..8e045c3
+--- /dev/null
++++ b/testdata/relay-tls/private-ca.pem
+@@ -0,0 +1,10 @@
++-----BEGIN CERTIFICATE-----
++MIIBaDCCAQ6gAwIBAgIJAPPmh2KpjieBMAoGCCqGSM49BAMCMCYxJDAiBgNVBAMM
++G0FnZW50TGFuZCByZWxheSBUTFMgdGVzdCBjYTAgFw0yNjA5MjYwNjE3NTVaGA8y
++MTI2MDkwMjA2MTc1NVowJjEkMCIGA1UEAwwbQWdlbnRMYW5kIHJlbGF5IFRMUyB0
++ZXN0IGNhMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPzjUO3UoDIB4k8XCjz8N
++vtPAM/29waZ8S7RCeBAd65QZBncsBrIl4kBVzYUTJEQ/7R0fkk0u+nsy9iMr5faB
++tKMjMCEwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYwCgYIKoZIzj0E
++AwIDSAAwRQIgSWPt+vWvtk0UmyaA0ssSQTsyvBvn2XmlfsLrqo0mHeoCIQDU4Nqv
++OiPa5mB/bQj8I0Hld0I9756zaddve2mo3nAOSA==
++-----END CERTIFICATE-----
+diff --git a/testdata/relay-tls/private-relay.pem b/testdata/relay-tls/private-relay.pem
+new file mode 100644
+index 0000000..9efadc7
+--- /dev/null
++++ b/testdata/relay-tls/private-relay.pem
+@@ -0,0 +1,11 @@
++-----BEGIN CERTIFICATE-----
++MIIBlDCCATqgAwIBAgIJAM9zKfwlu3xAMAoGCCqGSM49BAMCMCYxJDAiBgNVBAMM
++G0FnZW50TGFuZCByZWxheSBUTFMgdGVzdCBjYTAgFw0yNjA5MjYwNjE3NTVaGA8y
++MTI2MDkwMjA2MTc1NVowHzEdMBsGA1UEAwwUcmVsYXkuYWdlbnRsYW5kLnRlc3Qw
++WTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASTeR5vTK+quKUW3uv2QHXNdBpKO83C
++9vxw7hNeiVypw4WxDL4NlEFf1spnBeLww+72kE03EUWvsKTvP2vTyxiUo1YwVDAM
++BgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcD
++ATAfBgNVHREEGDAWghRyZWxheS5hZ2VudGxhbmQudGVzdDAKBggqhkjOPQQDAgNI
++ADBFAiAR8BNs/9uB/eVkSqLsd8g3rEtb795FcjlXTwzcYf0WDwIhANZfjvxdMfLQ
++Too4gNAbFgsV67T4c7tDn3Qr6xXpEfTz
++-----END CERTIFICATE-----

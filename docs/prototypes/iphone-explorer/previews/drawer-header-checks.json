@@ -1,0 +1,91 @@
+{
+  "title": "AgentLand",
+  "widths": [
+    {
+      "width": 320,
+      "page": 320,
+      "buttons": [
+        {
+          "label": "Workspaces",
+          "w": 80,
+          "h": 48
+        },
+        {
+          "label": "Git",
+          "w": 80,
+          "h": 48
+        },
+        {
+          "label": "Files",
+          "w": 80,
+          "h": 48
+        },
+        {
+          "label": "Sessions",
+          "w": 80,
+          "h": 48
+        }
+      ]
+    },
+    {
+      "width": 375,
+      "page": 375,
+      "buttons": [
+        {
+          "label": "Workspaces",
+          "w": 82.25,
+          "h": 48
+        },
+        {
+          "label": "Git",
+          "w": 82.25,
+          "h": 48
+        },
+        {
+          "label": "Files",
+          "w": 82.25,
+          "h": 48
+        },
+        {
+          "label": "Sessions",
+          "w": 82.25,
+          "h": 48
+        }
+      ]
+    },
+    {
+      "width": 402,
+      "page": 402,
+      "buttons": [
+        {
+          "label": "Workspaces",
+          "w": 89,
+          "h": 48
+        },
+        {
+          "label": "Git",
+          "w": 89,
+          "h": 48
+        },
+        {
+          "label": "Files",
+          "w": 89,
+          "h": 48
+        },
+        {
+          "label": "Sessions",
+          "w": 89,
+          "h": 48
+        }
+      ]
+    }
+  ],
+  "rightExit": {
+    "hidden": false,
+    "x": 166.981
+  },
+  "homeSettings": true,
+  "rapidSwitch": true,
+  "reducedMotion": true,
+  "errors": []
+}

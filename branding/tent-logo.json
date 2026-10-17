@@ -1,0 +1,48 @@
+{
+ "description": "AgentLand's logo since 2026-10-12, used everywhere (app icons, in-app mark, Mac menu bar): the circus big top in the steamboat rubber-hose style of the clown logo it replaced, three-quarter view, with a striped conical roof, pennant, scalloped valance and the dark left-front entrance, drawn by PixelLab as a 128x128 sprite.",
+ "owner": {
+  "tent": "2026-10-12 ~16:10, \"lets go back to the tent logo, just make the tent look like the style we reserched here,\"; ~16:15 \"no i ment the steamboat pixellab style whoops\"; ~16:20 \"naw i like the pixel art more, use the outlines if the style demands it\"",
+  "picked": "2026-10-12 ~17:08, \"t3 me like\", then picked t3-2 (job t3, image index 2)",
+  "everywhere": "2026-10-12, the rule carried over from the clown logo: \"its the new logo for everythnig, it has to go everywhere, the mac dock icon etc\"",
+  "menuBar": "2026-10-12 ~17:13 \"flip the colors on the mac menu bar icon, it should be mostly white\"; ~17:15 \"none of these, make a quick study on these icons they are small and hard to see so they need special design/attention\"; ~17:22 \"way to plain, needs to look more like the app logo\", picked \"M4 dome + curtains\"; ~17:30 \"round is tent door in the meune bar not the arrow shope\" (M4b)",
+  "applied": "2026-10-12 ~17:25, \"Apply + sim\""
+ },
+ "replaces": "The whiteface clown head (2026-10-12, archive/2026-10-12-clown-logo/), which had replaced the shaded tent icon of 2026-10-08.",
+ "source": "tent-logo-pixellab-source.png",
+ "pixellab": {
+  "endpoint": "/generate-image-v2",
+  "model": "generate-image-v2 (Pro)",
+  "job": "t3 (tent round 1)",
+  "backgroundJob": "ce43cd67-fcba-4406-ac84-30137ca1035c",
+  "imageIndex": 2,
+  "imagesReturned": 4,
+  "generations": 10,
+  "description": "Pixel art app icon of a circus big top tent, three-quarter view: a broad striped conical roof in alternating white and slate panels, a short pole on top with a little pennant flag, a scalloped valance around the roof's edge, striped walls, and a dark open entrance at the left front with its curtains tied back. Redrawn in the 1928 steamboat rubber-hose cartoon style of the style image: thick near-black navy outline around every shape, bold simple rounded shapes, a glossy white highlight on the roof, only five tones from near-black navy through slate blue-grey to white, centered and filling the frame, no ground, no shadow, no text.",
+  "image_size": {
+   "width": 128,
+   "height": 128
+  },
+  "no_background": true,
+  "seed": 1012803
+ },
+ "referenceImage": {
+  "usage": "The circus tent to draw: keep its three-quarter view, striped conical roof, pennant on the top pole, scalloped valance and the left-front entrance with tied-back curtains.",
+  "what": "The Home tent at the time, tent-bigtop-pixellab-source.png (tent-bigtop.json, PixelLab Pro Flash, seed 26100201; both in archive/2026-10-12-tent-before-logo/ since Home took this logo's tent, tent-home.json), scaled 4x with nearest-neighbour to 384x384."
+ },
+ "styleImage": {
+  "usage": "AgentLand's clown logo sprite, drawn in the 1928 steamboat rubber-hose cartoon style: match its thick dark outline, bold simple shapes, pixel scale, glossy highlights and five-tone navy-to-white palette.",
+  "what": "The clown logo sprite it replaced, archive/2026-10-12-clown-logo/clown-logo-pixellab-source.png (96x96)."
+ },
+ "menuBar": {
+  "source": "tent-menubar.txt",
+  "what": "The Mac menu-bar template, drawn by hand pixel by pixel for the bar's 1x grid, not resampled from the sprite: a 21x19 glyph of the tent's dome, scalloped valance and curtains with a round door (study variant M4b).",
+  "alpha": {
+   "#": 255,
+   "+": 120,
+   ".": 0
+  },
+  "colour": "black (a template image: the bar paints it, white in Dark, so the tent reads mostly white)",
+  "why": "The owner's Mac draws the bar at 1x (1920x1080) in Dark. The clown sprite, resampled to the bar's 22 pt, turned to anti-aliased grey mush; a glyph made for the grid stays crisp. Study: the owner's local evidence, .evidence/icon-redesign-20261012/menubar-study/README.md."
+ },
+ "packaging": "scripts/package-logo.py: each opaque pixel takes the nearest of the riders' five day tones (weights 0.3, 0.59, 0.11, clown-ride.json palette.day). App icon of iPhone, iPad and Mac (ios/AgentLand/AppIcon.icon, Icon Composer, iOS 27 glass; owner 2026-10-17, design 'B: tent 7x'): icon.json with a glass group 'Tent' (specular, neutral shadow 0.5, translucency off) over a group 'Background' without glass, supported-platforms squares shared. Assets/tent.png: the day tones (palette.day), cropped to the sprite's pixels (101x100), x7 with nearest-neighbour, centred in a clear 1024x1024 canvas and moved down 8 px; Assets/tent-mono.png, its 'tinted' specialization for Clear and Tinted: the same with one grey per tone from the day tones' luminance (>230 255, >140 205, >90 140, >40 80, else 28); Assets/bg.png: opaque, a vertical gradient from #3D4A5C to #222B37 (an image, since ictool 27 ignores a fill's dark specialization). In-app mark (Resources/LogoMark.png): the day tones cropped to the sprite's pixels and padded with clear pixels to a centred 101x101 square. Menu-bar template: tent-menubar.txt in black with its alpha levels, the glyph at x 0, y 2 of a clear 22x22 canvas (Resources/LogoMenuBar.png), and that image doubled with nearest-neighbour (Resources/LogoMenuBar-2x.png, 44x44); AgentLandMenuBarIcon shows them as the 1x and 2x bitmaps of one 22-pt template image, never resampled. Previews: branding/logo-light.png (day on white) and logo-dark.png (night on slate), fitting 76% of 512."
+}

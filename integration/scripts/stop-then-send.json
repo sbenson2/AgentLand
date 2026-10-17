@@ -1,0 +1,32 @@
+{
+  "name": "Stop, then send",
+  "about": "B-15 probe and regression: in a plain chat with the fixture model, a long reply is stopped and a new message is sent as soon as Send is back, eight times. Every new message must reach the model and get its reply (the run's fixture requests and, with --opencode-debug, OpenCode's DEBUG log say which did); none may be stopped with the reply before it.",
+  "appearance": "light",
+  "timeout": 1200,
+  "launch": {"appearance": "light", "pair": true},
+  "steps": [
+    {"do": "helper", "name": "newPlainChat"},
+    {"do": "wait", "id": "plainChatLanding", "timeout": 15},
+    {"do": "helper", "name": "chooseFixtureModel"},
+    {"do": "type", "id": "chatDraft", "text": "Hello from the tester"},
+    {"do": "tap", "id": "chatSend"},
+    {"do": "wait", "type": "text", "label": "${chatReply}", "timeout": 45},
+    {"do": "repeat", "times": 8, "steps": [
+      {"do": "type", "id": "chatDraft", "text": "AGENTLAND_LONG round ${round}"},
+      {"do": "tap", "id": "chatSend"},
+      {"do": "wait", "id": "chatStop", "timeout": 20},
+      {"do": "sleep", "seconds": 3},
+      {"do": "note", "note": "STOPSEND mark: stop round ${round}"},
+      {"do": "tap", "id": "chatStop"},
+      {"do": "wait", "id": "chatSend", "timeout": 20},
+      {"do": "note", "note": "STOPSEND mark: Send back, round ${round}"},
+      {"do": "type", "id": "chatDraft", "text": "After stop ${round}"},
+      {"do": "tap", "id": "chatSend"},
+      {"do": "note", "note": "STOPSEND mark: sent after stop, round ${round}"},
+      {"do": "wait", "type": "text", "id": "chatUserMessage", "labelContains": "After stop ${round}", "timeout": 20},
+      {"do": "wait", "id": "chatSend", "timeout": 60},
+      {"do": "screenshot", "name": "round-${round}"}
+    ]},
+    {"do": "invariants"}
+  ]
+}

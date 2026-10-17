@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-12",
+  "purpose": "Home's tent (and the empty-chat landings' and the covers' tent) is the logo's tent: the PixelLab sprite of tent-logo.json, pixel for pixel, mapped onto the riders' five day tones exactly as scripts/package-logo.py maps the logo. No redraw and no pixel edits.",
+  "owner": {
+    "request": "2026-10-12 ~18:35, \"the new tent in the logo also needs to be the new tent on teh home screen\"",
+    "exact": "2026-10-12 ~18:50, shown 96-px PixelLab redraws: \"it needs to be the exact same pixel art\""
+  },
+  "replaces": "The five-tone PixelLab Pro Flash big top, seed 26100201, of 2026-10-02 with its breathing loop (archive/2026-10-12-tent-before-logo/).",
+  "source": {
+    "file": "tent-logo-pixellab-source.png",
+    "provenance": "tent-logo.json (PixelLab generate-image-v2 Pro, job t3, image 2, seed 1012803)",
+    "size": "128x128 RGBA, alpha 0 or 255 only; the tent's pixels are (16, 13)-(116, 112), 101x100"
+  },
+  "tones": "Each pixel with alpha 128 or more takes the nearest of clown-ride.json palette.day by the weighted distance 0.3 R, 0.59 G, 0.11 B (scripts/package-logo.py); the rest is transparent. The night tones are the app's runtime recolour of the day ramp.",
+  "crop": {
+    "x": 10,
+    "y": 7,
+    "side": 113,
+    "why": "The packaged images are the source's 113x113 window from (10, 7): the tent with six clear pixels at its left, right and top and seven below, so it sits centred in the square the scene centres. Cropping removes only clear pixels; the packager refuses any frame with ink outside the window."
+  },
+  "scene": {
+    "pointsPerPixel": 2.125,
+    "rect": "The 113-pixel square is 240.125 pt, centred in the 336 x 360 scene at (47.9375, 59.9375) (AgentLandTentArt.sceneRect)",
+    "why": "The tent's 101x100 pixels are 214.6 x 212.5 pt, about the old big top's 215.25 x 207.4 pt, centred on the scene's x 168 with its lowest pixel at y 285.2 (the big top's ground line was 285). The title, the rope rig, the orbit and the stage sizes are unchanged."
+  },
+  "cleanup": {
+    "script": "scripts/package-tent.swift",
+    "rule": "Tones 1-3 form the monochrome mark. The opaque silhouette closes each depth mask; no geometry is hand-painted.",
+    "doorway": {
+      "seed": [51, 90],
+      "box": { "minX": 37, "minY": 67, "maxX": 65, "maxY": 107 },
+      "coordinates": "source pixels (the 128 canvas)",
+      "method": "Walk the darkest-tone 3x3 core from the seed inside the box, then grow one darkest-tone pixel. Only the dark opening between the tied-back curtains is cut; the curtains' outlines and shading, the valance and its centre scallop remain. The box is the opening's own extent: the walk stops at the curtains and the scallop on its own.",
+      "pixels": 763,
+      "bounds": { "minX": 37, "minY": 67, "maxX": 65, "maxY": 107 }
+    }
+  },
+  "palette": "clown-ride.json palette (day stored; night remapped without geometry changes)"
+}

@@ -1,0 +1,18 @@
+.DS_Store
+.evidence/
+**/.build/
+**/.swiftpm/
+**/xcuserdata/
+**/.evidence/
+**/__pycache__/
+.claude/worktrees/
+# Built by scripts/build-iroh-ffi.sh from pinned source
+shared/AgentLandIroh/Frameworks/
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+web/*.tsbuildinfo
+
+/test-results/
+/playwright-report/

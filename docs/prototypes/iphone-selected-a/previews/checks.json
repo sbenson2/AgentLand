@@ -1,0 +1,45 @@
+{
+  "routes": [
+    {
+      "action": "New Chat",
+      "title": "New Chat"
+    },
+    {
+      "action": "New Terminal",
+      "title": "Terminal"
+    },
+    {
+      "action": "Browse Files",
+      "title": "Files"
+    },
+    {
+      "action": "Resume Work",
+      "title": "Fix sign-in callback"
+    },
+    {
+      "action": "Settings",
+      "title": "Settings"
+    }
+  ],
+  "dimensions": [
+    {
+      "width": 320,
+      "doc": 320,
+      "navs": 1,
+      "smallTargets": []
+    },
+    {
+      "width": 375,
+      "doc": 375,
+      "navs": 1,
+      "smallTargets": []
+    },
+    {
+      "width": 402,
+      "doc": 402,
+      "navs": 1,
+      "smallTargets": []
+    }
+  ],
+  "errors": []
+}

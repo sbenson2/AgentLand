@@ -1,0 +1,473 @@
+{
+  "date": "2026-10-13",
+  "purpose": "The tent breathes, subtly: a PixelLab PixMiniMax loop of Home's tent (tent-home.json, the logo sprite) that starts and ends on the still. Only the roof and the pennant move: once a loop the roof's slopes lift by about a pixel and settle, and the pennant flutters every frame. The valance and its scallops, the walls, the curtains and the doorway are the still's pixels in every frame.",
+  "owner": {
+    "request": "2026-10-13 ~00:50, of the 2026-10-12 loop: \"the tent animation is too strong needs to be more stuble\""
+  },
+  "motion": {
+    "rule": "A packaged tonal pixel counts as changed when its opacity flips or its RGB moves by more than 60 in sum from the still (frame 0); percentages are of the still's 5,906 opaque pixels.",
+    "chosen": {
+      "meanChanged": "3.4% (198 pixels)",
+      "maxChanged": "6.7% (397 pixels)"
+    },
+    "replaced": {
+      "meanChanged": "13.0% (767 pixels)",
+      "maxChanged": "29.1% (1,717 pixels)"
+    },
+    "tests": "TentArtworkTests.testTheBreathChangesLittleOfTheTent (mean 6% and max 12% at most) and testTheRoofBreathesAndThePennantMovesEveryFrame"
+  },
+  "source": {
+    "endpoint": "PixelLab animate-pixminimax",
+    "backgroundJob": "58da1478-f136-4a80-82a6-5323253cf413",
+    "seed": 26101332,
+    "frameCount": 12,
+    "driftThreshold": 0,
+    "noBackground": true,
+    "enhancePrompt": false,
+    "prompt": "A quiet, seamless idle loop. The pennant flag at the top of the pole waves softly in a light breeze in every frame, and the canvas of the striped roof ripples very faintly in the same breeze, in one slow, barely perceptible rise and fall over the whole loop. The roof keeps its size and shape. The scalloped valance, the walls, the tied-back curtains and the dark doorway stay perfectly still. The tent does not move, bounce or change size. Static camera.",
+    "promptSource": "TENT_LOOP_PROMPT in scripts/candidates/circus.py (the candidates were run with .evidence/icon-redesign-20261012/home-tent/pl3.py, the same request)",
+    "subjectDescription": "a circus big top tent with a striped conical roof, a pennant on its pole, a scalloped valance and tied-back curtains around a dark doorway",
+    "initialPose": "standing still, the roof at rest and the pennant flying",
+    "view": "side",
+    "direction": "south",
+    "firstFrame": "The still in the day tones: tent-logo-pixellab-source.png mapped as tent-home.json says, 128x128 (exactly tent-loop/frame-00.png)",
+    "lastFrame": "The same image",
+    "exports": "13 images. tent-loop/frame-00.png ... frame-11.png are images 0-11 unchanged; image 0 is the input returned as is (pixel for pixel the still). Image 12, the model's redraw of the last frame, is not used: the loop wraps to frame-00.",
+    "costGenerations": 2
+  },
+  "candidates": {
+    "note": "Forty jobs at 2 generations each (80 in all), PixelLab balance 8381.2 before and 8301.2 after, all with drift threshold 0, the still as first and last frame and the same caption fields; numbers as packaged with the still from source row 53 down. Candidates, previews (preview-*-4x.gif) and the measuring are in .evidence/icon-redesign-20261012/home-tent/loop-subtle/ (not committed).",
+    "prompts": {
+      "A": "A very subtle, seamless idle loop, almost still. Only two things move: the small pennant flag at the top of the pole flutters gently in a light breeze, and the striped conical roof breathes almost imperceptibly, swelling by a single pixel and settling back. The scalloped valance, its scallops and the rope under the roof do not move. The striped walls, the tied-back curtains and the dark doorway stay perfectly still. The tent does not move, bounce, turn or change size. Static camera.",
+      "B": "A calm, seamless idle loop with barely perceptible motion. The small pennant flag on top of the pole flutters gently in a soft breeze in every frame. The rest of the circus tent stays almost perfectly still: the roof breathes only very faintly, the scalloped valance and its scallops stay put, and the walls, curtains and doorway do not move at all. No bounce, no squash, no stretch. Static camera.",
+      "C": "Barely perceptible idle motion. The pennant flag at the top of the pole ripples softly in a light breeze. The circus tent itself stays still; its roof breathes very faintly. The valance, scallops, walls, curtains and doorway do not move. Static camera.",
+      "D": "A gentle, seamless idle loop. The small pennant flag at the top of the pole flutters softly in every frame. The striped conical roof breathes very slightly: halfway through the loop it rises by one pixel and then settles back, like one slow, calm breath. The scalloped valance and its scallops stay exactly where they are. The striped walls, the tied-back curtains and the dark doorway stay perfectly still. No bounce, no squash and stretch. Static camera.",
+      "E": "A quiet, seamless idle loop. The pennant flag at the top of the pole waves softly in a light breeze in every frame, and the canvas of the striped roof ripples very faintly in the same breeze. The roof keeps its size and shape. The scalloped valance, the walls, the tied-back curtains and the dark doorway stay perfectly still. The tent does not move, bounce or change size. Static camera.",
+      "F": "A subtle, seamless idle loop in a slow rhythm. The pennant on top flutters gently in every frame. The top of the roof around the pole lifts very slightly and settles back as the tent breathes in and out once, barely perceptibly. The lower edge of the roof, the scalloped valance, the walls, the curtains and the doorway do not move. Static camera.",
+      "G": "A quiet, seamless idle loop. The pennant flag at the top of the pole waves softly in a light breeze in every frame, and the canvas of the striped roof ripples very faintly in the same breeze, rising once and settling back slowly over the whole loop. The roof keeps its size and shape. The scalloped valance, the walls, the tied-back curtains and the dark doorway stay perfectly still. The tent does not move, bounce or change size. Static camera.",
+      "H": "A quiet, seamless idle loop. The pennant flag at the top of the pole waves softly in a light breeze in every frame, and the canvas of the striped roof ripples very faintly in the same breeze, in one slow, barely perceptible rise and fall over the whole loop. The roof keeps its size and shape. The scalloped valance, the walls, the tied-back curtains and the dark doorway stay perfectly still. The tent does not move, bounce or change size. Static camera."
+    },
+    "jobs": [
+      {
+        "seed": 26101301,
+        "prompt": "A",
+        "backgroundJob": "bcc4c137-c01f-4bf3-824d-1ecd56f86af1",
+        "meanChanged": "4.2%",
+        "maxChanged": "11.4%",
+        "outcome": "Rejected: the valance or the lower tent moves (656 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101302,
+        "prompt": "A",
+        "backgroundJob": "1ce58fbd-286a-4c67-b0e1-db28763562e2",
+        "meanChanged": "4.8%",
+        "maxChanged": "12.0%",
+        "outcome": "Rejected: the valance or the lower tent moves (833 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101303,
+        "prompt": "A",
+        "backgroundJob": "3e5d971c-a743-4a18-9443-67aa4984272d",
+        "meanChanged": "4.7%",
+        "maxChanged": "9.2%",
+        "outcome": "Rejected: the valance or the lower tent moves (788 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101304,
+        "prompt": "A",
+        "backgroundJob": "0435f4e1-9fc6-44a5-a039-478eb8d8946b",
+        "meanChanged": "4.9%",
+        "maxChanged": "12.3%",
+        "outcome": "Rejected: the valance or the lower tent moves (1334 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101301,
+        "prompt": "B",
+        "backgroundJob": "ca18c4a1-f687-49b9-900b-ee82da022b2f",
+        "meanChanged": "2.0%",
+        "maxChanged": "2.5%",
+        "outcome": "Too still: only the pennant moves; the roof does not visibly breathe."
+      },
+      {
+        "seed": 26101302,
+        "prompt": "B",
+        "backgroundJob": "1bcf2ae2-75e8-4301-a982-25d7a6789d25",
+        "meanChanged": "1.8%",
+        "maxChanged": "2.2%",
+        "outcome": "Too still: only the pennant moves; the roof does not visibly breathe."
+      },
+      {
+        "seed": 26101303,
+        "prompt": "B",
+        "backgroundJob": "a8ce77b6-5d03-4fc3-bc4a-94366402f4c3",
+        "meanChanged": "1.8%",
+        "maxChanged": "2.5%",
+        "outcome": "Too still: only the pennant moves; the roof does not visibly breathe."
+      },
+      {
+        "seed": 26101304,
+        "prompt": "B",
+        "backgroundJob": "a921110f-7e00-4850-bf85-cb8dd2203023",
+        "meanChanged": "1.9%",
+        "maxChanged": "2.6%",
+        "outcome": "Too still: only the pennant moves; the roof does not visibly breathe."
+      },
+      {
+        "seed": 26101301,
+        "prompt": "C",
+        "backgroundJob": "7eb1b9d6-c843-4bf8-9335-d1d3017c095b",
+        "meanChanged": "2.4%",
+        "maxChanged": "2.9%",
+        "outcome": "Too still: only the pennant moves; the roof does not visibly breathe."
+      },
+      {
+        "seed": 26101302,
+        "prompt": "C",
+        "backgroundJob": "3b5eb93b-ef2e-4964-9e8a-20f8572644b6",
+        "meanChanged": "2.0%",
+        "maxChanged": "2.3%",
+        "outcome": "Too still: only the pennant moves; the roof does not visibly breathe."
+      },
+      {
+        "seed": 26101303,
+        "prompt": "C",
+        "backgroundJob": "8a60df0f-14ec-45a5-bca5-e3ac98d9b675",
+        "meanChanged": "1.8%",
+        "maxChanged": "2.5%",
+        "outcome": "Too still: only the pennant moves; the roof does not visibly breathe."
+      },
+      {
+        "seed": 26101304,
+        "prompt": "C",
+        "backgroundJob": "5741dec7-3904-433b-ae3c-c1be9073af35",
+        "meanChanged": "1.9%",
+        "maxChanged": "2.5%",
+        "outcome": "Too still: only the pennant moves; the roof does not visibly breathe."
+      },
+      {
+        "seed": 26101311,
+        "prompt": "D",
+        "backgroundJob": "f18670ec-9559-45e7-a1a3-56e0e8724b59",
+        "meanChanged": "2.9%",
+        "maxChanged": "8.7%",
+        "outcome": "Rejected: the valance or the lower tent moves (526 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101312,
+        "prompt": "D",
+        "backgroundJob": "31df958d-2cbd-4048-bbcf-42ca6e364b75",
+        "meanChanged": "4.4%",
+        "maxChanged": "8.0%",
+        "outcome": "Rejected: the valance or the lower tent moves (1648 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101313,
+        "prompt": "D",
+        "backgroundJob": "7376488c-caf5-4a90-b12e-b66e72342710",
+        "meanChanged": "4.4%",
+        "maxChanged": "11.1%",
+        "outcome": "Rejected: the valance or the lower tent moves (458 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101314,
+        "prompt": "D",
+        "backgroundJob": "edfb9c7c-dd57-4857-a4e4-900b43a627f1",
+        "meanChanged": "3.0%",
+        "maxChanged": "7.6%",
+        "outcome": "Rejected: the valance or the lower tent moves (330 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101311,
+        "prompt": "E",
+        "backgroundJob": "f73a8011-35f2-48b7-8073-e3d0eb0f9fb1",
+        "meanChanged": "2.1%",
+        "maxChanged": "3.8%",
+        "outcome": "Usable, but the breath is lopsided, doubled or abrupt; the chosen loop is calmer."
+      },
+      {
+        "seed": 26101312,
+        "prompt": "E",
+        "backgroundJob": "10b3c648-d81d-4968-943b-b00985523fef",
+        "meanChanged": "5.2%",
+        "maxChanged": "8.3%",
+        "outcome": "One smooth breath but larger (5.2% / 8.3%); below row 53 the model redrew the lower tent (replaced by the still)."
+      },
+      {
+        "seed": 26101313,
+        "prompt": "E",
+        "backgroundJob": "ea0e5686-7042-40bf-8da5-d16dc14b162d",
+        "meanChanged": "4.3%",
+        "maxChanged": "7.2%",
+        "outcome": "Usable, but the breath is lopsided, doubled or abrupt; the chosen loop is calmer."
+      },
+      {
+        "seed": 26101314,
+        "prompt": "E",
+        "backgroundJob": "c6132255-e04f-4fa0-8b56-52d94c4d58ba",
+        "meanChanged": "3.0%",
+        "maxChanged": "4.5%",
+        "outcome": "Usable, but the breath is lopsided, doubled or abrupt; the chosen loop is calmer."
+      },
+      {
+        "seed": 26101311,
+        "prompt": "F",
+        "backgroundJob": "95b2a284-deb6-414e-8161-22353eab9be3",
+        "meanChanged": "4.0%",
+        "maxChanged": "7.9%",
+        "outcome": "Rejected: the valance or the lower tent moves (281 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101312,
+        "prompt": "F",
+        "backgroundJob": "666f8a87-8acc-4223-abd2-c252558f5277",
+        "meanChanged": "3.5%",
+        "maxChanged": "5.8%",
+        "outcome": "Rejected: the valance or the lower tent moves (718 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101313,
+        "prompt": "F",
+        "backgroundJob": "853e36e1-cd24-47c0-aee1-38c400163a8c",
+        "meanChanged": "2.8%",
+        "maxChanged": "8.1%",
+        "outcome": "Rejected: the valance or the lower tent moves (1139 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101314,
+        "prompt": "F",
+        "backgroundJob": "2bdf5db8-3e0c-4e16-8807-2de9045247a0",
+        "meanChanged": "2.6%",
+        "maxChanged": "4.1%",
+        "outcome": "Rejected: the valance or the lower tent moves (319 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101315,
+        "prompt": "E",
+        "backgroundJob": "30562c3c-086d-4711-bb51-13b5dfdbc5a9",
+        "meanChanged": "2.0%",
+        "maxChanged": "2.7%",
+        "outcome": "Too still: only the pennant moves; the roof does not visibly breathe."
+      },
+      {
+        "seed": 26101316,
+        "prompt": "E",
+        "backgroundJob": "35139761-7bb6-4c04-b194-25acc35d3b34",
+        "meanChanged": "3.9%",
+        "maxChanged": "6.3%",
+        "outcome": "Runner-up: the subtlest largest frame, but two quick breaths a loop."
+      },
+      {
+        "seed": 26101317,
+        "prompt": "E",
+        "backgroundJob": "0719dab9-f060-4da6-a602-9d497e0e8478",
+        "meanChanged": "3.1%",
+        "maxChanged": "3.9%",
+        "outcome": "Rejected: the pennant stops in one step."
+      },
+      {
+        "seed": 26101318,
+        "prompt": "E",
+        "backgroundJob": "d485bdee-4f52-41c3-99ef-44f0e8af814a",
+        "meanChanged": "4.4%",
+        "maxChanged": "7.2%",
+        "outcome": "Usable, but the breath is lopsided, doubled or abrupt; the chosen loop is calmer."
+      },
+      {
+        "seed": 26101319,
+        "prompt": "E",
+        "backgroundJob": "66538521-9db1-4648-9188-4a8788e3f64f",
+        "meanChanged": "2.4%",
+        "maxChanged": "3.4%",
+        "outcome": "Usable, but the breath is lopsided, doubled or abrupt; the chosen loop is calmer."
+      },
+      {
+        "seed": 26101320,
+        "prompt": "E",
+        "backgroundJob": "8b26445d-ae2c-4e9d-b585-438efa881758",
+        "meanChanged": "3.3%",
+        "maxChanged": "5.4%",
+        "outcome": "Usable, but the breath is lopsided, doubled or abrupt; the chosen loop is calmer."
+      },
+      {
+        "seed": 26101321,
+        "prompt": "G",
+        "backgroundJob": "4570f7a7-9c65-4969-be34-af1018a7c1bd",
+        "meanChanged": "5.3%",
+        "maxChanged": "11.1%",
+        "outcome": "Too strong: the roof swells by more than a pixel."
+      },
+      {
+        "seed": 26101322,
+        "prompt": "G",
+        "backgroundJob": "62311389-54d2-450a-8394-6361ab8f809c",
+        "meanChanged": "5.6%",
+        "maxChanged": "12.2%",
+        "outcome": "Rejected: the valance or the lower tent moves (703 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101323,
+        "prompt": "G",
+        "backgroundJob": "fe53121f-6de6-4202-afc6-4543605b6c15",
+        "meanChanged": "5.0%",
+        "maxChanged": "10.4%",
+        "outcome": "Rejected: the valance or the lower tent moves (357 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101324,
+        "prompt": "G",
+        "backgroundJob": "473028b7-f03b-4b44-bf6a-21abbb3557c5",
+        "meanChanged": "5.6%",
+        "maxChanged": "9.2%",
+        "outcome": "Rejected: the valance or the lower tent moves (263 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101331,
+        "prompt": "H",
+        "backgroundJob": "0d2e5b44-2992-43a7-af27-e94903bef838",
+        "meanChanged": "3.7%",
+        "maxChanged": "7.8%",
+        "outcome": "Runner-up: the same single breath, a little larger; the pennant barely moves in one step."
+      },
+      {
+        "seed": 26101332,
+        "prompt": "H",
+        "backgroundJob": "58da1478-f136-4a80-82a6-5323253cf413",
+        "meanChanged": "3.4%",
+        "maxChanged": "6.7%",
+        "outcome": "Chosen: one calm breath a loop (the roof rests over frames 9-3, its slopes lift a pixel over 4-6 and settle over 7-8), the valance and scallops untouched, the pennant moving in every step (at least 93 tonal pixels), and from source row 53 down every frame is already the still's pixels."
+      },
+      {
+        "seed": 26101333,
+        "prompt": "H",
+        "backgroundJob": "fa477150-5449-4716-93cc-d1dca7a819f6",
+        "meanChanged": "4.6%",
+        "maxChanged": "9.8%",
+        "outcome": "Rejected: the valance or the lower tent moves (134 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101334,
+        "prompt": "H",
+        "backgroundJob": "92fef6b9-aada-4323-a924-208c94fb125a",
+        "meanChanged": "5.8%",
+        "maxChanged": "10.3%",
+        "outcome": "Too strong: the roof swells by more than a pixel."
+      },
+      {
+        "seed": 26101335,
+        "prompt": "H",
+        "backgroundJob": "559977a9-b7b4-4ea0-a56a-8e9a4d616881",
+        "meanChanged": "5.4%",
+        "maxChanged": "9.4%",
+        "outcome": "Rejected: the valance or the lower tent moves (155 pixels from source row 53 down differ from the still in a frame), so the valance cut would show a seam."
+      },
+      {
+        "seed": 26101336,
+        "prompt": "H",
+        "backgroundJob": "2cc868db-ebc5-4726-9bf3-02a7d21854f1",
+        "meanChanged": "4.8%",
+        "maxChanged": "6.6%",
+        "outcome": "Usable; the chosen loop is calmer."
+      }
+    ]
+  },
+  "cleanup": {
+    "tones": "As the still (tent-home.json): nearest day tone by the weighted distance, alpha 128 or more opaque.",
+    "fixedRegion": {
+      "firstRow": 53,
+      "coordinates": "source pixels (the 128 canvas); 46 in the packaged 113-pixel images (TentGeometry.json fixedFirstRow)",
+      "rule": "Every frame keeps the still's exact pixels from row 53 down: the valance and its scallops (their outer tops are source row 53), the walls, the curtains and the doorway. PixelLab supplies the roof and the pennant above it. The chosen frames already match the still there pixel for pixel, so the join cannot show a seam; the cut only guarantees that the valance stays put."
+    },
+    "doorway": "The still's (tent-home.json), cut from every frame's mark and tones, so the opening never changes."
+  },
+  "playback": {
+    "frameDuration": 0.1,
+    "order": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ]
+  },
+  "sha256": {
+    "frame-00.png": "45dcf374c6db79dba14d2890852394e446ffc57d05ad14cd4c34bb8f3f4d6629",
+    "frame-01.png": "4cfb1b8204e7fe3054eaaf64fe5398f7cf528a451c5bba9833c9c62d225e8825",
+    "frame-02.png": "0eb19dbc281945d98d44d3d0d23c80e422c881789516c6b6512c3d44bbdf0331",
+    "frame-03.png": "96cf89e0df4897efa2f205498321338deee38b42fca52c11711d8801917477c7",
+    "frame-04.png": "b7e997cee35320c4116325b9385b0522f96a2cbb54f06806cb770be1261e5a0b",
+    "frame-05.png": "b70979247756863031fc9badc93296e71bc37fa440c4ce1acd2a1a7abd9d916d",
+    "frame-06.png": "ea913e74108b745acc70fb1a1b42f4f5652922a04f1e1d97608a2c7c929cc655",
+    "frame-07.png": "b71b1c19b6a77323b6f5b2d4fcb49cd5095933367d972cbc5980e61bd84cce7a",
+    "frame-08.png": "fd813ab3fb866627df4141ab4620e3baf023a20b312402d4e4848a27c09b9c7c",
+    "frame-09.png": "b07727570da874943efaec9c0c0c729ea119120e4d78b49ad98e158fae1a03d8",
+    "frame-10.png": "1f634ff0672b97aaa03d995921bf07e565f58a5546d3a6ac6161ec36bb616790",
+    "frame-11.png": "dc2a7dee633f61d8fcf95a66e77d3dece6eaca2737443bc568a2463df6bb430a"
+  },
+  "replaces": {
+    "date": "2026-10-12",
+    "source": {
+      "backgroundJob": "dfcceef0-b18a-4836-ac74-a2b0f415e0d9",
+      "seed": 26101206,
+      "prompt": "A subtle, seamless idle loop in a bouncy 1930s rubber-hose cartoon rhythm. Only the top of the circus tent moves: the striped conical roof gently breathes, swelling a little and settling back, the scalloped valance under the roof sways softly, and the small pennant flag at the top of the pole snaps and flutters in the wind. The striped walls, the tied-back curtains and the dark doorway stay perfectly still. The tent does not move, turn or change size. Static camera."
+    },
+    "fixedFirstRow": 74,
+    "motion": "The roof swelled and the valance and scallops dipped about 2 pixels with it (13.0% of the tent's pixels on average, 29.1% at most).",
+    "candidates": {
+      "note": "Eight jobs at 2 generations each (16 in all), PixelLab balance 8397.2 before and 8381.2 after. Candidates are kept in .evidence/icon-redesign-20261012/home-tent/loop/ (not committed).",
+      "jobs": [
+        {
+          "seed": 26101201,
+          "backgroundJob": "ecd197a8-41a0-4520-88c3-3e115e159bb4",
+          "outcome": "Usable motion; the dipped valance loses its centre string and part of the scallops' outline."
+        },
+        {
+          "seed": 26101202,
+          "backgroundJob": "374c5705-f93f-49ec-b993-da20429479c0",
+          "outcome": "Usable motion; the same valance breakup as 26101201."
+        },
+        {
+          "seed": 26101203,
+          "backgroundJob": "28d35071-129f-4172-bdc2-7109763c1fc7",
+          "outcome": "Rejected: the whole tent shifts (over 1,200 pixels differ below the valance in every frame) and the last frame is not the still."
+        },
+        {
+          "seed": 26101204,
+          "backgroundJob": "df8fe754-b8e3-4934-8b5d-38ea4035045f",
+          "outcome": "Rejected: the walls and curtains move (up to 950 pixels below row 72)."
+        },
+        {
+          "seed": 26101205,
+          "driftThreshold": 0,
+          "backgroundJob": "2645a1d1-f660-4048-8558-d546f2eed247",
+          "outcome": "Clean valance; the roof holds still in five of the twelve steps."
+        },
+        {
+          "seed": 26101206,
+          "driftThreshold": 0,
+          "backgroundJob": "dfcceef0-b18a-4836-ac74-a2b0f415e0d9",
+          "outcome": "Chosen: the cleanest valance and scallop outlines while they dip, the roof swelling over steps 1-8 and settling, the pennant moving by a similar amount in every step, and below row 74 at most 3 pixels differing from the still."
+        },
+        {
+          "seed": 26101207,
+          "driftThreshold": 0,
+          "backgroundJob": "382091b6-da11-4c56-b460-e45db6d759eb",
+          "outcome": "Usable; the pennant barely moves in one step."
+        },
+        {
+          "seed": 26101208,
+          "driftThreshold": 0,
+          "backgroundJob": "da599a52-0821-4ecf-a9b4-1f8c8e63b95f",
+          "outcome": "Usable; the valance breaks up as in 26101201."
+        }
+      ]
+    },
+    "frames": "In git history before this change (branding/tent-loop/frame-01.png ... frame-11.png; frame-00.png, the still, is unchanged)."
+  }
+}
