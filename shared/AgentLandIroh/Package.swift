@@ -9,7 +9,7 @@ import PackageDescription
 let packageDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
 let xcframework = packageDirectory.appendingPathComponent("Frameworks/IrohLib.xcframework/Info.plist")
 if !FileManager.default.fileExists(atPath: xcframework.path) {
-    fatalError("shared/AgentLandIroh/Frameworks/IrohLib.xcframework is missing: run scripts/build-iroh-ffi.sh")
+    fatalError("shared/AgentLandIroh/Frameworks/IrohLib.xcframework is missing: run scripts/fetch-iroh-ffi.sh (or scripts/build-iroh-ffi.sh)")
 }
 
 let package = Package(

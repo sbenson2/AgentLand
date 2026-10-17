@@ -89,8 +89,9 @@ swift test --package-path shared/AgentLandPairing
 python3 integration/check-host-client.py
 ```
 
-The apps link iroh's Swift bindings, which are built from pinned source and
-not committed: run `scripts/build-iroh-ffi.sh` once before building the iOS
+The apps link iroh's Swift bindings, which are not committed: run
+`scripts/fetch-iroh-ffi.sh` (prebuilt, checked against the record) or
+`scripts/build-iroh-ffi.sh` (from pinned source) once before building the iOS
 app, the Mac app or the packages that depend on `AgentLandIroh`.
 
 For mobile changes, also build the app and run its unit tests on a simulator

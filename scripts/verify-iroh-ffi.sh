@@ -19,7 +19,7 @@ stamp=${3:-}
 
 fail() {
   printf 'error: %s does not match %s: %s\n' "$framework" "$record" "$1" >&2
-  printf 'error: run scripts/build-iroh-ffi.sh (see third_party/iroh-ffi/README.md)\n' >&2
+  printf 'error: run scripts/fetch-iroh-ffi.sh or scripts/build-iroh-ffi.sh (see third_party/iroh-ffi/README.md)\n' >&2
   exit 1
 }
 

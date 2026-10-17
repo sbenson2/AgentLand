@@ -51,10 +51,12 @@ iPhone and iPad app yourself for free.
 
 You need a Mac with Xcode 26 and Swift 6, Go 1.26.8 or later (the shared
 minimum is in `desktop/go.mod`), [XcodeGen](https://github.com/yonaskolb/XcodeGen),
-and the Rust toolchain pinned in `scripts/build-iroh-ffi.sh`. The apps link
-iroh's Swift bindings, which are built from pinned source and not committed:
-run `scripts/build-iroh-ffi.sh` once before the first app build. The script needs
-the pinned Xcode version; see [third_party/iroh-ffi](third_party/iroh-ffi/README.md).
+and an Apple-silicon Mac. The apps link iroh's Swift bindings, which are not
+committed: run `scripts/fetch-iroh-ffi.sh` once before the first app build. It
+downloads the prebuilt library from this repo's releases and checks every file
+against `third_party/iroh-ffi/IrohLib.sha256`. To build the library from source
+instead, run `scripts/build-iroh-ffi.sh`, which needs the pinned Xcode and Rust;
+see [third_party/iroh-ffi](third_party/iroh-ffi/README.md).
 
 - **Mobile:** open `ios/AgentLand.xcodeproj`, scheme `AgentLand`. See [iOS instructions](ios/README.md). Bundle ID: `dev.agentland.client`.
 - **Desktop:** run `AGENTLAND_CODE_SIGN_IDENTITY="Apple Development: your identity" scripts/build-desktop-app.sh /absolute/new/path/AgentLand.app`. Keep that signing identity consistent for updates. See [macOS setup](macos/README.md). Bundle ID: `dev.agentland.desktop`.

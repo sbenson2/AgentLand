@@ -50,8 +50,9 @@ Scheme `AgentLand` builds `AgentLand.app` with bundle identifier
 `dev.agentland.desktop`, executable `AgentLandDesktop` and
 `Resources/Info.plist`. The app's code is the `AgentLandDesktop` library in
 `Package.swift`, which links iroh's Swift bindings (`../shared/AgentLandIroh`).
-Build those first with `scripts/build-iroh-ffi.sh` (pinned Xcode and Rust, about
-10 minutes; the package's manifest stops with a message while they are missing),
+Get those first with `scripts/fetch-iroh-ffi.sh` (prebuilt download), or build them
+with `scripts/build-iroh-ffi.sh` (pinned Xcode and Rust, about 10 minutes); the
+package's manifest stops with a message while they are missing,
 and the `VerifyIrohLib` build tool plugin checks them against
 `third_party/iroh-ffi/IrohLib.sha256` before anything links them, in SwiftPM and
 in Xcode. The Xcode target adds only the entry point in `App/` and the app icon. Its script
