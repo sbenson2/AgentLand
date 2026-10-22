@@ -1204,7 +1204,8 @@ private extension View {
                 .workspaceInlineNavigationTitle()
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
-                        Menu(content: menu) { Label("\(title) Actions", systemImage: "ellipsis.circle") }
+                        // iPhone's bar draws its own glass circle, so its ••• is the plain ellipsis (HIG, 2026-10-22).
+                        Menu(content: menu) { Label("\(title) Actions", systemImage: WorkspacePlatform.isPhone ? "ellipsis" : "ellipsis.circle") }
                             .menuOrder(.fixed)
                             .accessibilityIdentifier("terminalActions")
                             .modifier(endQuestion)

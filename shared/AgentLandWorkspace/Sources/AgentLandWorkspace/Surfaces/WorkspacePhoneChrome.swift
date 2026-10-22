@@ -135,7 +135,7 @@ struct PhoneSessionTitle<Items: View>: ViewModifier {
     }
 
     @ViewBuilder private func actionsMenu(_ tab: WorkspaceTab) -> some View {
-        let menu = Menu { menuItems(tab) } label: { Label("\(title) Actions", systemImage: "ellipsis.circle") }
+        let menu = Menu { menuItems(tab) } label: { Label("\(title) Actions", systemImage: "ellipsis") }
             .menuOrder(.fixed)
             .accessibilityIdentifier("sessionActions")
             // An editor's Close asks here when it has unsaved edits (source `.header`).
