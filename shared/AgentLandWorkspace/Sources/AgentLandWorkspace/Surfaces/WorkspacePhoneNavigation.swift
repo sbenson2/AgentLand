@@ -3,8 +3,8 @@ import Observation
 import SwiftUI
 import AgentLandCore
 
-/// The iPhone's quick tab switcher (a glass panel below the header's center button) and the Files and Git pages
-/// that Workspace opens (owner, 2026-10-11: bottom tabs replace the left drawer).
+/// The iPhone's task switcher (the title menu, `switcherSections`) and the Files and Git pages that Workspace opens
+/// (owner, 2026-10-11: bottom tabs replace the left drawer).
 @MainActor @Observable final class WorkspacePhoneNavigation {
     /// Files and Git browse the current workspace.
     enum DrawerSection: String, Hashable, CaseIterable, Identifiable {
@@ -98,28 +98,75 @@ import AgentLandCore
         dismissPopovers()
         model.selectedTabID = nil
     }
-    /// Home is separate; only open chat, terminal and file tasks in this workspace follow it.
-    func quickTabs(model: WorkspaceModel) -> [WorkspaceTab] {
-        guard let id = switcherWorkspaceID(model: model) else { return [] }
-        return workingTasks(inWorkspace: id, model: model).filter {
-            switch $0.kind {
-            case .chat, .terminal, .editor: true
-            default: false
+
+    // MARK: Task switcher
+
+    /// One section of the iPhone's task switcher: an open workspace, whose name is a row of its own (a section's header
+    /// can't be chosen) that shows its Home, then its open terminals and chats; or, last, the open chats of the Chats
+    /// space that belong to no workspace, under a plain "Chats" header.
+    struct SwitcherSection: Identifiable, Equatable {
+        /// The workspace; nil for the Chats space's chats.
+        let projectID: String?
+        /// The workspace's name ("Home" until the host's list names it), or "Chats".
+        let title: String
+        let tasks: [WorkspaceTab]
+        var id: String { projectID.map { "workspace-\($0)" } ?? "chats" }
+    }
+
+    /// What the switcher marks as where you are: the task in front, or a workspace's Home while its launcher shows.
+    enum SwitcherItem: Hashable {
+        case home(projectID: String)
+        case task(UUID)
+    }
+
+    /// The title menu of Chat's and Terminal's Home and of every session's page on iPhone (owner, 2026-10-22: switching
+    /// between terminals of different projects took Home, Workspace, a workspace and the way back). Every workspace open
+    /// on this device, as the Workspaces screen lists them (`WorkspaceManager.open`: the one in use first, then by last
+    /// use; a closed workspace has no tabs here and is not listed), each with its open terminals and chats; then the
+    /// Chats space's chats that no workspace owns. Until the host's workspace list is known (`workspaceListPending`),
+    /// the workspace restored on this device stands for the list (2026-10-12).
+    func switcherSections(model: WorkspaceModel) -> [SwitcherSection] {
+        var sections: [SwitcherSection]
+        if model.workspaceListPending {
+            sections = switcherWorkspaceID(model: model).map {
+                [SwitcherSection(projectID: $0, title: "Home", tasks: switcherTasks(inWorkspace: $0, model: model))]
+            } ?? []
+        } else {
+            sections = model.workspaces.open.filter { !model.isChatsSpace($0.id) }.map {
+                SwitcherSection(projectID: $0.id, title: $0.project.name, tasks: switcherTasks(inWorkspace: $0.id, model: model))
             }
         }
+        let unowned = model.tabs.filter { model.isPlainChat($0) && model.workspaceID(for: $0) == nil }
+        if !unowned.isEmpty { sections.append(SwitcherSection(projectID: nil, title: "Chats", tasks: unowned)) }
+        return sections
     }
-    /// The workspace whose tasks the switcher lists: the one in use. Until the host's workspace list is known (the
-    /// host out of reach at launch, `workspaceListPending`), the workspace restored on this device stands for it: the
-    /// selected tab's, else the last one in use (2026-10-12: the switcher listed Home alone with a task in front).
+
+    /// A workspace's task rows: its open terminals and chats, in the order they opened (owner, 2026-10-22: "terminals and
+    /// chats"). Editors, browser tabs, Files and Git, and hidden coding chats are not listed.
+    func switcherTasks(inWorkspace id: String, model: WorkspaceModel) -> [WorkspaceTab] {
+        workingTasks(inWorkspace: id, model: model).filter { $0.kind == .chat || $0.kind == .terminal }
+    }
+
+    /// The workspace in use, the switcher's first; the stacks keep only its pages. Until the host's workspace list is
+    /// known (the host out of reach at launch, `workspaceListPending`), the workspace restored on this device stands for
+    /// it: the selected tab's, else the last one in use (2026-10-12: the switcher listed Home alone with a task in front).
     func switcherWorkspaceID(model: WorkspaceModel) -> String? {
         if let project = model.currentProject { return project.id }
         return model.workspaceListPending ? model.selectedProjectID : nil
     }
 
-    func selectQuickTab(_ id: UUID?, model: WorkspaceModel) {
-        guard let id else { showHome(model: model); return }
-        guard let tab = quickTabs(model: model).first(where: { $0.id == id }) else { return }
+    /// A task row: that terminal or chat in front, its own workspace becoming the one in use when it is another's; the
+    /// shell shows a chat on Chat and a terminal on Terminal. A row the switcher no longer lists does nothing.
+    func selectSwitcherTask(_ id: UUID, model: WorkspaceModel) {
+        guard let tab = switcherSections(model: model).lazy.flatMap(\.tasks).first(where: { $0.id == id }) else { return }
         model.requestResume(.tab(tab))
+    }
+
+    /// A workspace's row: its Home, with it the workspace in use. Nothing closes or ends; each task stays open in the
+    /// switcher (while the host's list is unknown, the workspace stays as it is).
+    func showWorkspaceHome(_ id: String, model: WorkspaceModel) {
+        model.selectProject(id)
+        showHome(model: model)
     }
 
     /// The items of `tab`'s ••• menu on its pill in the drawer (owner, 2026-10-08: the tab's own actions moved there

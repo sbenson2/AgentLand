@@ -939,11 +939,11 @@ struct TerminalTabView: View {
         .onChange(of: workspace.presentationRequest(for: tab.id), initial: true) { _, _ in
             session.reportPresentationIfReady()
         }
-        // A tab's End comes from the title menu (the iPhone's task menu): its question points there (`DialogAnchor`). A
-        // standalone terminal's End comes from the actions menu in its own navigation bar, which asks itself
-        // (`terminalChrome`).
+        // An iPad tab's End comes from its actions menu: its question points there (`DialogAnchor`). On iPhone End
+        // Terminal is the ••• menu's, which asks itself: a tab's page's (`PhoneSessionTitle`), a standalone terminal's
+        // screen's (`terminalChrome`).
         .overlay(alignment: DialogAnchor.titleMenu) {
-            if !standalone { DialogAnchor().modifier(endQuestion(session)) }
+            if !standalone && !WorkspacePlatform.isPhone { DialogAnchor().modifier(endQuestion(session)) }
         }
         // A standalone terminal ended from here leaves its screen, as a tab closes.
         .onChange(of: session.endedHere) { _, ended in if ended && standalone { dismiss() } }
@@ -953,15 +953,20 @@ struct TerminalTabView: View {
                         endQuestion: endQuestion(session)) { terminalMenu }
     }
 
-    /// End's question. A terminal of another device or the Mac says where it runs (`TerminalEndConfirmation`).
+    /// End's question. A terminal of another device or the Mac says where it runs (`TerminalEndConfirmation`); a
+    /// standalone terminal's screen (iPhone) asks as a tab's page there does.
     private func endQuestion(_ session: TerminalSession) -> TerminalEndQuestion {
         let shown = workspace.tab(tab.id) ?? tab
-        return TerminalEndQuestion(session: session, title: TerminalEndConfirmation.title(shown),
-                                   message: TerminalEndConfirmation.message(shown.sharedFrom, hostName: workspace.hostName))
+        let message = TerminalEndConfirmation.message(shown.sharedFrom, hostName: workspace.hostName)
+        if standalone {
+            return TerminalEndQuestion(session: session, title: TerminalEndConfirmation.phoneTitle(shown.title), message: message,
+                                       phone: true)
+        }
+        return TerminalEndQuestion(session: session, title: TerminalEndConfirmation.title(shown), message: message)
     }
 
     /// The terminal's actions: the keyboard (iPhone and iPad), paste, keys a phone keyboard lacks,
-    /// reconnecting and ending the shell. They use the same guarded input queue as typing.
+    /// reconnecting and ending the shell (on iPhone, `phoneEndItem`). They use the same guarded input queue as typing.
     @ViewBuilder private var terminalMenu: some View {
         #if os(iOS)
         Button("Show keyboard", systemImage: "keyboard") { perform(.keyboard) }.accessibilityIdentifier("terminalKeyboard")
@@ -984,8 +989,42 @@ struct TerminalTabView: View {
         // A section rather than a divider: a menu separates it the same way, and the iPhone's task menu lists these
         // items in a List, where a divider would be an empty row.
         Section {
-            Button("End terminal", systemImage: "xmark.octagon", role: .destructive) { perform(.end) }
+            if WorkspacePlatform.isPhone {
+                phoneEndItem
+            } else {
+                Button("End terminal", systemImage: "xmark.octagon", role: .destructive) { perform(.end) }
+            }
         }
+    }
+
+    /// iPhone's one way out of a terminal, the last item of its ••• menu on its page and on a standalone terminal's
+    /// screen (owner, 2026-10-22: one End Terminal in place of Close Terminal and End terminal). While the terminal
+    /// runs it is End Terminal, which asks once (`TerminalEndQuestion`, on that menu) and then ends the program on the
+    /// Mac, whoever opened it: this device, another device or the Mac (`sharedFrom`; owner: "always end it on the mac
+    /// since the remote app controls"; from 2026-10-15 one another device or the Mac opened only closed, and kept
+    /// running). Once it has ended, Close Tab (Close on a standalone screen), at once.
+    @ViewBuilder private var phoneEndItem: some View {
+        let session = self.session
+        if session.status == .exited || session.terminalGone {
+            Button(standalone ? "Close" : "Close Tab", systemImage: "xmark") {
+                MenuAction.afterDismissal { endEditing(); closeEnded() }
+            }
+            .disabled(workspace.sessionOpening || session.ending)
+            .accessibilityIdentifier("phoneCloseTab")
+        } else {
+            Button("End Terminal", systemImage: "xmark.octagon", role: .destructive) {
+                // The question is a popover: the keyboard goes first (B-8), once the menu has gone.
+                MenuAction.afterDismissal { endEditing(); perform(.end) }
+            }
+            .disabled(workspace.sessionOpening || session.ending)
+            .accessibilityIdentifier("phoneEndTerminal")
+        }
+    }
+
+    private func endEditing() {
+        #if os(iOS)
+        endEditingInEveryWindow()
+        #endif
     }
 
     private func perform(_ action: TerminalAction) {
@@ -1130,22 +1169,32 @@ struct TerminalTabView: View {
     }
 }
 
-/// The question End asks before it ends the terminal on the host, attached where End was chosen: under the title menu
-/// for a tab (`DialogAnchor`), on the actions menu for a standalone terminal's screen.
-private struct TerminalEndQuestion: ViewModifier {
+/// The question End asks before it ends the terminal on the host, attached where End was chosen: on the ••• menu on
+/// iPhone (a tab's page, `PhoneSessionTitle`, or a standalone terminal's screen), under the actions menu for a tab on
+/// iPad (`DialogAnchor`). Only the host's confirmed end closes the tab (`TerminalSession.endTerminal`); a failed or
+/// uncertain one keeps it with the session's notice.
+struct TerminalEndQuestion: ViewModifier {
     @Bindable var session: TerminalSession
     let title: String
     let message: String
+    /// iPhone's: End Terminal or Cancel, as its ••• menu's End Terminal (owner, 2026-10-22).
+    var phone = false
 
     func body(content: Content) -> some View {
         content.confirmationDialog(title, isPresented: $session.showEndConfirmation, titleVisibility: .visible) {
-            Button("End terminal", role: .destructive) { Task { await session.endTerminal() } }
+            if phone {
+                Button("End Terminal", role: .destructive) { Task { await session.endTerminal() } }
+                    .accessibilityIdentifier("phoneConfirmEndTerminal")
+                Button("Cancel", role: .cancel) {}.accessibilityIdentifier("phoneCancelEndTerminal")
+            } else {
+                Button("End terminal", role: .destructive) { Task { await session.endTerminal() } }
+            }
         } message: { Text(message) }
     }
 }
 
 private extension View {
-    /// A tab's title and actions in the workspace's switcher and title menu (`surfaceTitle`); a standalone terminal's in
+    /// A tab's title and actions in the workspace's title and actions menu (`surfaceTitle`); a standalone terminal's in
     /// its own screen's navigation bar, which keeps its Back button, and whose actions menu asks End's question
     /// (`endQuestion`), pointing at the menu End was chosen from.
     @ViewBuilder func terminalChrome<Items: View>(standalone: Bool, title: String, endQuestion: TerminalEndQuestion,

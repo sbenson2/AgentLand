@@ -337,8 +337,9 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
 
     /// iPhone (native-full side build, 2026-10-16): four native tabs, each with its own navigation stack and the system's
     /// bars. Chat and Terminal show Home (the art and that tab's launchers) under the workspace's name, whose title menu
-    /// lists Home and the open tasks; a session is a page pushed on its tab's stack. Workspace pushes Files, Git and their
-    /// pages, and editors and browser tabs; Settings pushes its pages. The tab bar shows on every screen but an open
+    /// is the task switcher (`PhoneTaskSwitcher`: every open workspace and its terminals and chats, owner, 2026-10-22);
+    /// a session is a page pushed on its tab's stack. Workspace pushes Files, Git and their pages, and editors and
+    /// browser tabs; Settings pushes its pages. The tab bar shows on every screen but an open
     /// chat's or terminal's page (owner, 2026-10-16: "i dont want the bottom nativigation to appear on the chat or
     /// terminal tab").
     private var phoneShell: some View {
@@ -418,8 +419,9 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
             .containerBackground(fill, for: .navigation)
     }
 
-    /// Chat's and Terminal's root: Home with that tab's launchers, under the workspace in use's name; its title menu
-    /// lists Home and the workspace's open tasks. Each tab keeps its own Home; only the one in front animates.
+    /// Chat's and Terminal's root: Home with that tab's launchers, under the workspace in use's name; its title menu is
+    /// the task switcher, with this workspace's Home checked, and the UI tests' controls (Home has no ••• button). Each
+    /// tab keeps its own Home; only the one in front animates.
     private func phoneHomeRoot(_ destination: PhoneTabDestination) -> some View {
         let atRoot = destination == .terminal ? phoneTerminalPath.isEmpty : phoneChatPath.isEmpty
         let inFront = phoneTab == destination && atRoot
@@ -434,7 +436,11 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
                 .overlay { if opening { creatingIndicator } }
                 .navigationTitle(model.currentProject?.name ?? "AgentLand")
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarTitleMenu { phoneTabsMenu },
+                .toolbarTitleMenu {
+                    PhoneTaskSwitcher(model: model, shell: shellActions,
+                                      current: model.phoneNavigation.switcherWorkspaceID(model: model).map { .home(projectID: $0) },
+                                      testControls: true)
+                },
             notices: inFront)
     }
 
@@ -448,33 +454,6 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
                 .navigationTitle("Workspace")
                 .navigationBarTitleDisplayMode(.large),
             notices: inFront)
-    }
-
-    /// The title menu of Chat's and Terminal's Home: Home (in front, checked), then the open chats, terminals and files
-    /// of the workspace in use, as the switcher listed them. Choosing a task shows it on its own tab.
-    @ViewBuilder private var phoneTabsMenu: some View {
-        let tabs = model.phoneNavigation.quickTabs(model: model)
-        Picker("Tabs", selection: Binding<UUID?>(get: { nil }, set: { id in
-            guard let id else { return }
-            // The page pushes once the menu has gone (`MenuAction.afterDismissal`).
-            MenuAction.afterDismissal { model.phoneNavigation.selectQuickTab(id, model: model) }
-        })) {
-            Label("Home", systemImage: "house").tag(UUID?.none)
-                .accessibilityIdentifier("quickTabHome")
-            ForEach(tabs) { tab in
-                Label(tab.title, systemImage: tabIcon(tab.kind)).tag(Optional(tab.id))
-                    .accessibilityIdentifier("quickTab-\(tab.id.uuidString)")
-            }
-        }
-        .pickerStyle(.inline)
-        if workspaceUITestHooks {
-            Section {
-                Button("List VoiceOver elements", systemImage: "list.bullet") { listVoiceOverElements() }
-                    .accessibilityIdentifier("debugListVoiceOverElements")
-                Button("Rebuild surfaces", systemImage: "arrow.triangle.2.circlepath") { surfaceGeneration &+= 1 }
-                    .accessibilityIdentifier("debugRebuildSurfaces")
-            }
-        }
     }
 
     /// A session's page. Only the session in front mounts its surface (its live state stays in the workspace's
@@ -668,6 +647,16 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
         phoneWorkspaceSession = nil
         phoneSettingsPath = NavigationPath()
         phonePoppingID = nil
+    }
+
+    /// A workspace's row in the task switcher: its Home on the Chat or Terminal tab in front; from Workspace's pages (an
+    /// editor, a browser tab) on Terminal's, as switching terminals is the app's main job (2026-10-22). No tab closes.
+    private func showPhoneWorkspaceHome(_ projectID: String) {
+        if phoneTab != .chat && phoneTab != .terminal {
+            resignKeyboard()
+            phoneTab = .terminal
+        }
+        model.phoneNavigation.showWorkspaceHome(projectID, model: model)
     }
 
     /// Browse Files and Git (an agent chat, Resume Work's search) push Workspace's Files or Git page.
@@ -1066,6 +1055,9 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
         actions.showDetail = {}
         actions.debugListVoiceOverElements = { listVoiceOverElements() }
         actions.debugRebuildSurfaces = { surfaceGeneration &+= 1 }
+        #if os(iOS)
+        actions.showPhoneWorkspaceHome = { showPhoneWorkspaceHome($0) }
+        #endif
         return actions
     }
 

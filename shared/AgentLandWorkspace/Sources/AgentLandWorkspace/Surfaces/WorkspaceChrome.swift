@@ -57,6 +57,8 @@ struct WorkspaceShellActions {
     var newBrowserTab: @MainActor () -> Void = {}
     /// Compatibility hook for navigation callers; the full-width shell already shows its detail.
     var showDetail: @MainActor () -> Void = {}
+    /// iPhone: a workspace's row in the task switcher shows that workspace's Home (`PhoneTaskSwitcher`).
+    var showPhoneWorkspaceHome: @MainActor (_ projectID: String) -> Void = { _ in }
     /// UI-test runs only (`workspaceUITestHooks`): list what VoiceOver reaches, and build every surface
     /// view again. Both are the last items of the title menu there.
     var debugListVoiceOverElements: @MainActor () -> Void = {}
@@ -114,7 +116,7 @@ private struct SurfaceTitleModifier<Items: View>: ViewModifier {
 
     @ViewBuilder func body(content: Content) -> some View {
         if WorkspacePlatform.isPhone {
-            // A session's page on iPhone: its name in the system bar, its actions and Close in the title menu.
+            // A session's page on iPhone: its name in the system bar over the task switcher, its actions in •••.
             #if os(iOS)
             content.modifier(PhoneSessionTitle(title: title, items: items))
             #else

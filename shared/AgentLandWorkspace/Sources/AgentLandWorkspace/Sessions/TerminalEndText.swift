@@ -67,6 +67,9 @@ enum TerminalEndConfirmation {
         tab.sharedFrom == nil ? "End this terminal on the host?" : "End “\(tab.title)”?"
     }
 
+    /// iPhone's End Terminal names the terminal, whoever opened it (owner, 2026-10-22).
+    static func phoneTitle(_ name: String) -> String { "End “\(name)”?" }
+
     static func message(_ origin: SharedOrigin?, hostName: String) -> String {
         guard let origin else { return "This stops the terminal session on your Mac. Unsaved work may be lost." }
         if origin.routed { return "It's running in Terminal on \(hostName). Ending it stops the program." }

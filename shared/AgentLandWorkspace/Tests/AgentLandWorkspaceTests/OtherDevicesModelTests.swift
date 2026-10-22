@@ -375,12 +375,7 @@ import AgentLandCore
     func testClosingASharedTabNeverEndsIt() async throws {
         let (workspace, host) = try await workspace()
         guard case let .tab(id) = workspace.openShared(iPadTerminal()) else { return XCTFail("Opens as a tab") }
-        let shared = try XCTUnwrap(workspace.tab(id))
-        let own = WorkspaceTab.terminal(RemoteTerminal(id: "t1", title: "Terminal", projectID: "p1", status: .running, exitCode: nil), projectID: "p1")
-        XCTAssertFalse(WorkspaceModel.asksBeforeClosing(shared, running: true), "Closing a shared tab only stops following it")
-        XCTAssertTrue(WorkspaceModel.asksBeforeClosing(own, running: true), "This device's own running terminal asks before it ends")
-        XCTAssertFalse(WorkspaceModel.asksBeforeClosing(own, running: false))
-
+        // iPhone's End Terminal ends a shared terminal too (owner, 2026-10-22); closing its tab still only stops following it.
         workspace.close(id, source: .header)
         XCTAssertNil(workspace.tab(id))
         XCTAssertTrue(host.requests("/v1/terminal/close").isEmpty)

@@ -355,11 +355,13 @@ import AgentLandCore
         XCTAssertEqual(model.selectedTabID, b.id)
         XCTAssertEqual(model.tabs.map(\.id), [a.id, b.id])
     }
-    func testQuickSwitcherKeepsHomeAndOnlyTheCurrentWorkspacesTabs() {
+    /// The task switcher lists every open workspace with its terminals and chats; choosing another workspace's task
+    /// brings that workspace, and a workspace's row shows its Home; nothing closes (owner, 2026-10-22).
+    func testSwitcherListsEveryOpenWorkspaceAndSwitchesWithoutClosingAnything() {
         let model = WorkspaceModel()
         let navigation = model.phoneNavigation
-        XCTAssertTrue(navigation.quickTabs(model: model).isEmpty)
-        navigation.selectQuickTab(nil, model: model)
+        XCTAssertTrue(navigation.switcherSections(model: model).isEmpty)
+        navigation.showHome(model: model)
         XCTAssertNil(model.selectedTabID, "Home works even with no workspace")
         model.projects = [Project(id: "a", name: "Alpha"), Project(id: "b", name: "Beta")]
         let terminal = WorkspaceTab(kind: .terminal, projectID: "a", resourceID: "s", title: "Shell")
@@ -372,25 +374,28 @@ import AgentLandCore
         model.selectedTabID = terminal.id
         let editor = model.editorSession(for: document)
         editor.content = "Live notes"
-        XCTAssertEqual(navigation.quickTabs(model: model).map(\.id), [terminal.id, document.id, chat.id])
-        navigation.selectQuickTab(other.id, model: model)
-        XCTAssertEqual(model.selectedTabID, terminal.id, "A stale menu cannot switch to another workspace")
-        navigation.selectQuickTab(document.id, model: model)
-        XCTAssertEqual(model.selectedTabID, document.id)
-        navigation.selectQuickTab(nil, model: model)
+        XCTAssertEqual(navigation.switcherSections(model: model).map(\.projectID), ["a", "b"])
+        XCTAssertEqual(navigation.switcherSections(model: model).map { $0.tasks.map(\.id) }, [[terminal.id, chat.id], [other.id]])
+        navigation.selectSwitcherTask(document.id, model: model)
+        XCTAssertEqual(model.selectedTabID, terminal.id, "A file is no row of the switcher")
+        navigation.selectSwitcherTask(other.id, model: model)
+        XCTAssertEqual(model.selectedTabID, other.id)
+        XCTAssertEqual(model.selectedProjectID, "b", "Another workspace's task brings its workspace")
+        navigation.showWorkspaceHome("a", model: model)
         XCTAssertNil(model.selectedTabID)
-        XCTAssertEqual(model.selectedProjectID, "a", "Home stays in the same workspace")
+        XCTAssertEqual(model.selectedProjectID, "a", "A workspace's row shows its Home")
+        XCTAssertEqual(model.tabs.map(\.id), [terminal.id, document.id, other.id, chat.id], "Nothing closes")
         XCTAssertEqual(model.tab(document.id)?.draft, "Unsaved notes")
         XCTAssertTrue(model.editorSession(for: document) === editor)
         XCTAssertEqual(editor.content, "Live notes")
-        navigation.selectQuickTab(chat.id, model: model)
+        navigation.selectSwitcherTask(chat.id, model: model)
         XCTAssertEqual(model.selectedTabID, chat.id)
         XCTAssertEqual(model.selectedProjectID, "a")
     }
 
-    /// Relaunched with the host out of reach, its workspace list never loads: the switcher still lists Home and the open
-    /// tasks of the workspace restored in front, and choosing one selects it (2026-10-12: it listed Home alone). Once
-    /// the host answers, its list decides again.
+    /// Relaunched with the host out of reach, its workspace list never loads: the switcher still lists the workspace
+    /// restored in front with its open tasks, and choosing one selects it (2026-10-12: it listed Home alone). Once the
+    /// host answers, its list decides again.
     func testQuickSwitcherListsTheRestoredWorkspacesTasksWhileTheHostIsOutOfReach() async throws {
         let suite = "phone-switcher-offline-\(UUID())"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -400,10 +405,12 @@ import AgentLandCore
         let before = try await launch(online, defaults: defaults)
         let terminal = WorkspaceTab(kind: .terminal, projectID: "a", resourceID: "pty", title: "Shell")
         let notes = WorkspaceTab(kind: .editor, projectID: "a", resourceID: "notes.md", title: "Notes")
+        let second = WorkspaceTab(kind: .terminal, projectID: "a", resourceID: "pty-2", title: "Server")
         let other = WorkspaceTab(kind: .terminal, projectID: "b", resourceID: "other", title: "Other")
-        before.tabs = [terminal, notes, other]
+        before.tabs = [terminal, notes, second, other]
         before.selectedTabID = terminal.id
-        XCTAssertEqual(before.phoneNavigation.quickTabs(model: before).map(\.id), [terminal.id, notes.id])
+        XCTAssertEqual(before.phoneNavigation.switcherSections(model: before).map(\.projectID), ["a", "b"])
+        XCTAssertEqual(before.phoneNavigation.switcherSections(model: before).first?.tasks.map(\.id), [terminal.id, second.id])
 
         let unreachable = ScriptedHost()
         unreachable.on("/v1/projects") { _ in throw URLError(.cannotConnectToHost) }
@@ -413,24 +420,27 @@ import AgentLandCore
         XCTAssertTrue(model.projects.isEmpty)
         XCTAssertNotNil(model.hostIssue)
         XCTAssertEqual(model.selectedTabID, terminal.id, "The terminal is restored in front")
-        XCTAssertEqual(navigation.quickTabs(model: model).map(\.id), [terminal.id, notes.id],
+        XCTAssertEqual(navigation.switcherSections(model: model).map(\.projectID), ["a"])
+        XCTAssertEqual(navigation.switcherSections(model: model).first?.tasks.map(\.id), [terminal.id, second.id],
                        "The switcher lists the restored workspace's tasks, not Home alone")
-        navigation.selectQuickTab(notes.id, model: model)
-        XCTAssertEqual(model.selectedTabID, notes.id, "Choosing a task selects it")
+        navigation.selectSwitcherTask(second.id, model: model)
+        XCTAssertEqual(model.selectedTabID, second.id, "Choosing a task selects it")
         XCTAssertNil(model.creationIssue)
         XCTAssertNil(model.pendingSessionResume)
-        navigation.selectQuickTab(other.id, model: model)
-        XCTAssertEqual(model.selectedTabID, notes.id, "Another workspace's task is not the switcher's")
-        navigation.selectQuickTab(nil, model: model)
+        navigation.selectSwitcherTask(other.id, model: model)
+        XCTAssertEqual(model.selectedTabID, second.id, "Another workspace's task is not the switcher's until the host answers")
+        navigation.showWorkspaceHome("a", model: model)
         XCTAssertNil(model.selectedTabID)
-        XCTAssertEqual(navigation.quickTabs(model: model).map(\.id), [terminal.id, notes.id],
+        XCTAssertEqual(navigation.switcherSections(model: model).first?.tasks.map(\.id), [terminal.id, second.id],
                        "Home keeps the last workspace in use")
 
         // A host that answers without that workspace: its tasks leave the switcher and Resume says it is gone.
         let answered = ScriptedHost()
         answered.on("/v1/projects") { _ in (200, #"{"projects":[{"id":"b","name":"Blog"}]}"#) }
         let after = try await launch(answered, defaults: defaults)
-        XCTAssertTrue(after.phoneNavigation.quickTabs(model: after).isEmpty)
+        let listed = after.phoneNavigation.switcherSections(model: after)
+        XCTAssertFalse(listed.contains { $0.projectID == "a" })
+        XCTAssertFalse(listed.flatMap(\.tasks).contains { $0.id == terminal.id })
         after.requestResume(.tab(terminal))
         XCTAssertNil(after.selectedTabID)
         XCTAssertNotNil(after.creationIssue)

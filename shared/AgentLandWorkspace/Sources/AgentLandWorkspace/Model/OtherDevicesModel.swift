@@ -256,13 +256,6 @@ extension WorkspaceModel {
         sessions.end(tabID)
     }
 
-    /// Whether the header's X asks before closing `tab`: only this device's own terminal that still runs, which closing
-    /// ends (2026-10-10). A tab that follows a terminal of another device or of the Mac (`sharedFrom`) closes at once and
-    /// leaves the terminal running; other tabs ask their own questions.
-    static func asksBeforeClosing(_ tab: WorkspaceTab, running: Bool) -> Bool {
-        tab.kind == .terminal && tab.sharedFrom == nil && running
-    }
-
     /// Makes the tab's workspace the one in use (on iPhone with its remembered task, as choosing a workspace there does)
     /// and opens the tab in it.
     @discardableResult

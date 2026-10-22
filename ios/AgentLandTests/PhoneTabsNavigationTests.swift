@@ -35,29 +35,102 @@ import AgentLandCore
         XCTAssertEqual(HomeLauncherLayout.phonePlan(input, compactTent: false), original)
     }
 
-    func testQuickMenuListsOnlyOpenTasksFromTheCurrentWorkspace() {
-        let model = WorkspaceModel()
-        model.projects = [Project(id: "a", name: "Alpha"), Project(id: "b", name: "Beta")]
+    /// The task switcher (owner, 2026-10-22): every workspace open on this device, the one in use first and the others
+    /// as the Workspaces screen lists them, each with its open terminals and chats, then the chats no workspace owns.
+    func testSwitcherListsEveryOpenWorkspaceWithItsTerminalsAndChats() throws {
+        let (model, _, defaults, suite) = try closeFixture()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        // As the iPhone shell sets it: Files and Git are Workspace's pages, never tasks.
+        model.phoneNavigation.drawerHoldsBrowsers = true
+        model.projects = [Project(id: "a", name: "Alpha"), Project(id: "b", name: "Beta"), Project(id: "c", name: "Gamma"),
+                          Project(id: "d", name: "Delta")]
         let terminal = WorkspaceTab(kind: .terminal, projectID: "a", resourceID: "shell", title: "Shell")
-        let file = WorkspaceTab(kind: .editor, projectID: "a", resourceID: "notes", title: "Notes")
-        let chat = WorkspaceTab(kind: .chat, projectID: "chats", resourceID: "chat", title: "Conversation")
-        let other = WorkspaceTab(kind: .terminal, projectID: "b", resourceID: "other", title: "Other workspace")
-        let excluded = [WorkspaceTabKind.home, .files, .git, .browser].map {
+        let codingChat = WorkspaceTab(kind: .chat, projectID: "a", resourceID: "claude:session", title: "Claude Code")
+        let hiddenChat = WorkspaceTab(kind: .chat, projectID: "a", resourceID: "legacy", title: "Legacy coding chat")
+        let movedChat = WorkspaceTab(kind: .chat, projectID: "chats", resourceID: "moved", title: "Conversation")
+        let loneChat = WorkspaceTab(kind: .chat, projectID: "chats", resourceID: "lone", title: "Lone conversation")
+        let excluded = [WorkspaceTabKind.home, .files, .git, .browser, .editor].map {
             WorkspaceTab(kind: $0, projectID: "a", resourceID: $0.rawValue, title: $0.rawValue)
         }
-        let legacyChat = WorkspaceTab(kind: .chat, projectID: "a", resourceID: "legacy", title: "Legacy coding chat")
-        model.tabs = excluded + [terminal, other, file, chat, legacyChat]
-        model.rememberChatWorkspace(chat.resourceID, workspaceID: "a")
-        model.selectedTabID = terminal.id
-        XCTAssertEqual(model.phoneNavigation.quickTabs(model: model).map(\.id), [terminal.id, file.id, chat.id])
-        model.phoneNavigation.selectQuickTab(other.id, model: model)
+        let server = WorkspaceTab(kind: .terminal, projectID: "b", resourceID: "server", title: "Server")
+        let notes = WorkspaceTab(kind: .editor, projectID: "c", resourceID: "notes", title: "Notes")
+        let files = WorkspaceTab(kind: .files, projectID: "d", title: "Files")
+        model.tabs = excluded + [terminal, codingChat, hiddenChat, movedChat, loneChat, server, notes, files]
+        model.rememberChatWorkspace(movedChat.resourceID, workspaceID: "a")
+        // Used in turn: Gamma, Alpha, then Beta, in use now.
+        for id in ["c", "a", "b"] { model.selectProject(id) }
+
+        let navigation = model.phoneNavigation
+        let sections = navigation.switcherSections(model: model)
+        XCTAssertEqual(sections.map(\.projectID), ["b", "a", "c", nil],
+                       "The workspace in use, then the others by last use; Delta has only Files and is not open")
+        XCTAssertEqual(sections.dropLast().map(\.projectID), model.workspaces.open.map { Optional($0.id) },
+                       "The Workspaces screen's open workspaces, in its order")
+        XCTAssertEqual(sections.map(\.title), ["Beta", "Alpha", "Gamma", "Chats"])
+        XCTAssertEqual(sections[0].tasks.map(\.id), [server.id])
+        XCTAssertEqual(sections[1].tasks.map(\.id), [terminal.id, codingChat.id, movedChat.id],
+                       "Terminals and chats only: no editor, browser, Files, Git, Home or hidden coding chat")
+        XCTAssertTrue(sections[2].tasks.isEmpty, "An open workspace with no terminal or chat still has its row")
+        XCTAssertEqual(sections[3].tasks.map(\.id), [loneChat.id], "A chat no workspace owns is listed under Chats")
+
+        model.closeWorkspace("c")
+        XCTAssertEqual(navigation.switcherSections(model: model).map(\.projectID), ["b", "a", nil],
+                       "A workspace closed on this device leaves the switcher")
+    }
+
+    /// A task row opens that terminal or chat, its workspace becoming the one in use, on its own bottom tab; nothing
+    /// closes, and a row the switcher doesn't list (an editor) does nothing.
+    func testChoosingASwitcherTaskBringsItsWorkspaceAndItsOwnTab() throws {
+        let (model, host, defaults, suite) = try closeFixture()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        model.phoneNavigation.drawerHoldsBrowsers = true
+        model.projects = [Project(id: "a", name: "Alpha"), Project(id: "b", name: "Beta")]
+        let terminal = WorkspaceTab(kind: .terminal, projectID: "a", resourceID: "shell", title: "Shell")
+        let chat = WorkspaceTab(kind: .chat, projectID: "b", resourceID: "codex:review", title: "Review")
+        let editor = WorkspaceTab(kind: .editor, projectID: "b", resourceID: "notes", title: "Notes")
+        model.tabs = [terminal, chat, editor]
+        model.selectedTabID = editor.id
+        let navigation = model.phoneNavigation
+
+        navigation.selectSwitcherTask(terminal.id, model: model)
         XCTAssertEqual(model.selectedTabID, terminal.id)
-        model.phoneNavigation.selectQuickTab(nil, model: model)
+        XCTAssertEqual(model.currentProject?.id, "a", "Another workspace's terminal brings its workspace")
+        XCTAssertEqual(PhoneTabDestination.hosting(try XCTUnwrap(model.currentTab).kind), .terminal)
+        navigation.selectSwitcherTask(chat.id, model: model)
+        XCTAssertEqual(model.selectedTabID, chat.id)
+        XCTAssertEqual(model.currentProject?.id, "b")
+        XCTAssertEqual(PhoneTabDestination.hosting(try XCTUnwrap(model.currentTab).kind), .chat)
+        navigation.selectSwitcherTask(editor.id, model: model)
+        XCTAssertEqual(model.selectedTabID, chat.id, "An editor is no row of the switcher")
+        XCTAssertEqual(model.tabs.map(\.id), [terminal.id, chat.id, editor.id], "Switching closes nothing")
+        XCTAssertTrue(host.requests.isEmpty, "Switching ends nothing on the host")
+    }
+
+    /// A workspace's row shows its Home, with it the workspace in use; every tab stays open and its session goes on.
+    func testChoosingASwitcherWorkspaceShowsItsHomeWithEveryTabOpen() throws {
+        let (model, host, defaults, suite) = try closeFixture()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        model.phoneNavigation.drawerHoldsBrowsers = true
+        model.projects = [Project(id: "a", name: "Alpha"), Project(id: "b", name: "Beta")]
+        let terminal = WorkspaceTab(kind: .terminal, projectID: "a", resourceID: "shell", title: "Shell")
+        let other = WorkspaceTab(kind: .terminal, projectID: "b", resourceID: "server", title: "Server")
+        model.tabs = [terminal, other]
+        model.selectedTabID = terminal.id
+        let session = model.terminalSession(for: terminal)
+        let navigation = model.phoneNavigation
+
+        navigation.showWorkspaceHome("b", model: model)
+        XCTAssertNil(model.selectedTabID, "Home in front")
+        XCTAssertEqual(model.currentProject?.id, "b")
+        XCTAssertEqual(navigation.switcherWorkspaceID(model: model), "b", "Its Home row is where you are")
+        XCTAssertEqual(model.tabs.map(\.id), [terminal.id, other.id], "No tab closes")
+        XCTAssertTrue(model.terminalSession(for: terminal) === session, "The other workspace's terminal goes on")
+        XCTAssertTrue(host.requests.isEmpty, "Nothing ends on the host")
+        XCTAssertEqual(navigation.switcherSections(model: model).map(\.projectID), ["b", "a"])
+
+        navigation.showWorkspaceHome("a", model: model)
         XCTAssertNil(model.selectedTabID)
-        XCTAssertEqual(model.currentProject?.id, "a", "Home preserves the workspace in use")
-        XCTAssertEqual(model.phoneNavigation.quickTabs(model: model).map(\.id), [terminal.id, file.id, chat.id])
-        model.tabs.removeAll { $0.id == file.id }
-        XCTAssertEqual(model.phoneNavigation.quickTabs(model: model).map(\.id), [terminal.id, chat.id])
+        XCTAssertEqual(model.currentProject?.id, "a", "The workspace's own Home, not its last task")
     }
 
     func testClosingChatPreservesHistoryAndWorkspaceAssociation() throws {
@@ -144,6 +217,33 @@ import AgentLandCore
             XCTAssertEqual(session.inputBlocked, status == 503)
             XCTAssertEqual(host.requests.count, 1)
         }
+    }
+
+    /// End Terminal ends a terminal another device opened as well (owner, 2026-10-22: "always end it on the mac since
+    /// the remote app controls"; from 2026-10-15 such a tab closed and left it running): it asks once, saying where it
+    /// runs, and the tab closes once the host has ended it.
+    func testEndTerminalEndsATerminalOfAnotherDeviceToo() async throws {
+        let (model, host, defaults, suite) = try closeFixture()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var tab = WorkspaceTab(kind: .terminal, projectID: "p", resourceID: "shared-terminal", title: "Claude Code")
+        tab.sharedFrom = SharedOrigin(deviceName: "iPad", onMac: false, routed: false)
+        model.open(tab)
+        let session = model.terminalSession(for: tab)
+        session.setViewActive(true, view: UUID())
+        if let ticket = model.presentationTicket {
+            model.resolvePresentationOffline()
+            XCTAssertTrue(model.completePresentation(ticket))
+        }
+        XCTAssertEqual(TerminalEndConfirmation.phoneTitle(tab.title), "End “Claude Code”?")
+        XCTAssertEqual(TerminalEndConfirmation.message(tab.sharedFrom, hostName: model.hostName),
+                       "It's open on another iPad. Ending it stops the program.")
+        model.perform(.end, onTerminal: tab.id)
+        XCTAssertTrue(session.showEndConfirmation, "End Terminal asks first, whoever opened the terminal")
+        await session.endTerminal()
+        XCTAssertNil(model.tab(tab.id))
+        XCTAssertEqual(host.requests.map { $0.url?.path }, ["/v1/terminal/close"])
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(host.requests.first?.httpBody)) as? [String: String])
+        XCTAssertEqual(body, ["projectId": "p", "terminalId": "shared-terminal"])
     }
 
     private func closeFixture(status: Int = 200) throws -> (WorkspaceModel, TabCloseHost, UserDefaults, String) {
