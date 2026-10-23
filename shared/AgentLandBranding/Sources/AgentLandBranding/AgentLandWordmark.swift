@@ -25,15 +25,19 @@ public struct AgentLandWordmark: View {
     private let referenceDate: Date
     private let onTap: (() -> Void)?
     private let tonalArt: Bool
+    private let replaysEntrance: Bool
 
     /// `active` is true while the title is visible and uncovered. `referenceDate` is the circus clock,
-    /// so flourishes land on the clown's beat.
-    public init(color: Color, active: Bool, referenceDate: Date, onTap: (() -> Void)? = nil, tonalArt: Bool = false) {
+    /// so flourishes land on the clown's beat. `replaysEntrance` false: only the first reveal is an entrance; shown
+    /// again, the title keeps its face and look and goes on with its flourishes.
+    public init(color: Color, active: Bool, referenceDate: Date, onTap: (() -> Void)? = nil, tonalArt: Bool = false,
+                replaysEntrance: Bool = true) {
         self.color = color
         self.active = active
         self.referenceDate = referenceDate
         self.onTap = onTap
         self.tonalArt = tonalArt
+        self.replaysEntrance = replaysEntrance
     }
 
     /// The canvas (every letter and bulb) in circus scene units; the arch is centred on x = 168.
@@ -57,7 +61,8 @@ public struct AgentLandWordmark: View {
     @ViewBuilder private var content: some View {
         #if os(macOS)
         WordmarkRepresentable(color: color, motionAllowed: motionAllowed, referenceDate: referenceDate,
-                              flourishRequests: flourishRequests, ramp: tonalArt ? (colorScheme == .dark ? .night : .day) : nil)
+                              flourishRequests: flourishRequests, ramp: tonalArt ? (colorScheme == .dark ? .night : .day) : nil,
+                              replaysEntrance: replaysEntrance)
             .onAppear { macAppIsActive = NSApp.isActive }
             .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
                 macAppIsActive = true
@@ -67,7 +72,8 @@ public struct AgentLandWordmark: View {
             }
         #else
         WordmarkRepresentable(color: color, motionAllowed: motionAllowed, referenceDate: referenceDate,
-                              flourishRequests: flourishRequests, ramp: tonalArt ? (colorScheme == .dark ? .night : .day) : nil)
+                              flourishRequests: flourishRequests, ramp: tonalArt ? (colorScheme == .dark ? .night : .day) : nil,
+                              replaysEntrance: replaysEntrance)
         #endif
     }
 
@@ -181,16 +187,18 @@ public struct AgentLandTitleBlock: View {
     private let active: Bool
     private let referenceDate: Date
     private let tonalArt: Bool
+    private let replaysEntrance: Bool
 
     /// `quipColor` and `showsQuip` are kept so existing layouts compile; the flat arch has no hollow for a
-    /// quip, so neither is drawn here.
+    /// quip, so neither is drawn here. `replaysEntrance`: as `AgentLandWordmark`'s.
     public init(scale: CGFloat, color: Color, quipColor: Color, active: Bool, referenceDate: Date,
-                showsQuip: Bool = false, quips: QuipStore = .shared, tonalArt: Bool = false) {
+                showsQuip: Bool = false, quips: QuipStore = .shared, tonalArt: Bool = false, replaysEntrance: Bool = true) {
         self.scale = scale
         self.color = color
         self.active = active
         self.referenceDate = referenceDate
         self.tonalArt = tonalArt
+        self.replaysEntrance = replaysEntrance
         _quips = ObservedObject(wrappedValue: quips)
     }
 
@@ -201,7 +209,8 @@ public struct AgentLandTitleBlock: View {
 
     public var body: some View {
         let canvas = Self.canvas
-        AgentLandWordmark(color: color, active: active, referenceDate: referenceDate, onTap: quips.advance, tonalArt: tonalArt)
+        AgentLandWordmark(color: color, active: active, referenceDate: referenceDate, onTap: quips.advance, tonalArt: tonalArt,
+                          replaysEntrance: replaysEntrance)
             .frame(width: canvas.width * scale, height: canvas.height * scale)
             .accessibilityIdentifier("homeWordmark")
             .onChange(of: active, initial: true) { _, visible in
@@ -235,6 +244,8 @@ final class WordmarkLayerController {
     private var ramp: AgentLandClownRamp?
     private var motionAllowed = false
     private var configured = false
+    /// An entrance has played since this title was made.
+    private var entered = false
     private var referenceDate = Date()
     private var flourishRequests = 0
     private var idleTask: Task<Void, Never>?
@@ -304,7 +315,8 @@ final class WordmarkLayerController {
         CATransaction.commit()
     }
 
-    func update(color: CGColor, motionAllowed: Bool, referenceDate: Date, flourishRequests: Int, ramp: AgentLandClownRamp? = nil) {
+    func update(color: CGColor, motionAllowed: Bool, referenceDate: Date, flourishRequests: Int, ramp: AgentLandClownRamp? = nil,
+                replaysEntrance: Bool = true) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         if self.color != color || self.ramp != ramp {
@@ -321,7 +333,8 @@ final class WordmarkLayerController {
             configured = true
             self.motionAllowed = motionAllowed
             if motionAllowed {
-                playEntrance()
+                // Shown again where reveals don't replay: the face and look it wore, its flourishes going on.
+                if replaysEntrance || !entered { playEntrance() } else { resume() }
             } else {
                 if !styled { pickStyle() }
                 rest()
@@ -375,6 +388,7 @@ final class WordmarkLayerController {
 
     func playEntrance(_ kind: AgentLandWordmarkEntrance) {
         guard let stage else { return }
+        entered = true
         run(WordmarkChoreography.entrance(kind, stage: stage, seed: Self.picker.nextSeed()), key: "wordmarkEntrance")
         scheduleIdleFlourish()
     }
@@ -499,12 +513,14 @@ struct WordmarkRepresentable: UIViewRepresentable {
     let referenceDate: Date
     let flourishRequests: Int
     var ramp: AgentLandClownRamp? = nil
+    var replaysEntrance = true
 
     func makeUIView(context: Context) -> WordmarkHostView { WordmarkHostView(frame: .zero) }
 
     func updateUIView(_ view: WordmarkHostView, context: Context) {
         view.controller.update(color: color.resolve(in: context.environment).cgColor, motionAllowed: motionAllowed,
-                               referenceDate: referenceDate, flourishRequests: flourishRequests, ramp: ramp)
+                               referenceDate: referenceDate, flourishRequests: flourishRequests, ramp: ramp,
+                               replaysEntrance: replaysEntrance)
     }
 }
 #elseif os(macOS)
@@ -548,12 +564,14 @@ struct WordmarkRepresentable: NSViewRepresentable {
     let referenceDate: Date
     let flourishRequests: Int
     var ramp: AgentLandClownRamp? = nil
+    var replaysEntrance = true
 
     func makeNSView(context: Context) -> WordmarkHostView { WordmarkHostView(frame: .zero) }
 
     func updateNSView(_ view: WordmarkHostView, context: Context) {
         view.controller.update(color: color.resolve(in: context.environment).cgColor, motionAllowed: motionAllowed,
-                               referenceDate: referenceDate, flourishRequests: flourishRequests, ramp: ramp)
+                               referenceDate: referenceDate, flourishRequests: flourishRequests, ramp: ramp,
+                               replaysEntrance: replaysEntrance)
     }
 }
 #endif

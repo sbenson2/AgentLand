@@ -448,6 +448,45 @@ final class WordmarkTests: XCTestCase {
         XCTAssertTrue(controller.letters.allSatisfy { $0.opacity == 1 && CATransform3DIsIdentity($0.transform) })
     }
 
+    /// The iPhone's Home stays alive under the pages pushed over it: shown again, its title picks up where it was, with
+    /// no new face, look or entrance (owner, 2026-10-22: Home "reappearing very slow on returning home"). Elsewhere each
+    /// reveal is a new entrance.
+    @MainActor
+    func testTitleShownAgainWithoutReplayKeepsItsStyleAndPlaysNoEntrance() throws {
+        let suite = "WordmarkTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 304, height: 152), styleMask: [.borderless],
+                              backing: .buffered, defer: false)
+        let host = WordmarkHostView(frame: NSRect(x: 0, y: 0, width: 304, height: 152), defaults: defaults)
+        window.contentView?.addSubview(host)
+        host.layoutSubtreeIfNeeded()
+        let controller = host.controller
+        let white = CGColor(gray: 1, alpha: 1)
+        func entranceRunning() -> Bool {
+            controller.animatableLayers.contains { ($0.animationKeys() ?? []).contains { $0.hasPrefix("wordmarkEntrance") } }
+        }
+
+        controller.update(color: white, motionAllowed: false, referenceDate: Date(), flourishRequests: 0, replaysEntrance: false)
+        controller.update(color: white, motionAllowed: true, referenceDate: Date(), flourishRequests: 0, replaysEntrance: false)
+        XCTAssertTrue(entranceRunning(), "The first reveal plays an entrance")
+        let style = controller.style
+
+        controller.update(color: white, motionAllowed: false, referenceDate: Date(), flourishRequests: 0, replaysEntrance: false)
+        controller.update(color: white, motionAllowed: true, referenceDate: Date(), flourishRequests: 0, replaysEntrance: false)
+        XCTAssertFalse(entranceRunning(), "Shown again: no new entrance")
+        XCTAssertEqual(controller.style, style, "Shown again: the same face and look")
+        XCTAssertTrue(controller.letters.allSatisfy { $0.opacity == 1 && CATransform3DIsIdentity($0.transform) },
+                      "The letters rest on the arch")
+        controller.update(color: white, motionAllowed: true, referenceDate: Date(), flourishRequests: 1, replaysEntrance: false)
+        XCTAssertTrue(controller.animatableLayers.contains { ($0.animationKeys() ?? []).contains { $0.hasPrefix("wordmarkFlourish") } },
+                      "A tap still plays a flourish")
+
+        controller.update(color: white, motionAllowed: false, referenceDate: Date(), flourishRequests: 1)
+        controller.update(color: white, motionAllowed: true, referenceDate: Date(), flourishRequests: 1)
+        XCTAssertTrue(entranceRunning(), "Where reveals replay (the default), shown again is a new entrance")
+    }
+
     @MainActor
     func testTitleWearsItsStyleThroughRestRampChangesAndEntrances() throws {
         let suite = "WordmarkTests-\(UUID().uuidString)"

@@ -93,9 +93,13 @@ struct HomeView: View {
 
     private func launcher(plan: HomeLauncherLayout.Plan, titleScale: CGFloat) -> some View {
         ZStack(alignment: .topLeading) {
+            // iPhone's Homes stay alive under the pages pushed over them: shown again, the title is as it was, its
+            // flourishes going on, rather than a new entrance over Back's slide (owner, 2026-10-22: "reappearing very
+            // slow on returning home"). Its first showing is still an entrance.
             AgentLandTitleBlock(scale: titleScale, color: AgentLandColor.artInk.color,
                                 quipColor: AgentLandColor.artInkSecondary.color, active: animationActive,
-                                referenceDate: artwork.referenceDate, tonalArt: true)
+                                referenceDate: artwork.referenceDate, tonalArt: true,
+                                replaysEntrance: !WorkspacePlatform.isPhone)
                 // A local edge lift thickens the existing animated title without changing its pixels
                 // or the wordmark rendering used by iPad, Mac, covers and icons.
                 .shadow(color: AgentLandColor.artInk.color.opacity(WorkspacePlatform.isPhone ? 0.45 : 0), radius: 0,
