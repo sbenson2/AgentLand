@@ -446,6 +446,102 @@ import AgentLandCore
         XCTAssertNotNil(after.creationIssue)
     }
 
+    /// A workspace whose last task ended stays in the switcher, its name alone, after another is in use: only the
+    /// Workspaces screen's Close closes it here (owner, 2026-10-23: after ending A's only terminal, then switching to B
+    /// and closing B's only chat, Chat's Home listed B alone).
+    func testWorkspaceWhoseLastTaskEndedStaysInTheSwitcherAfterSwitchingAway() async throws {
+        let (model, defaults) = try await launchFresh()
+        let navigation = model.phoneNavigation
+        navigation.drawerHoldsBrowsers = true
+        XCTAssertTrue(navigation.switcherSections(model: model).isEmpty, "Nothing is open on a fresh device")
+
+        navigation.switchWorkspace("a", model: model)
+        let terminal = WorkspaceTab(kind: .terminal, projectID: "a", resourceID: "pty", title: "Shell")
+        model.open(terminal)
+        model.close(terminal.id)
+        navigation.switchWorkspace("b", model: model)
+        let chat = WorkspaceTab(kind: .chat, projectID: "chats", resourceID: "chat", title: "Chat")
+        model.rememberChatWorkspace(chat.resourceID, workspaceID: "b")
+        model.open(chat)
+        model.close(chat.id)
+        XCTAssertTrue(model.tabs.isEmpty)
+        XCTAssertEqual(model.selectedProjectID, "b")
+
+        let sections = navigation.switcherSections(model: model)
+        XCTAssertEqual(sections.map(\.projectID), ["b", "a"], "Both stay open, the one in use first")
+        XCTAssertEqual(sections.map(\.title), ["Blog", "App"])
+        XCTAssertTrue(sections.allSatisfy(\.tasks.isEmpty), "Each is its name alone")
+        navigation.showWorkspaceHome("a", model: model)
+        XCTAssertEqual(model.selectedProjectID, "a", "A's name row shows its Home")
+        XCTAssertNil(model.selectedTabID)
+        XCTAssertEqual(navigation.switcherSections(model: model).map(\.projectID), ["a", "b"])
+
+        let relaunched = try await launch(Self.threeWorkspaces(), defaults: defaults)
+        XCTAssertEqual(relaunched.phoneNavigation.switcherSections(model: relaunched).map(\.projectID), ["a", "b"],
+                       "Still open after a relaunch")
+    }
+
+    /// Close on the Workspaces screen closes a workspace here: the switcher leaves it out, after switching and after a
+    /// relaunch, until it is in use again; then it stays listed after switching away.
+    func testClosedWorkspaceLeavesTheSwitcherUntilItIsInUseAgain() async throws {
+        let (model, defaults) = try await launchFresh()
+        let navigation = model.phoneNavigation
+        navigation.drawerHoldsBrowsers = true
+        navigation.switchWorkspace("a", model: model)
+        navigation.switchWorkspace("b", model: model)
+        XCTAssertEqual(navigation.switcherSections(model: model).map(\.projectID), ["b", "a"])
+
+        model.closeWorkspace("a")
+        XCTAssertEqual(navigation.switcherSections(model: model).map(\.projectID), ["b"], "A closed workspace isn't listed")
+        model.closeWorkspace("b")
+        XCTAssertNil(model.selectedProjectID)
+        XCTAssertTrue(navigation.switcherSections(model: model).isEmpty, "Closing the one in use closes it too")
+        let relaunched = try await launch(Self.threeWorkspaces(), defaults: defaults)
+        XCTAssertTrue(relaunched.phoneNavigation.switcherSections(model: relaunched).isEmpty, "Closed stays closed")
+
+        navigation.showWorkspaceHome("a", model: model)
+        navigation.switchWorkspace("c", model: model)
+        XCTAssertEqual(navigation.switcherSections(model: model).map(\.projectID), ["c", "a"],
+                       "In use again, it is open again, and stays after switching away")
+    }
+
+    /// Workspaces with nothing open keep the switcher's order, the one in use first and then by last use here; chats of
+    /// no workspace stay last under "Chats", and the Chats space is never a workspace's row, even once in use.
+    func testSwitcherOrderAndChatsSectionWithEmptyOpenWorkspaces() async throws {
+        let (model, _) = try await launchFresh(chatsSpaceListed: true)
+        let navigation = model.phoneNavigation
+        navigation.drawerHoldsBrowsers = true
+        XCTAssertEqual(model.chatsSpaceID, "chats")
+        model.selectProject("chats")
+        for id in ["a", "b", "c"] { navigation.switchWorkspace(id, model: model) }
+        let chat = WorkspaceTab(kind: .chat, projectID: "chats", resourceID: "loose", title: "Loose")
+        model.tabs.append(chat)
+        var sections = navigation.switcherSections(model: model)
+        XCTAssertEqual(sections.map(\.projectID), ["c", "b", "a", nil])
+        XCTAssertEqual(sections.last?.title, "Chats")
+        XCTAssertEqual(sections.last?.tasks.map(\.id), [chat.id])
+        navigation.showWorkspaceHome("a", model: model)
+        sections = navigation.switcherSections(model: model)
+        XCTAssertEqual(sections.map(\.projectID), ["a", "c", "b", nil])
+        XCTAssertEqual(model.workspaces.open.map(\.id).filter { $0 != "chats" }, ["a", "c", "b"],
+                       "The Workspaces screen lists the same, in the same order")
+    }
+
+    nonisolated private static func threeWorkspaces(chatsSpaceListed: Bool = false) -> ScriptedHost {
+        let host = ScriptedHost()
+        let chats = chatsSpaceListed ? #",{"id":"chats","name":"Chats"}"# : ""
+        host.on("/v1/projects") { _ in (200, #"{"projects":[{"id":"a","name":"App"},{"id":"b","name":"Blog"},{"id":"c","name":"Cafe"}\#(chats)]}"#) }
+        host.on("/v1/capabilities") { _ in (200, #"{"interactions":true,"terminal":true,"plainChats":{"projectId":"chats"}}"#) }
+        return host
+    }
+
+    private func launchFresh(chatsSpaceListed: Bool = false, name: String = #function) async throws -> (WorkspaceModel, UserDefaults) {
+        let suite = "phone-switcher-\(name)-\(UUID())"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        addTeardownBlock { defaults.removePersistentDomain(forName: suite) }
+        return (try await launch(Self.threeWorkspaces(chatsSpaceListed: chatsSpaceListed), defaults: defaults), defaults)
+    }
+
     /// A launch of the app on this device's saved workspace for one host, its workspace list asked of `host`.
     private func launch(_ host: ScriptedHost, defaults: UserDefaults) async throws -> WorkspaceModel {
         let identity = ConnectionIdentity(host: "https://mac.example", deviceID: "phone")

@@ -25,7 +25,7 @@ struct WorkspaceRowMenuItems: View {
                 .disabled(busy || !manager.canChange)
                 .accessibilityIdentifier("workspaceActionRename")
         }
-        if summary.openTabs > 0 || summary.isCurrent {
+        if summary.isOpen {
             Button("Close", systemImage: "xmark.circle") { MenuAction.afterDismissal { manager.questionRow = row; await manager.requestClose(summary.project) } }
                 .disabled(busy)
                 .accessibilityIdentifier("workspaceActionClose")
@@ -60,7 +60,7 @@ struct WorkspaceRowSwipeActions: ViewModifier {
                         .tint(.red)
                         .accessibilityIdentifier("workspaceSwipeRemove")
                 }
-                if summary.openTabs > 0 || summary.isCurrent {
+                if summary.isOpen {
                     Button { manager.questionRow = row; Task { await manager.requestClose(summary.project) } } label: { Label("Close", systemImage: "xmark.circle") }
                         .tint(.gray)
                         .accessibilityIdentifier("workspaceSwipeClose")
@@ -91,7 +91,7 @@ struct WorkspaceRowAccessibilityActions: ViewModifier {
             if manager.canRename {
                 Button("Rename") { manager.requestRename(summary.project) }
             }
-            if summary.openTabs > 0 || summary.isCurrent {
+            if summary.isOpen {
                 Button("Close") { manager.questionRow = row; Task { await manager.requestClose(summary.project) } }
             }
             if manager.canRemove {

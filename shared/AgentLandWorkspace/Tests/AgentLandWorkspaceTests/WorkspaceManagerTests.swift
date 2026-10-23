@@ -209,6 +209,45 @@ import AgentLandArchive
         XCTAssertTrue(workspace.tabs(inWorkspace: "p1").isEmpty, "Closing also releases the hidden drawer pages")
     }
 
+    /// A workspace used here stays open, on the Open list with its Close, once its last tab has closed and another is in
+    /// use (iPhone's Files and Git pages are no tabs); Close closes it until it is in use again (owner, 2026-10-23).
+    func testAWorkspaceWithNoTabsLeftStaysOpenUntilClosedHere() async throws {
+        let host = scriptedHost(projects: Self.projects(Self.project("p1", "Alpha"), Self.project("p2", "Beta"), Self.project("p3", "Gamma")))
+        host.on("/v1/terminals") { _ in (200, #"{"terminals":[]}"#) }
+        let (workspace, defaults) = try await workspace(host)
+        workspace.phoneNavigation.drawerHoldsBrowsers = true
+        let manager = workspace.workspaces
+        workspace.openWorkspace("p1", openFilesIfEmpty: false)
+        let shell = WorkspaceTab(kind: .terminal, projectID: "p1", resourceID: "t1", title: "Shell")
+        workspace.open(shell)
+        workspace.open(WorkspaceTab(kind: .files, projectID: "p1", title: "Files"))
+        workspace.close(shell.id)
+        workspace.openWorkspace("p2", openFilesIfEmpty: false)
+        XCTAssertEqual(manager.open.map(\.id), ["p2", "p1"], "The one in use first, then by last use; Gamma was never used here")
+        let alpha = try XCTUnwrap(manager.open.last)
+        XCTAssertTrue(alpha.isOpen, "Its row offers Close")
+        XCTAssertEqual(alpha.openTabs, 0)
+        XCTAssertFalse(alpha.isCurrent)
+        XCTAssertFalse(try XCTUnwrap(manager.all.first { $0.id == "p3" }).isOpen)
+        XCTAssertEqual(WorkspaceRowLabel.usage(alpha), "Last used just now")
+
+        await manager.requestClose(alpha.project)
+        let request = try XCTUnwrap(manager.pendingClose)
+        XCTAssertEqual(request.message, "This workspace closes on this device.", "The Files page is no tab on iPhone")
+        await manager.close(request)
+        XCTAssertEqual(manager.open.map(\.id), ["p2"])
+        XCTAssertFalse(try XCTUnwrap(manager.all.first { $0.id == "p1" }).isOpen, "Its row no longer offers Close")
+        XCTAssertTrue(workspace.tabs(inWorkspace: "p1").isEmpty)
+
+        let reopened = WorkspaceModel(defaults: defaults)
+        reopened.attach(hostID: hostID, identity: identity, client: try client(host))
+        await reopened.refreshProjects()
+        XCTAssertEqual(reopened.workspaces.open.map(\.id), ["p2"], "Closed stays closed after a relaunch")
+        reopened.openWorkspace("p1", openFilesIfEmpty: false)
+        reopened.openWorkspace("p2", openFilesIfEmpty: false)
+        XCTAssertEqual(reopened.workspaces.open.map(\.id), ["p2", "p1"], "In use again, it is open again")
+    }
+
     // MARK: Remove
 
     func testABusyWorkspaceAsksAgainAndEndTerminalsAndRemoveSendsTheForce() async throws {

@@ -123,9 +123,9 @@ import AgentLandCore
     /// The task switcher of Chat's and Terminal's Home and of every session's page on iPhone (owner, 2026-10-22: switching
     /// between terminals of different projects took Home, Workspace, a workspace and the way back). Every workspace open
     /// on this device, as the Workspaces screen lists them (`WorkspaceManager.open`: the one in use first, then by last
-    /// use; a closed workspace has no tabs here and is not listed), each with its open terminals and chats; then the
-    /// Chats space's chats that no workspace owns. Until the host's workspace list is known (`workspaceListPending`),
-    /// the workspace restored on this device stands for the list (2026-10-12).
+    /// use; one with nothing open is its name alone, one closed here is not listed), each with its open terminals and
+    /// chats; then the Chats space's chats that no workspace owns. Until the host's workspace list is known
+    /// (`workspaceListPending`), the workspace restored on this device stands for the list (2026-10-12).
     func switcherSections(model: WorkspaceModel) -> [SwitcherSection] {
         var sections: [SwitcherSection]
         if model.workspaceListPending {

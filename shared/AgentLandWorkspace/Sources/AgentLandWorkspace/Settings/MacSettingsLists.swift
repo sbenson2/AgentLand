@@ -260,7 +260,7 @@ public struct MacWorkspacesSettingsList: View {
                 manager.questionRow = Self.row(selected.id)
                 Task { await manager.requestClose(selected.project) }
             }
-            .disabled(selected.map { busy || !($0.openTabs > 0 || $0.isCurrent) } ?? true)
+            .disabled(selected.map { busy || !$0.isOpen } ?? true)
             .accessibilityIdentifier("workspacesClose")
             Button("Open") { if let selected { openWorkspace(selected.id) } }
                 .disabled(selected == nil)

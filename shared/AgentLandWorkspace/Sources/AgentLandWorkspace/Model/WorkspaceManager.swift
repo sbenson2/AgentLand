@@ -29,6 +29,8 @@ public struct WorkspaceSummary: Identifiable, Hashable, Sendable {
     public let isCurrent: Bool
     /// When it was last the workspace in use on this device.
     public let lastUsed: Date?
+    /// Open on this device: used here and not closed here since (`WorkspaceManager.summary`).
+    public let isOpen: Bool
 
     public var id: String { project.id }
 
@@ -177,22 +179,28 @@ public enum WorkspaceAddResult: Equatable, Sendable {
             .sorted { $0.project.name.localizedStandardCompare($1.project.name) == .orderedAscending }
     }
 
-    /// The workspaces open on this device (with tabs here, or in use): the one in use first, then by
-    /// last use.
+    /// The workspaces open on this device (`WorkspaceSummary.isOpen`), the Open list and the iPhone's task switcher:
+    /// the one in use first, then by last use.
     public var open: [WorkspaceSummary] {
-        all.filter { $0.openTabs > 0 || $0.isCurrent }.sorted { left, right in
+        all.filter(\.isOpen).sorted { left, right in
             if left.isCurrent != right.isCurrent { return left.isCurrent }
             return (left.lastUsed ?? .distantPast) > (right.lastUsed ?? .distantPast)
         }
     }
 
-    /// One workspace's row: its folder, open tabs, whether it is in use and its last use here.
+    /// One workspace's row: its folder, open tabs, whether it is in use, its last use here and whether it is open here.
+    /// Open means used on this device (tabs here, in use, or in use before) and not closed here since: ending or
+    /// closing its last task leaves it open with nothing in it; only Close closes it, until it is in use again
+    /// (owner, 2026-10-23: after ending one workspace's last terminal and switching away, the switcher dropped it).
     func summary(_ project: Project) -> WorkspaceSummary {
         let workspace = self.workspace
-        return WorkspaceSummary(project: project, folder: folderText(project.directory),
-                                openTabs: presentedTabs(inWorkspace: project.id).count,
-                                isCurrent: workspace?.selectedProjectID == project.id,
-                                lastUsed: workspace?.lastUsed[project.id])
+        let openTabs = presentedTabs(inWorkspace: project.id).count
+        let isCurrent = workspace?.selectedProjectID == project.id
+        let lastUsed = workspace?.lastUsed[project.id]
+        let closed = workspace?.closedWorkspaceIDs.contains(project.id) ?? true
+        return WorkspaceSummary(project: project, folder: folderText(project.directory), openTabs: openTabs,
+                                isCurrent: isCurrent, lastUsed: lastUsed,
+                                isOpen: openTabs > 0 || isCurrent || (lastUsed != nil && !closed))
     }
 
     /// On iPhone, Files and Git live in the drawer's sections, not in its list of open tabs.

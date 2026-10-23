@@ -120,7 +120,8 @@ public struct WorkspaceStorageKeys: Sendable, Equatable {
     }
     /// When each workspace was last the one in use on this device, saved per host and device identity.
     public private(set) var lastUsed: [String: Date] = [:]
-    /// Closed here, not removed from the host. Choosing the folder again makes it visible in the menu.
+    /// Closed here (the Workspaces screen's Close), not removed from the host: not open on this device
+    /// (`WorkspaceSummary.isOpen`) until it is in use again.
     private(set) var closedWorkspaceIDs: Set<String> = []
     /// Attaching restores the saved choice; that is not a use.
     @ObservationIgnored private var restoringSelection = false
