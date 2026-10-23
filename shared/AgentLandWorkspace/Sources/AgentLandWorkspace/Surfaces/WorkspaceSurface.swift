@@ -10,6 +10,16 @@ extension EnvironmentValues {
     }
 }
 
+private struct WorkspacePageLeavingKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    /// The iPhone's page this surface is on is on its way out: no longer in front, still on screen until its transition
+    /// ends, so the surface keeps drawing (`PhoneSessionPageSurface`).
+    var workspacePageLeaving: Bool {
+        get { self[WorkspacePageLeavingKey.self] }
+        set { self[WorkspacePageLeavingKey.self] = newValue }
+    }
+}
+
 private struct WorkspaceMenuObscuredKey: EnvironmentKey { static let defaultValue = false }
 extension EnvironmentValues {
     /// Something other than the iPhone's drawer covers the workspace. The tab in front's own actions are on its pill's

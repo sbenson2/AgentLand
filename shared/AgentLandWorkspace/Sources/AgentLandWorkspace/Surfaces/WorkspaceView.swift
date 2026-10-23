@@ -96,9 +96,6 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
     /// The session on top of the Workspace stack and the stack's depth with it on top; nil while none is on top.
     @State private var phoneWorkspaceSession: PhoneStackedSession?
     @State private var phoneSettingsPath = NavigationPath()
-    /// A session's page on its way out after Back: it keeps its surface until it has gone, as a cross-fade kept the
-    /// outgoing surface before.
-    @State private var phonePoppingID: UUID?
     #endif
     @State private var settingsPresented = false
     @State private var sheet: WorkspaceSheet?
@@ -479,25 +476,27 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
     }
 
     /// A session's page. Only the session in front mounts its surface (its live state stays in the workspace's
-    /// registry); a page on its way out after Back keeps it until it has gone. The loader covers the work area while a
-    /// new session opens; the navigation bar stays in reach. A chat's or terminal's page hides the tab bar, as a pushed
-    /// conversation does (its stack's root says so, `phoneHomeRoot`); Back brings it back. Editors and browser tabs keep it.
+    /// registry); a page on its way out keeps it until it has gone (`PhoneSessionPageSurface`). The loader covers the
+    /// work area while a new session opens; the navigation bar stays in reach. A chat's or terminal's page hides the tab
+    /// bar, as a pushed conversation does (its stack's root says so, `phoneHomeRoot`); Back brings it back. Editors and
+    /// browser tabs keep it.
     @ViewBuilder private func phoneSessionPage(_ route: PhoneSessionRoute) -> some View {
         let tab = model.tab(route.tabID)
         let selected = model.selectedTabID == route.tabID
         let opening = selected && showSessionOpening
         phonePage(
             ZStack {
-                if let tab, selected || phonePoppingID == route.tabID {
-                    surface(for: tab)
-                        .id(SurfaceIdentity(tabID: tab.id, generation: surfaceGeneration))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .disabled(opening)
-                        .accessibilityHidden(opening)
+                PhoneSessionPageSurface(selected: selected) {
+                    if let tab {
+                        surface(for: tab)
+                            .id(SurfaceIdentity(tabID: tab.id, generation: surfaceGeneration))
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .disabled(opening)
+                            .accessibilityHidden(opening)
+                    }
                 }
                 if opening { creatingIndicator }
-            }
-            .onDisappear { if phonePoppingID == route.tabID { phonePoppingID = nil } },
+            },
             notices: selected, background: selected ? model.phoneChromeAppearance?.background : nil)
     }
 
@@ -545,7 +544,7 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
             let old = destination == .terminal ? phoneTerminalPath : phoneChatPath
             if destination == .terminal { phoneTerminalPath = path } else { phoneChatPath = path }
             guard let top = old.last?.tabID, path.last?.tabID != top, model.selectedTabID == top else { return }
-            phonePopping(top)
+            resignKeyboard()
             model.selectedTabID = path.last?.tabID
         })
     }
@@ -557,17 +556,10 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
             guard let session = phoneWorkspaceSession, path.count < session.depth else { return }
             phoneWorkspaceSession = nil
             if model.selectedTabID == session.tabID {
-                phonePopping(session.tabID)
+                resignKeyboard()
                 model.selectedTabID = nil
             }
         })
-    }
-
-    private func phonePopping(_ id: UUID) {
-        resignKeyboard()
-        phonePoppingID = id
-        // The page reports that it has gone; this is the fallback.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { if phonePoppingID == id { phonePoppingID = nil } }
     }
 
     private var phoneSelectionState: PhoneSelectionState {
@@ -666,7 +658,6 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
         phoneWorkspacePath = NavigationPath()
         phoneWorkspaceSession = nil
         phoneSettingsPath = NavigationPath()
-        phonePoppingID = nil
     }
 
     /// A workspace's row in the task switcher: its Home on the Chat or Terminal tab in front; from Workspace's pages (an
@@ -1485,6 +1476,25 @@ private struct PhonePopoverEscape: View {
             .opacity(0)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+    }
+}
+
+/// A session's page's surface on iPhone, mounted while its session is in front. A page on its way out (Back, the task
+/// switcher's Home or another task) is no longer in front once its transition starts, yet still on screen: it keeps
+/// its surface, drawn (`workspacePageLeaving`), until the page has gone, so the page doesn't slide away blank (owner,
+/// 2026-10-22: "buttons on screen dissapearing"). The page's own appearance says when it has gone: the shell's state
+/// read from a page that is leaving its stack still held the value from before the change.
+private struct PhoneSessionPageSurface<Surface: View>: View {
+    let selected: Bool
+    @ViewBuilder let surface: () -> Surface
+    @State private var onScreen = false
+
+    var body: some View {
+        ZStack {
+            if selected || onScreen { surface().environment(\.workspacePageLeaving, !selected) }
+        }
+        .onAppear { onScreen = true }
+        .onDisappear { onScreen = false }
     }
 }
 

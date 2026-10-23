@@ -864,6 +864,8 @@ struct TerminalTabView: View {
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.workspaceObscured) private var workspaceObscured
+    /// Its iPhone page is on its way out: the canvas stays drawn until the page has gone.
+    @Environment(\.workspacePageLeaving) private var pageLeaving
     @Environment(\.dismiss) private var dismiss
     #if os(iOS)
     // Settings → Terminal.
@@ -1074,7 +1076,7 @@ struct TerminalTabView: View {
                          fontSize: TerminalSettings.fontSize(chosen: chosenFontSize, automatic: terminalFontSize(width: width)),
                          cursor: cursor, showsKeyBar: showsKeyBar, bellVibrates: bellVibrates, noticeInset: noticeInset(session),
                          focusRequest: session.focusRequest, showKeyboard: session.showKeyboard, pasteRequest: session.pasteRequest,
-                         visible: inFront)
+                         visible: inFront || pageLeaving)
         #else
         TerminalRenderer(session: session, rendererID: session.rendererID, packet: session.packets.first,
                          active: inputActive && session.rendererTakesInput,
