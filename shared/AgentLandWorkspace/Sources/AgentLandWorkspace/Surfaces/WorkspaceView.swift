@@ -448,8 +448,22 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
                     PhoneTaskSwitcherTitle(model: model, shell: shellActions, title: title,
                                            current: model.phoneNavigation.switcherWorkspaceID(model: model).map { .home(projectID: $0) },
                                            testControls: true)
-                },
+                }
+                // The stack's root says whether the tab bar shows, from the stack itself: hidden while a chat's or
+                // terminal's page is on it and back as Back starts, so it comes in with Home instead of after the
+                // pop with Home's launchers jumping up (owner, 2026-10-22). Hidden is asked once the opening cover has
+                // gone: asked under it, for a page restored at launch, the system kept the bar ("the tab bar at the
+                // bottom persist when going back to a terminal"). The root's choice outranks a pushed page's.
+                .toolbarVisibility(phoneStackShowsSession(destination) && !model.presentationPending ? .hidden : .visible,
+                                   for: .tabBar),
             notices: inFront)
+    }
+
+    /// A chat's or a terminal's page is on top of Chat's or Terminal's stack.
+    private func phoneStackShowsSession(_ destination: PhoneTabDestination) -> Bool {
+        let path = destination == .terminal ? phoneTerminalPath : phoneChatPath
+        guard let top = path.last, let kind = model.tab(top.tabID)?.kind else { return false }
+        return kind == .chat || kind == .terminal
     }
 
     /// Workspace's root: the workspace in use, other devices' terminals, Files, Git, Chat History and the workspaces.
@@ -467,10 +481,9 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
     /// A session's page. Only the session in front mounts its surface (its live state stays in the workspace's
     /// registry); a page on its way out after Back keeps it until it has gone. The loader covers the work area while a
     /// new session opens; the navigation bar stays in reach. A chat's or terminal's page hides the tab bar, as a pushed
-    /// conversation does; Back brings it back. Editors and browser tabs keep it.
+    /// conversation does (its stack's root says so, `phoneHomeRoot`); Back brings it back. Editors and browser tabs keep it.
     @ViewBuilder private func phoneSessionPage(_ route: PhoneSessionRoute) -> some View {
         let tab = model.tab(route.tabID)
-        let hidesTabBar = tab?.kind == .chat || tab?.kind == .terminal
         let selected = model.selectedTabID == route.tabID
         let opening = selected && showSessionOpening
         phonePage(
@@ -486,7 +499,6 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
             }
             .onDisappear { if phonePoppingID == route.tabID { phonePoppingID = nil } },
             notices: selected, background: selected ? model.phoneChromeAppearance?.background : nil)
-        .toolbarVisibility(hidesTabBar ? .hidden : .automatic, for: .tabBar)
     }
 
     // MARK: iPhone stacks and the selection
