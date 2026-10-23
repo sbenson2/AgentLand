@@ -487,7 +487,8 @@ final class TerminalKeyBar: UIInputView, UIInputViewAudioFeedback {
     func clipboardCopy(source: TerminalView, content: Data) {}
     func clipboardRead(source: TerminalView) -> Data? { nil }
     func iTermContent(source: TerminalView, content: ArraySlice<UInt8>) {}
-    func rangeChanged(source: TerminalView, startY: Int, endY: Int) {}
+    /// Rows changed: a renderer sliding with the keyboard keeps the cursor's row in sight (`TerminalMountView`).
+    func rangeChanged(source: TerminalView, startY: Int, endY: Int) { (source as? AgentTerminalView)?.owner?.rowsMoved() }
 }
 
 /// Holds the session's retained renderer while a SwiftUI view shows it. Tearing the view down
@@ -509,6 +510,12 @@ final class TerminalMountView: UIView {
     /// Told how much of this view the key bar covers, for what sits at the bottom over it (the notice).
     var keyBarCoverChanged: ((CGFloat) -> Void)?
     private var reportedKeyBarCover: CGFloat = 0
+    /// The on-screen keyboard's frame, in the screen's coordinates, as the system last said it would end; nil while
+    /// it is away.
+    private var keyboardFrame: CGRect?
+    /// The renderer sliding with the keyboard (`TerminalKeyboardFollow`): with a rising keyboard it keeps its height
+    /// (`rising`) and its rows change once the keyboard has arrived (`end`).
+    private var slide: (id: UUID, rising: Bool, end: CFTimeInterval)?
 
     /// The renderer while this view owns it.
     var mounted: AgentTerminalView? { renderer?.owner === self ? renderer : nil }
@@ -517,6 +524,10 @@ final class TerminalMountView: UIView {
         super.init(frame: frame)
         isAccessibilityElement = false
         backgroundColor = .clear
+        // A renderer sliding with the keyboard reaches past this view's top; the navigation bar stays clear of it.
+        clipsToBounds = true
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillMove(_:)),
+                                               name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
         for name in [UIResponder.keyboardDidShowNotification, UIResponder.keyboardDidChangeFrameNotification,
                      UIResponder.keyboardDidHideNotification] {
             NotificationCenter.default.addObserver(self, selector: #selector(keyboardSettled(_:)), name: name, object: nil)
@@ -536,10 +547,13 @@ final class TerminalMountView: UIView {
         if view.isFirstResponder { scheduleTake() } else { take(view) }
     }
 
+    /// The renderer's frame is this view's to set (`layoutSubviews`): resized along with this view, its rows would
+    /// change on the way to the frame it rests at.
     private func take(_ view: AgentTerminalView) {
         view.removeFromSuperview()
+        slide = nil
         view.frame = bounds
-        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.autoresizingMask = []
         addSubview(view)
         needsScrollSync = true
         setNeedsLayout()
@@ -562,6 +576,7 @@ final class TerminalMountView: UIView {
     func unmount() {
         guard let view = renderer else { return }
         renderer = nil
+        slide = nil
         if view.owner === self { view.owner = nil }
         guard view.superview === self else { return }
         if view.isFirstResponder { _ = view.resignFirstResponder() }
@@ -573,35 +588,200 @@ final class TerminalMountView: UIView {
         if window != nil { setNeedsLayout() }
     }
 
-    /// How much of this view the renderer's key bar covers. The keyboard safe area follows the system's
-    /// keyboard frame; in landscape the keys are narrower than the screen and that frame starts below the
-    /// key bar, so this view reached under the bar and the prompt line was hidden behind it (B-16). In
-    /// portrait, and with a hardware keyboard, the frame includes the bar and nothing is covered.
-    private func keyBarOverlap(_ view: AgentTerminalView) -> CGFloat {
-        guard let bar = view.inputAccessoryView, bar.window != nil, !bar.isHidden,
-              let space = window?.windowScene?.screen.coordinateSpace else { return 0 }
-        let barFrame = bar.convert(bar.bounds, to: space)
-        let ownFrame = convert(bounds, to: space)
-        guard barFrame.intersects(ownFrame), barFrame.maxY >= ownFrame.maxY - 1 else { return 0 }
-        return min(max(0, ownFrame.maxY - barFrame.minY), bounds.height / 2)
+    /// Where the renderer rests: this view's width, from its top down to the keyboard (with the key bar on it), less
+    /// the notice's room. This view reaches under the keyboard, which it follows itself.
+    private func restFrame(for view: AgentTerminalView) -> CGRect {
+        var frame = bounds
+        frame.size.height = max(0, bounds.height - keyboardCover(view) - noticeInset)
+        return frame
     }
 
-    /// The key bar settles after the keyboard's frame changes; lay out again once it has.
-    @objc private func keyboardSettled(_ note: Notification) { setNeedsLayout() }
+    /// The top of the docked on-screen keyboard, the key bar on it included, in the screen's coordinates; nil while
+    /// the keyboard is away, floating or beside this view.
+    private func keyboardTop(_ view: AgentTerminalView, in space: UICoordinateSpace, screenHeight: CGFloat) -> CGFloat? {
+        guard let keyboardFrame, keyboardFrame.maxY >= screenHeight - 1 else { return nil }
+        let own = convert(bounds, to: space)
+        guard keyboardFrame.maxX > own.minX, keyboardFrame.minX < own.maxX else { return nil }
+        var top = keyboardFrame.minY
+        if let bar = view.inputAccessoryView, bar.window != nil, !bar.isHidden {
+            let barFrame = bar.convert(bar.bounds, to: space)
+            if barFrame.maxX > own.minX, barFrame.minX < own.maxX, barFrame.maxY >= keyboardFrame.minY - 1 {
+                top = min(top, barFrame.minY)
+            }
+        }
+        return top
+    }
+
+    /// How much of this view's foot the keyboard covers, the key bar on it included. The keyboard's frame is the one
+    /// the system says it will end at; in landscape the keys are narrower than the screen and that frame starts below
+    /// the key bar (B-16), so the bar counts where it actually is.
+    private func keyboardCover(_ view: AgentTerminalView) -> CGFloat {
+        guard let screen = window?.windowScene?.screen,
+              let top = keyboardTop(view, in: screen.coordinateSpace, screenHeight: screen.bounds.height) else { return 0 }
+        let own = convert(bounds, to: screen.coordinateSpace)
+        return min(max(0, own.maxY - top), bounds.height)
+    }
+
+    /// How far the key bar reaches above the keyboard's frame, which SwiftUI's keyboard safe area follows: the room
+    /// the notice leaves under it (B-16). In portrait, and with a hardware keyboard, the frame includes the bar.
+    private func keyBarOverlap(_ view: AgentTerminalView) -> CGFloat {
+        guard let keyboardFrame, let bar = view.inputAccessoryView, bar.window != nil, !bar.isHidden,
+              let space = window?.windowScene?.screen.coordinateSpace else { return 0 }
+        let barFrame = bar.convert(bar.bounds, to: space)
+        guard barFrame.maxY >= keyboardFrame.minY - 1 else { return 0 }
+        return min(max(0, keyboardFrame.minY - barFrame.minY), bounds.height / 2)
+    }
+
+    /// The keyboard is about to rise, go or change height: the renderer follows it in step, with its curve and
+    /// duration, and changes its rows (and the host's) once per move (`TerminalKeyboardFollow`).
+    @objc private func keyboardWillMove(_ note: Notification) {
+        guard let end = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+        let screenHeight = window?.windowScene?.screen.bounds.height ?? end.maxY
+        keyboardFrame = end.isEmpty || end.minY >= screenHeight - 1 ? nil : end
+        guard let view = mounted, view.superview === self, window != nil, bounds.width > 0, bounds.height > 0 else {
+            setNeedsLayout()
+            return
+        }
+        let duration = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0
+        let curve = note.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? Int ?? UIView.AnimationCurve.easeInOut.rawValue
+        follow(view, duration: duration, curve: curve)
+    }
+
+    private func follow(_ view: AgentTerminalView, duration: TimeInterval, curve: Int) {
+        // A slide still under way ends where it was going first.
+        endSlide(view)
+        let from = view.frame
+        let target = restFrame(for: view)
+        guard duration > 0, abs(target.height - from.height) >= 0.5, from.height > 0 else {
+            setNeedsLayout()
+            return
+        }
+        let options = UIView.AnimationOptions(rawValue: UInt(curve) << 16).union(.beginFromCurrentState)
+        let id = UUID()
+        let rising = target.height < from.height
+        slide = (id, rising, CACurrentMediaTime() + duration)
+        if rising {
+            // The renderer keeps its rows and slides up, so its rows and the host's change once, when the keyboard has
+            // arrived; it then rests where SwiftTerm's resize leaves the rows already shown.
+            let top = heldTop(view, target: target)
+            UIView.animate(withDuration: duration, delay: 0, options: options) { view.frame.origin.y = top }
+        } else {
+            // Going: the rows change now. SwiftTerm brings back history above the rows shown (or adds rows under
+            // them); the renderer starts where those rows stay put and slides down with the keyboard.
+            let offset = view.contentOffset.y
+            UIView.performWithoutAnimation {
+                view.frame = CGRect(x: target.minX, y: from.minY, width: target.width, height: target.height)
+                view.layoutIfNeeded()
+                view.frame.origin.y = from.minY + min(0, view.contentOffset.y - offset)
+            }
+            UIView.animate(withDuration: duration, delay: 0, options: options) { view.frame.origin.y = target.minY }
+        }
+        // The keyboard has arrived (its Did notification usually says so first). An animation's completion would not
+        // do: one that moves nothing completes at once, while the keyboard still slides.
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
+            guard let self, self.slide?.id == id, let view = self.mounted else { return }
+            self.endSlide(view)
+        }
+    }
+
+    /// Where a renderer holding its height rests once the keyboard has risen to `target`: where SwiftTerm's resize
+    /// to that height leaves the rows it shows now.
+    private func heldTop(_ view: AgentTerminalView, target: CGRect) -> CGFloat {
+        let terminal = view.getTerminal()
+        let cellHeight = terminal.rows > 0 ? view.getOptimalFrameSize().size.height / CGFloat(terminal.rows) : 0
+        let lines = cellHeight > 0 ? Int((view.contentSize.height / cellHeight).rounded()) : terminal.rows
+        let shift = TerminalKeyboardFollow.heldShift(cellHeight: cellHeight, rows: terminal.rows,
+                                                     cursorRow: terminal.getCursorLocation().y, lines: lines,
+                                                     topRow: terminal.getTopVisibleRow(), offset: view.contentOffset.y,
+                                                     height: target.height, keepsHistory: !terminal.isCurrentBufferAlternate)
+        return target.minY + min(0, max(target.height - view.frame.height, shift))
+    }
+
+    /// The slide is over (or another keyboard move takes its place): the renderer takes its resting frame, and with a
+    /// rising keyboard its new rows, where the rows shown stay in place.
+    private func endSlide(_ view: AgentTerminalView) {
+        guard let ended = slide else { return }
+        slide = nil
+        let frame = restFrame(for: view)
+        UIView.performWithoutAnimation {
+            if ended.rising || view.frame != frame { view.layer.removeAnimation(forKey: "position") }
+            view.frame = frame
+            view.layoutIfNeeded()
+        }
+    }
+
+    /// The rows changed while the renderer slides (output arrived, a program repainted), before they are drawn: the
+    /// cursor's row stays above the key bar. Return closes the keyboard, so a command's output often arrives mid-slide.
+    func rowsMoved() {
+        guard let current = slide, let view = mounted, view.superview === self,
+              let cursorBottom = cursorBottomNow(view), let barTop = keyBarTopNow(view) else { return }
+        let hidden = cursorBottom - barTop
+        guard hidden > 0.5 else { return }
+        let presented = (view.layer.presentation() ?? view.layer).frame.minY
+        let remaining = max(0.05, current.end - CACurrentMediaTime())
+        // The new rows appear where the cursor's row clears the key bar.
+        UIView.performWithoutAnimation {
+            view.layer.removeAnimation(forKey: "position")
+            view.frame.origin.y = presented - hidden
+        }
+        if current.rising {
+            // The keyboard still rises: get to where the renderer rests ahead of it.
+            let top = heldTop(view, target: restFrame(for: view))
+            UIView.animate(withDuration: min(remaining, 0.12), delay: 0, options: [.curveEaseOut, .beginFromCurrentState]) {
+                view.frame.origin.y = min(top, presented - hidden)
+            }
+        } else {
+            // The keyboard still goes, slowing down: follow it at an even pace, behind it, to rest when it does.
+            let top = restFrame(for: view).minY
+            UIView.animate(withDuration: remaining, delay: 0, options: [.curveLinear, .beginFromCurrentState]) {
+                view.frame.origin.y = top
+            }
+        }
+    }
+
+    /// The bottom of the cursor's row as it is on screen now (and its rows as they are about to be drawn), in this view's
+    /// coordinates.
+    private func cursorBottomNow(_ view: AgentTerminalView) -> CGFloat? {
+        let terminal = view.getTerminal()
+        guard terminal.rows > 0 else { return nil }
+        let cellHeight = view.getOptimalFrameSize().size.height / CGFloat(terminal.rows)
+        guard cellHeight > 0 else { return nil }
+        let history = max(0, Int((view.contentSize.height / cellHeight).rounded()) - terminal.rows)
+        let top = (view.layer.presentation() ?? view.layer).frame.minY
+        return top + CGFloat(history + terminal.getCursorLocation().y + 1) * cellHeight - view.contentOffset.y
+    }
+
+    /// The key bar's top as it is on screen now, in this view's coordinates.
+    private func keyBarTopNow(_ view: AgentTerminalView) -> CGFloat? {
+        guard let bar = view.inputAccessoryView, let barWindow = bar.window, !bar.isHidden,
+              let space = window?.windowScene?.screen.coordinateSpace else { return nil }
+        let layer = bar.layer.presentation() ?? bar.layer
+        let onScreen = barWindow.convert(layer.convert(layer.bounds, to: nil), to: space)
+        return convert(onScreen, from: space).minY
+    }
+
+    /// The keyboard has settled, and the key bar with it: lay out where it actually is.
+    @objc private func keyboardSettled(_ note: Notification) {
+        if let view = mounted, view.superview === self { endSlide(view) }
+        setNeedsLayout()
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        guard let view = mounted, view.superview === self else { return }
+        guard let view = mounted, view.superview === self, window != nil else { return }
         let cover = keyBarOverlap(view)
         if cover != reportedKeyBarCover {
             reportedKeyBarCover = cover
             let changed = keyBarCoverChanged
             DispatchQueue.main.async { changed?(cover) }
         }
-        var frame = bounds
-        frame.size.height = max(0, bounds.height - cover - noticeInset)
-        if view.frame != frame { view.frame = frame }
-        guard needsScrollSync, window != nil, bounds.width > 0, bounds.height > 0 else { return }
+        if slide != nil, view.frame.width != bounds.width { endSlide(view) }
+        if slide == nil {
+            // Set as it is, inside an animation or not: an animated height would stretch the drawn rows.
+            let frame = restFrame(for: view)
+            if view.frame != frame { UIView.performWithoutAnimation { view.frame = frame } }
+        }
+        guard needsScrollSync, bounds.width > 0, bounds.height > 0 else { return }
         needsScrollSync = false
         // After this layout pass the renderer shows the rows its terminal displays.
         DispatchQueue.main.async { [weak view] in
@@ -646,6 +826,8 @@ struct TerminalRenderer: UIViewRepresentable {
         view.inputAccessoryView = keyBar
         view.inputAssistantItem.leadingBarButtonGroups = []
         view.inputAssistantItem.trailingBarButtonGroups = []
+        // `rangeChanged` hears of rows about to be drawn, for a renderer sliding with the keyboard.
+        view.notifyUpdateChanges = true
         view.allowMouseReporting = true
         view.installWheelScrolling()
         view.linkReporting = .none
@@ -923,6 +1105,10 @@ struct TerminalTabView: View {
                         .accessibilityIdentifier("terminalRendererSerial")
                 }
             }
+            #if os(iOS)
+            // The renderer's mount keeps the rows above the keyboard itself (`TerminalMountView`), in step with it.
+            .ignoresSafeArea(.keyboard, edges: .bottom)
+            #endif
             if let connectionIssue = session.connectionIssue {
                 terminalConnectionState(connectionIssue, session: session)
                 if session.terminalGone, let resumeIssue = session.resumeIssue {
