@@ -166,7 +166,9 @@ struct PhoneTaskSwitcher: View {
             .padding(.vertical, AgentLandSpacing.xSmall)
         }
         .scrollBounceBehavior(.basedOnSize)
-        .frame(minWidth: 300, maxWidth: 340)
+        // As wide as its widest row and no wider (owner, 2026-10-22: "needs to fit the text exactly"); a longer name
+        // truncates in the middle.
+        .frame(maxWidth: 340)
         .frame(maxHeight: heightLimit)
         .onDisappear {
             let action = chosen
@@ -276,7 +278,6 @@ private struct PhoneSwitcherRow: View {
                     .foregroundStyle(AgentLandColor.tint)
                     .accessibilityHidden(true)
             }
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, inset)
         .agentLandRowHeight()
