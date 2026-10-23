@@ -153,7 +153,15 @@ struct PhoneTaskSwitcher: View {
         let sections = model.phoneNavigation.switcherSections(model: model)
         ScrollView {
             VStack(alignment: .leading, spacing: AgentLandSpacing.xSmall) {
-                ForEach(sections) { section($0) }
+                ForEach(sections) { section in
+                    // A hairline between workspaces (owner, 2026-10-22: "a narrow seperator between the workspaces").
+                    if section.id != sections.first?.id {
+                        AgentLandColor.separator.color.frame(height: 1 / 3)
+                            .padding(.horizontal, AgentLandSpacing.medium)
+                            .accessibilityHidden(true)
+                    }
+                    self.section(section)
+                }
                 if sections.isEmpty {
                     Text("No workspaces or chats are open.")
                         .font(.body)
@@ -271,9 +279,11 @@ private struct PhoneSwitcherRow: View {
                 .foregroundStyle(secondary ? AgentLandColor.textSecondary : AgentLandColor.text)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            // Right after the title, not at the panel's edge (owner, 2026-10-22: "too much" space between them).
+            // After the title with a little room, not at the panel's edge (owner, 2026-10-22: "too much" space at the
+            // edge, then "a bit of space" before it).
             if checked {
                 Image(systemName: "checkmark")
+                    .padding(.leading, AgentLandSpacing.xSmall)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(AgentLandColor.tint)
                     .accessibilityHidden(true)
