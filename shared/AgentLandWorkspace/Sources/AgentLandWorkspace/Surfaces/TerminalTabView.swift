@@ -87,9 +87,54 @@ public final class AgentTerminalView: TerminalView {
     /// program. Those go up the responder chain first. (Their release reaches SwiftTerm, which
     /// reports releases only for keys it reported pressing, then passes it up too.)
     public override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        if presses.contains(where: { $0.key != nil }) {
+            // The text a hardware key types reaches `insertText` while its press is handled.
+            hardwareKeyTyping = true
+            DispatchQueue.main.async { [weak self] in self?.hardwareKeyTyping = false }
+        }
         let (mine, up) = split(presses)
         if !mine.isEmpty { super.pressesBegan(mine, with: event) }
         if !up.isEmpty { next?.pressesBegan(up, with: event) }
+    }
+
+    // MARK: Return closes the on-screen keyboard
+
+    /// A hardware key's press is being handled: what it types is not the on-screen keyboard's.
+    private var hardwareKeyTyping = false
+    /// The keyboard's height as it last said it would end, the key bar on it included; 0 while it is away.
+    private var keyboardHeight: CGFloat = 0
+    // Read once more in deinit to unregister; NotificationCenter removal is thread-safe.
+    nonisolated(unsafe) private var keyboardObserver: NSObjectProtocol?
+    deinit { if let keyboardObserver { NotificationCenter.default.removeObserver(keyboardObserver) } }
+
+    /// Return on the on-screen keyboard sends the Return and then puts the keyboard and its key bar away
+    /// (`TerminalReturnKey`). SwiftTerm sends the Return from here into the guarded input queue first; the keyboard
+    /// goes once UIKit's text input has finished with the key, and the rows growing back resize the host's terminal
+    /// behind the Return, in the same queue.
+    public override func insertText(_ text: String) {
+        let closes = TerminalReturnKey.closesKeyboard(
+            text: text, keyboardHeight: keyboardHeight, keyBarHeight: inputAccessoryView?.bounds.height ?? 0,
+            hardwareKeyboard: hardwareKeyTyping, controlLatched: controlModifier)
+        super.insertText(text)
+        guard closes else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.isFirstResponder else { return }
+            _ = self.resignFirstResponder()
+        }
+    }
+
+    /// Follows the keyboard's height, for whether its keys are on screen.
+    func observeKeyboard() {
+        guard keyboardObserver == nil else { return }
+        keyboardObserver = NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillChangeFrameNotification,
+                                                                  object: nil, queue: .main) { [weak self] note in
+            let end = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect ?? .zero
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let screenHeight = self.window?.windowScene?.screen.bounds.height ?? end.maxY
+                self.keyboardHeight = end.minY >= screenHeight - 1 ? 0 : end.height
+            }
+        }
     }
     public override func layoutSubviews() {
         super.layoutSubviews()
@@ -845,6 +890,7 @@ struct TerminalRenderer: UIViewRepresentable {
         // safe-area inset, left over from a bar that has gone (the tab bar, under which a terminal's page is first
         // laid out), kept the last row that far above the renderer's foot until the next output.
         view.contentInsetAdjustmentBehavior = .never
+        view.observeKeyboard()
         // `rangeChanged` hears of rows about to be drawn, for a renderer sliding with the keyboard.
         view.notifyUpdateChanges = true
         view.allowMouseReporting = true

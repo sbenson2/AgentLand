@@ -213,6 +213,55 @@ private final class TerminalHost: APITransport, @unchecked Sendable {
         XCTAssertEqual(view.frame.minY, 0, accuracy: 0.5)
     }
 
+    /// Return on the on-screen keyboard closes it; a hardware keyboard's Return, a Return made another key by the
+    /// latched Control and any other text keep it (owner, 2026-10-23).
+    func testOnlyTheOnScreenKeyboardsReturnClosesIt() {
+        XCTAssertTrue(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 355, keyBarHeight: 54,
+                                                       hardwareKeyboard: false, controlLatched: false))
+        XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 355, keyBarHeight: 54,
+                                                        hardwareKeyboard: true, controlLatched: false), "A hardware key's Return")
+        XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 54, keyBarHeight: 54,
+                                                        hardwareKeyboard: false, controlLatched: false),
+                       "With a hardware keyboard only the key bar is on screen")
+        XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 0, keyBarHeight: 54,
+                                                        hardwareKeyboard: false, controlLatched: false))
+        XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 355, keyBarHeight: 54,
+                                                        hardwareKeyboard: false, controlLatched: true), "Control-Return")
+        for text in ["a", " ", "a\n", "\r\n"] {
+            XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: text, keyboardHeight: 355, keyBarHeight: 54,
+                                                            hardwareKeyboard: false, controlLatched: false), text)
+        }
+    }
+
+    /// The Return goes into the input queue before the keyboard goes; letters and the latched Control's Return keep it.
+    func testReturnOnTheOnScreenKeyboardSendsItThenPutsTheKeyboardAway() async throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+        var sent: [Data] = []
+        let link = TerminalRendererLink(send: { sent.append($0) }, sendProtocolReply: { _ in }, resize: { _, _ in })
+        let view = TerminalRenderer.makeRenderer(link: link)
+        view.frame = window.bounds
+        window.addSubview(view)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        view.isUserInteractionEnabled = true
+        XCTAssertTrue(view.becomeFirstResponder())
+        NotificationCenter.default.post(name: UIResponder.keyboardWillChangeFrameNotification, object: nil,
+                                        userInfo: [UIResponder.keyboardFrameEndUserInfoKey: CGRect(x: 0, y: 519, width: 402, height: 355)])
+        try await Task.sleep(for: .milliseconds(50))
+
+        view.insertText("l")
+        view.controlModifier = true
+        view.insertText("\n")
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertTrue(view.isFirstResponder, "Letters and Control-Return keep the keyboard")
+
+        view.insertText("\n")
+        XCTAssertEqual(sent.last, Data([13]), "The Return is in the input queue as the keyboard starts to go")
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertFalse(view.isFirstResponder, "then the keyboard and its key bar go")
+        XCTAssertEqual(sent.last, Data([13]), "Nothing is sent after it")
+    }
+
     func testDirectTerminalDelegateInputUsesUserRoute() {
         var userSends: [Data] = []
         var protocolReplies: [Data] = []
