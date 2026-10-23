@@ -189,8 +189,8 @@ private final class TerminalHost: APITransport, @unchecked Sendable {
         let view = AgentTerminalView(frame: .zero)
         mount.mount(view, claim: true)
         mount.layoutIfNeeded()
-        let height = window.bounds.height, foot = height
-        XCTAssertEqual(view.frame.maxY, foot, accuracy: 0.5, "Without a keyboard the rows fill the view")
+        let height = window.bounds.height, foot = height - window.safeAreaInsets.bottom
+        XCTAssertEqual(view.frame.maxY, foot, accuracy: 0.5, "Without a keyboard the rows end above the home indicator")
         func keyboard(top: CGFloat, duration: Double) {
             NotificationCenter.default.post(name: UIResponder.keyboardWillChangeFrameNotification, object: nil, userInfo: [
                 UIResponder.keyboardFrameEndUserInfoKey: CGRect(x: 0, y: top, width: window.bounds.width, height: 355),

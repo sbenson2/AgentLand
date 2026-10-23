@@ -588,12 +588,27 @@ final class TerminalMountView: UIView {
         if window != nil { setNeedsLayout() }
     }
 
-    /// Where the renderer rests: this view's width, from its top down to the keyboard (with the key bar on it), less
-    /// the notice's room. This view reaches under the keyboard, which it follows itself.
+    override func safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        setNeedsLayout()
+    }
+
+    /// Where the renderer rests: this view's width, from its top down to the keyboard (with the key bar on it) or,
+    /// without one, to the home indicator, less the notice's room. This view reaches the bottom edge, so the rows
+    /// never follow the safe area of a bar that comes and goes: on iPhone the tab bar hides as a terminal's page comes
+    /// in, and a page laid out under it first ended above where the bar had been (owner, 2026-10-23: "the terminal
+    /// view is above the tab bar not fully down").
     private func restFrame(for view: AgentTerminalView) -> CGRect {
         var frame = bounds
-        frame.size.height = max(0, bounds.height - keyboardCover(view) - noticeInset)
+        frame.size.height = max(0, bounds.height - max(homeIndicatorInset(), keyboardCover(view)) - noticeInset)
         return frame
+    }
+
+    /// How much of this view's foot is in the window's bottom safe area (the home indicator).
+    private func homeIndicatorInset() -> CGFloat {
+        guard let window else { return 0 }
+        let own = convert(bounds, to: window)
+        return min(max(0, own.maxY - (window.bounds.height - window.safeAreaInsets.bottom)), bounds.height)
     }
 
     /// The top of the docked on-screen keyboard, the key bar on it included, in the screen's coordinates; nil while
@@ -826,6 +841,10 @@ struct TerminalRenderer: UIViewRepresentable {
         view.inputAccessoryView = keyBar
         view.inputAssistantItem.leadingBarButtonGroups = []
         view.inputAssistantItem.trailingBarButtonGroups = []
+        // The mount places the rows clear of the bars, the home indicator and the keyboard. A scroll view's own
+        // safe-area inset, left over from a bar that has gone (the tab bar, under which a terminal's page is first
+        // laid out), kept the last row that far above the renderer's foot until the next output.
+        view.contentInsetAdjustmentBehavior = .never
         // `rangeChanged` hears of rows about to be drawn, for a renderer sliding with the keyboard.
         view.notifyUpdateChanges = true
         view.allowMouseReporting = true
@@ -1106,8 +1125,9 @@ struct TerminalTabView: View {
                 }
             }
             #if os(iOS)
-            // The renderer's mount keeps the rows above the keyboard itself (`TerminalMountView`), in step with it.
-            .ignoresSafeArea(.keyboard, edges: .bottom)
+            // The renderer's mount keeps the rows above the home indicator and the keyboard itself
+            // (`TerminalMountView`), in step with the keyboard and whatever bars come and go.
+            .ignoresSafeArea(edges: .bottom)
             #endif
             if let connectionIssue = session.connectionIssue {
                 terminalConnectionState(connectionIssue, session: session)
