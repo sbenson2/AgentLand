@@ -532,8 +532,7 @@ final class TerminalKeyBar: UIInputView, UIInputViewAudioFeedback {
     func clipboardCopy(source: TerminalView, content: Data) {}
     func clipboardRead(source: TerminalView) -> Data? { nil }
     func iTermContent(source: TerminalView, content: ArraySlice<UInt8>) {}
-    /// Rows changed: a renderer sliding with the keyboard keeps the cursor's row in sight (`TerminalMountView`).
-    func rangeChanged(source: TerminalView, startY: Int, endY: Int) { (source as? AgentTerminalView)?.owner?.rowsMoved() }
+    func rangeChanged(source: TerminalView, startY: Int, endY: Int) {}
 }
 
 /// Holds the session's retained renderer while a SwiftUI view shows it. Tearing the view down
@@ -558,9 +557,6 @@ final class TerminalMountView: UIView {
     /// The on-screen keyboard's frame, in the screen's coordinates, as the system last said it would end; nil while
     /// it is away.
     private var keyboardFrame: CGRect?
-    /// The renderer sliding with the keyboard (`TerminalKeyboardFollow`): with a rising keyboard it keeps its height
-    /// (`rising`) and its rows change once the keyboard has arrived (`end`).
-    private var slide: (id: UUID, rising: Bool, end: CFTimeInterval)?
 
     /// The renderer while this view owns it.
     var mounted: AgentTerminalView? { renderer?.owner === self ? renderer : nil }
@@ -569,8 +565,6 @@ final class TerminalMountView: UIView {
         super.init(frame: frame)
         isAccessibilityElement = false
         backgroundColor = .clear
-        // A renderer sliding with the keyboard reaches past this view's top; the navigation bar stays clear of it.
-        clipsToBounds = true
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillMove(_:)),
                                                name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
         for name in [UIResponder.keyboardDidShowNotification, UIResponder.keyboardDidChangeFrameNotification,
@@ -596,7 +590,6 @@ final class TerminalMountView: UIView {
     /// change on the way to the frame it rests at.
     private func take(_ view: AgentTerminalView) {
         view.removeFromSuperview()
-        slide = nil
         view.frame = bounds
         view.autoresizingMask = []
         addSubview(view)
@@ -621,7 +614,6 @@ final class TerminalMountView: UIView {
     func unmount() {
         guard let view = renderer else { return }
         renderer = nil
-        slide = nil
         if view.owner === self { view.owner = nil }
         guard view.superview === self else { return }
         if view.isFirstResponder { _ = view.resignFirstResponder() }
@@ -692,8 +684,12 @@ final class TerminalMountView: UIView {
         return min(max(0, keyboardFrame.minY - barFrame.minY), bounds.height / 2)
     }
 
-    /// The keyboard is about to rise, go or change height: the renderer follows it in step, with its curve and
-    /// duration, and changes its rows (and the host's) once per move (`TerminalKeyboardFollow`).
+    /// The keyboard is about to rise, go or change height: the renderer takes the height it rests at, the key bar on
+    /// the keyboard included, with the keyboard's own duration and curve, so its rows shrink and grow with the keyboard
+    /// as they did under SwiftUI's keyboard safe area (owner, 2026-10-23: "the old way looked nicer it was just to slow
+    /// in tranitions"). That area left the key bar out, or kept its room, until the keyboard had stopped; this height
+    /// is right from the first frame, and the rows (and the host's) change once, as the move starts, so the program's
+    /// repaint can arrive while the keyboard still moves.
     @objc private func keyboardWillMove(_ note: Notification) {
         guard let end = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
         let screenHeight = window?.windowScene?.screen.bounds.height ?? end.maxY
@@ -702,129 +698,21 @@ final class TerminalMountView: UIView {
             setNeedsLayout()
             return
         }
+        let frame = restFrame(for: view)
+        guard view.frame != frame else { return }
         let duration = note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0
         let curve = note.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? Int ?? UIView.AnimationCurve.easeInOut.rawValue
-        follow(view, duration: duration, curve: curve)
-    }
-
-    private func follow(_ view: AgentTerminalView, duration: TimeInterval, curve: Int) {
-        // A slide still under way ends where it was going first.
-        endSlide(view)
-        let from = view.frame
-        let target = restFrame(for: view)
-        guard duration > 0, abs(target.height - from.height) >= 0.5, from.height > 0 else {
-            setNeedsLayout()
-            return
-        }
         let options = UIView.AnimationOptions(rawValue: UInt(curve) << 16).union(.beginFromCurrentState)
-        let id = UUID()
-        let rising = target.height < from.height
-        slide = (id, rising, CACurrentMediaTime() + duration)
-        if rising {
-            // The renderer keeps its rows and slides up, so its rows and the host's change once, when the keyboard has
-            // arrived; it then rests where SwiftTerm's resize leaves the rows already shown.
-            let top = heldTop(view, target: target)
-            UIView.animate(withDuration: duration, delay: 0, options: options) { view.frame.origin.y = top }
-        } else {
-            // Going: the rows change now. SwiftTerm brings back history above the rows shown (or adds rows under
-            // them); the renderer starts where those rows stay put and slides down with the keyboard.
-            let offset = view.contentOffset.y
-            UIView.performWithoutAnimation {
-                view.frame = CGRect(x: target.minX, y: from.minY, width: target.width, height: target.height)
-                view.layoutIfNeeded()
-                view.frame.origin.y = from.minY + min(0, view.contentOffset.y - offset)
-            }
-            UIView.animate(withDuration: duration, delay: 0, options: options) { view.frame.origin.y = target.minY }
-        }
-        // The keyboard has arrived (its Did notification usually says so first). An animation's completion would not
-        // do: one that moves nothing completes at once, while the keyboard still slides.
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
-            guard let self, self.slide?.id == id, let view = self.mounted else { return }
-            self.endSlide(view)
-        }
-    }
-
-    /// Where a renderer holding its height rests once the keyboard has risen to `target`: where SwiftTerm's resize
-    /// to that height leaves the rows it shows now.
-    private func heldTop(_ view: AgentTerminalView, target: CGRect) -> CGFloat {
-        let terminal = view.getTerminal()
-        let cellHeight = terminal.rows > 0 ? view.getOptimalFrameSize().size.height / CGFloat(terminal.rows) : 0
-        let lines = cellHeight > 0 ? Int((view.contentSize.height / cellHeight).rounded()) : terminal.rows
-        let shift = TerminalKeyboardFollow.heldShift(cellHeight: cellHeight, rows: terminal.rows,
-                                                     cursorRow: terminal.getCursorLocation().y, lines: lines,
-                                                     topRow: terminal.getTopVisibleRow(), offset: view.contentOffset.y,
-                                                     height: target.height, keepsHistory: !terminal.isCurrentBufferAlternate)
-        return target.minY + min(0, max(target.height - view.frame.height, shift))
-    }
-
-    /// The slide is over (or another keyboard move takes its place): the renderer takes its resting frame, and with a
-    /// rising keyboard its new rows, where the rows shown stay in place.
-    private func endSlide(_ view: AgentTerminalView) {
-        guard let ended = slide else { return }
-        slide = nil
-        let frame = restFrame(for: view)
-        UIView.performWithoutAnimation {
-            if ended.rising || view.frame != frame { view.layer.removeAnimation(forKey: "position") }
+        let resize = {
             view.frame = frame
             view.layoutIfNeeded()
         }
-    }
-
-    /// The rows changed while the renderer slides (output arrived, a program repainted), before they are drawn: the
-    /// cursor's row stays above the key bar. Return closes the keyboard, so a command's output often arrives mid-slide.
-    func rowsMoved() {
-        guard let current = slide, let view = mounted, view.superview === self,
-              let cursorBottom = cursorBottomNow(view), let barTop = keyBarTopNow(view) else { return }
-        let hidden = cursorBottom - barTop
-        guard hidden > 0.5 else { return }
-        let presented = (view.layer.presentation() ?? view.layer).frame.minY
-        let remaining = max(0.05, current.end - CACurrentMediaTime())
-        // The new rows appear where the cursor's row clears the key bar.
-        UIView.performWithoutAnimation {
-            view.layer.removeAnimation(forKey: "position")
-            view.frame.origin.y = presented - hidden
-        }
-        if current.rising {
-            // The keyboard still rises: get to where the renderer rests ahead of it.
-            let top = heldTop(view, target: restFrame(for: view))
-            UIView.animate(withDuration: min(remaining, 0.12), delay: 0, options: [.curveEaseOut, .beginFromCurrentState]) {
-                view.frame.origin.y = min(top, presented - hidden)
-            }
-        } else {
-            // The keyboard still goes, slowing down: follow it at an even pace, behind it, to rest when it does.
-            let top = restFrame(for: view).minY
-            UIView.animate(withDuration: remaining, delay: 0, options: [.curveLinear, .beginFromCurrentState]) {
-                view.frame.origin.y = top
-            }
-        }
-    }
-
-    /// The bottom of the cursor's row as it is on screen now (and its rows as they are about to be drawn), in this view's
-    /// coordinates.
-    private func cursorBottomNow(_ view: AgentTerminalView) -> CGFloat? {
-        let terminal = view.getTerminal()
-        guard terminal.rows > 0 else { return nil }
-        let cellHeight = view.getOptimalFrameSize().size.height / CGFloat(terminal.rows)
-        guard cellHeight > 0 else { return nil }
-        let history = max(0, Int((view.contentSize.height / cellHeight).rounded()) - terminal.rows)
-        let top = (view.layer.presentation() ?? view.layer).frame.minY
-        return top + CGFloat(history + terminal.getCursorLocation().y + 1) * cellHeight - view.contentOffset.y
-    }
-
-    /// The key bar's top as it is on screen now, in this view's coordinates.
-    private func keyBarTopNow(_ view: AgentTerminalView) -> CGFloat? {
-        guard let bar = view.inputAccessoryView, let barWindow = bar.window, !bar.isHidden,
-              let space = window?.windowScene?.screen.coordinateSpace else { return nil }
-        let layer = bar.layer.presentation() ?? bar.layer
-        let onScreen = barWindow.convert(layer.convert(layer.bounds, to: nil), to: space)
-        return convert(onScreen, from: space).minY
+        if duration > 0 { UIView.animate(withDuration: duration, delay: 0, options: options, animations: resize) }
+        else { UIView.performWithoutAnimation(resize) }
     }
 
     /// The keyboard has settled, and the key bar with it: lay out where it actually is.
-    @objc private func keyboardSettled(_ note: Notification) {
-        if let view = mounted, view.superview === self { endSlide(view) }
-        setNeedsLayout()
-    }
+    @objc private func keyboardSettled(_ note: Notification) { setNeedsLayout() }
 
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -835,12 +723,8 @@ final class TerminalMountView: UIView {
             let changed = keyBarCoverChanged
             DispatchQueue.main.async { changed?(cover) }
         }
-        if slide != nil, view.frame.width != bounds.width { endSlide(view) }
-        if slide == nil {
-            // Set as it is, inside an animation or not: an animated height would stretch the drawn rows.
-            let frame = restFrame(for: view)
-            if view.frame != frame { UIView.performWithoutAnimation { view.frame = frame } }
-        }
+        let frame = restFrame(for: view)
+        if view.frame != frame { view.frame = frame }
         guard needsScrollSync, bounds.width > 0, bounds.height > 0 else { return }
         needsScrollSync = false
         // After this layout pass the renderer shows the rows its terminal displays.
@@ -891,8 +775,6 @@ struct TerminalRenderer: UIViewRepresentable {
         // laid out), kept the last row that far above the renderer's foot until the next output.
         view.contentInsetAdjustmentBehavior = .never
         view.observeKeyboard()
-        // `rangeChanged` hears of rows about to be drawn, for a renderer sliding with the keyboard.
-        view.notifyUpdateChanges = true
         view.allowMouseReporting = true
         view.installWheelScrolling()
         view.linkReporting = .none

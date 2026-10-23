@@ -154,30 +154,10 @@ private final class TerminalHost: APITransport, @unchecked Sendable {
         XCTAssertEqual(view.frame.height, 480, accuracy: 0.5, "Once it goes the rows take the room back")
     }
 
-    /// A rising keyboard: the renderer keeps its rows while it slides up, and rests where SwiftTerm's resize leaves the
-    /// rows shown, so taking its new height changes nothing on screen (owner, 2026-10-23: "smooth and instant").
-    func testARisingKeyboardLeavesTheRowsShownWhereTheResizeDoes() {
-        // 21 pt rows: 33 of them in 712 pt, 18 in 391 pt.
-        // A shell with history, following its newest output: the last row stays on the bottom edge.
-        XCTAssertEqual(TerminalKeyboardFollow.heldShift(cellHeight: 21, rows: 33, cursorRow: 32, lines: 600, topRow: 567,
-                                                       offset: 567 * 21 - 19, height: 391), 391 - 712, accuracy: 0.01)
-        // A new shell, its prompt at the top: the empty rows under it go, nothing moves.
-        XCTAssertEqual(TerminalKeyboardFollow.heldShift(cellHeight: 21, rows: 33, cursorRow: 1, lines: 33, topRow: 0,
-                                                       offset: 0, height: 391), 0, accuracy: 0.01)
-        // The cursor on row 25 of 33 with no history yet: 7 rows under it go, then 8 scroll away.
-        XCTAssertEqual(TerminalKeyboardFollow.heldShift(cellHeight: 21, rows: 33, cursorRow: 25, lines: 33, topRow: 0,
-                                                       offset: 0, height: 391), -(8 * 21 - 13), accuracy: 0.01)
-        // A full-screen program on the alternate screen, its input 4 rows above the bottom: 11 rows leave its top.
-        XCTAssertEqual(TerminalKeyboardFollow.heldShift(cellHeight: 21, rows: 33, cursorRow: 28, lines: 33, topRow: 0,
-                                                       offset: 0, height: 391, keepsHistory: false), -11 * 21, accuracy: 0.01)
-        // Scrolled back into the history: the lines in view stay in view.
-        XCTAssertEqual(TerminalKeyboardFollow.heldShift(cellHeight: 21, rows: 33, cursorRow: 32, lines: 600, topRow: 300,
-                                                       offset: 300 * 21, height: 391), -15 * 21, accuracy: 0.01)
-    }
-
-    /// The rows stop above the keyboard, the key bar on it included, and the notice above that. While a rising keyboard
-    /// slides in the renderer keeps its height (its rows, and the host's, change once it has arrived); a going one gives
-    /// the rows back at once.
+    /// The rows stop above the keyboard, the key bar on it included, and the notice above that. The renderer takes that
+    /// height as the keyboard starts to move, animated with the keyboard's duration, so its rows (and the host's)
+    /// change once per move, at its start (owner, 2026-10-23: "the old way looked nicer it was just to slow in
+    /// tranitions").
     func testTheRowsFollowTheKeyboardAndChangeOncePerMove() async throws {
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.first as? UIWindowScene)
         let window = UIWindow(windowScene: scene)
@@ -186,9 +166,13 @@ private final class TerminalHost: APITransport, @unchecked Sendable {
         window.addSubview(mount)
         window.makeKeyAndVisible()
         defer { window.isHidden = true }
+        var resizes: [Int] = []
+        let link = TerminalRendererLink(send: { _ in }, sendProtocolReply: { _ in }, resize: { rows, _ in resizes.append(rows) })
         let view = AgentTerminalView(frame: .zero)
+        view.terminalDelegate = link
         mount.mount(view, claim: true)
         mount.layoutIfNeeded()
+        view.layoutIfNeeded()
         let height = window.bounds.height, foot = height - window.safeAreaInsets.bottom
         XCTAssertEqual(view.frame.maxY, foot, accuracy: 0.5, "Without a keyboard the rows end above the home indicator")
         func keyboard(top: CGFloat, duration: Double) {
@@ -197,69 +181,36 @@ private final class TerminalHost: APITransport, @unchecked Sendable {
                 UIResponder.keyboardAnimationDurationUserInfoKey: duration,
                 UIResponder.keyboardAnimationCurveUserInfoKey: 7])
         }
+        func heightAnimation() -> CAAnimation? {
+            view.layer.animationKeys()?.compactMap { view.layer.animation(forKey: $0) }
+                .first { ($0 as? CABasicAnimation)?.keyPath == "bounds.size" }
+        }
+
+        resizes = []
         keyboard(top: height - 355, duration: 0.25)
-        XCTAssertEqual(view.frame.height, foot, accuracy: 0.5, "The renderer keeps its rows while the keyboard rises")
-        try await Task.sleep(for: .milliseconds(400))
         XCTAssertEqual(view.frame.minY, 0, accuracy: 0.5)
-        XCTAssertEqual(view.frame.maxY, height - 355, accuracy: 0.5, "then rests on the keyboard with its new rows")
+        XCTAssertEqual(view.frame.maxY, height - 355, accuracy: 0.5, "The renderer takes the height it rests at at once")
+        XCTAssertNotNil(heightAnimation(), "and gets there with the keyboard")
+        XCTAssertEqual(resizes.count, 1, "Its rows change as the keyboard starts to rise")
+        try await Task.sleep(for: .milliseconds(400))
+        mount.layoutIfNeeded()
+        XCTAssertEqual(view.frame.maxY, height - 355, accuracy: 0.5, "Nothing moves once the keyboard has arrived")
+        XCTAssertEqual(resizes.count, 1, "and the rows changed once")
 
         mount.noticeInset = 96
         mount.layoutIfNeeded()
         XCTAssertEqual(view.frame.maxY, height - 355 - 96, accuracy: 0.5, "The notice sits on the keyboard, the rows above it")
 
+        resizes = []
         keyboard(top: height, duration: 0.25)
-        XCTAssertEqual(view.frame.height, foot - 96, accuracy: 0.5, "A going keyboard gives the rows back at once")
+        XCTAssertEqual(view.frame.maxY, foot - 96, accuracy: 0.5, "A going keyboard gives the rows back at once")
+        XCTAssertNotNil(heightAnimation(), "at the keyboard's pace")
+        XCTAssertEqual(resizes.count, 1)
         try await Task.sleep(for: .milliseconds(400))
-        XCTAssertEqual(view.frame.minY, 0, accuracy: 0.5)
-    }
-
-    /// Return on the on-screen keyboard closes it; a hardware keyboard's Return, a Return made another key by the
-    /// latched Control and any other text keep it (owner, 2026-10-23).
-    func testOnlyTheOnScreenKeyboardsReturnClosesIt() {
-        XCTAssertTrue(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 355, keyBarHeight: 54,
-                                                       hardwareKeyboard: false, controlLatched: false))
-        XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 355, keyBarHeight: 54,
-                                                        hardwareKeyboard: true, controlLatched: false), "A hardware key's Return")
-        XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 54, keyBarHeight: 54,
-                                                        hardwareKeyboard: false, controlLatched: false),
-                       "With a hardware keyboard only the key bar is on screen")
-        XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 0, keyBarHeight: 54,
-                                                        hardwareKeyboard: false, controlLatched: false))
-        XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: "\n", keyboardHeight: 355, keyBarHeight: 54,
-                                                        hardwareKeyboard: false, controlLatched: true), "Control-Return")
-        for text in ["a", " ", "a\n", "\r\n"] {
-            XCTAssertFalse(TerminalReturnKey.closesKeyboard(text: text, keyboardHeight: 355, keyBarHeight: 54,
-                                                            hardwareKeyboard: false, controlLatched: false), text)
-        }
-    }
-
-    /// The Return goes into the input queue before the keyboard goes; letters and the latched Control's Return keep it.
-    func testReturnOnTheOnScreenKeyboardSendsItThenPutsTheKeyboardAway() async throws {
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
-        var sent: [Data] = []
-        let link = TerminalRendererLink(send: { sent.append($0) }, sendProtocolReply: { _ in }, resize: { _, _ in })
-        let view = TerminalRenderer.makeRenderer(link: link)
-        view.frame = window.bounds
-        window.addSubview(view)
-        window.makeKeyAndVisible()
-        defer { window.isHidden = true }
-        view.isUserInteractionEnabled = true
-        XCTAssertTrue(view.becomeFirstResponder())
-        NotificationCenter.default.post(name: UIResponder.keyboardWillChangeFrameNotification, object: nil,
-                                        userInfo: [UIResponder.keyboardFrameEndUserInfoKey: CGRect(x: 0, y: 519, width: 402, height: 355)])
-        try await Task.sleep(for: .milliseconds(50))
-
-        view.insertText("l")
-        view.controlModifier = true
-        view.insertText("\n")
-        try await Task.sleep(for: .milliseconds(50))
-        XCTAssertTrue(view.isFirstResponder, "Letters and Control-Return keep the keyboard")
-
-        view.insertText("\n")
-        XCTAssertEqual(sent.last, Data([13]), "The Return is in the input queue as the keyboard starts to go")
-        try await Task.sleep(for: .milliseconds(50))
-        XCTAssertFalse(view.isFirstResponder, "then the keyboard and its key bar go")
-        XCTAssertEqual(sent.last, Data([13]), "Nothing is sent after it")
+        mount.layoutIfNeeded()
+        XCTAssertEqual(view.frame.maxY, foot - 96, accuracy: 0.5)
+        XCTAssertEqual(resizes.count, 1)
+        withExtendedLifetime(link) {}
     }
 
     func testDirectTerminalDelegateInputUsesUserRoute() {
