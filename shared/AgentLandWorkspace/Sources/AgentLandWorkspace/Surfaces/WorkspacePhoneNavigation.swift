@@ -163,6 +163,19 @@ import AgentLandCore
         model.requestResume(.tab(tab))
     }
 
+    /// Whether a stack keeps the page of the task `id`. The stack in front (`inFront`) keeps an open task's page while it
+    /// is the task in front or one of the workspace in use's (the stacks keep only its pages). Chat's or Terminal's
+    /// stack that isn't in front keeps every page until it is (the shell's `switchPhoneTab`): emptied while its tab was
+    /// off screen or leaving it (the switcher's task in another workspace, on the other tab), the stack showed the next
+    /// page pushed on it black under its name, with the tab bar (owner, 2026-10-23).
+    func stackKeepsPage(_ id: UUID, inFront: Bool, model: WorkspaceModel) -> Bool {
+        guard inFront else { return true }
+        guard model.tab(id) != nil else { return false }
+        if id == model.selectedTabID { return true }
+        guard let workspace = switcherWorkspaceID(model: model) else { return false }
+        return workingTasks(inWorkspace: workspace, model: model).contains { $0.id == id }
+    }
+
     /// A workspace's row: its Home, with it the workspace in use. Nothing closes or ends; each task stays open in the
     /// switcher (while the host's list is unknown, the workspace stays as it is).
     func showWorkspaceHome(_ id: String, model: WorkspaceModel) {

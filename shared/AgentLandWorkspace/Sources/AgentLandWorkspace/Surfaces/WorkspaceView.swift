@@ -514,7 +514,15 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
         guard destination != phoneTab else { return }
         resignKeyboard()
         phoneTab = destination
+        // A page this stack kept while out of sight (another workspace's, a closed task's) goes now (`reconcilePhoneStacks`).
+        reconcilePhoneStacks(front: destination)
         model.selectedTabID = phoneTopSession(destination)
+    }
+
+    /// The tab the selection shows (`showPhoneSelection`): a chat's or terminal's own, or the tab in front.
+    private var phoneSelectionDestination: PhoneTabDestination {
+        guard let tab = model.currentTab, tab.kind != .home, tab.kind != .files, tab.kind != .git else { return phoneTab }
+        return PhoneTabDestination.hosting(tab.kind)
     }
 
     /// The open session on top of a tab's stack; nil at its root (Home), or on Settings.
@@ -586,10 +594,15 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
         // Files and Git are Workspace's pages, never the task in front; the change this makes is followed next.
         navigation.reconcileSelection(model: model)
         guard model.selectedTabID == new.selected else { return }
-        reconcilePhoneStacks()
-        // The session in front closed: its page goes back to Home, not to the task the model put in its place.
+        // The session in front closed: its page goes back to Home, not to the task the model put in its place. The
+        // stacks follow that Home, on the tab in front, not the tab of the task put in its place.
+        var closedInFront = false
         if old.host == new.host, let closed = old.selected, closed != new.selected, !new.tabs.contains(closed),
            let kind = old.selectedKind, kind != .home, kind != .files, kind != .git, new.selected != nil {
+            closedInFront = true
+        }
+        reconcilePhoneStacks(front: closedInFront ? phoneTab : nil)
+        if closedInFront {
             model.selectedTabID = nil
             return
         }
@@ -631,20 +644,21 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
         }
     }
 
-    /// Drops the pages of tasks that closed, or that belong to a workspace no longer in use.
-    private func reconcilePhoneStacks() {
+    /// Drops the pages of tasks that closed, or that belong to a workspace no longer in use: from Chat's or Terminal's
+    /// stack once it is the one in front (`front`, else the one the selection shows; `WorkspacePhoneNavigation.stackKeepsPage`).
+    private func reconcilePhoneStacks(front: PhoneTabDestination? = nil) {
         let navigation = model.phoneNavigation
-        let working = Set(navigation.switcherWorkspaceID(model: model)
-            .map { navigation.workingTasks(inWorkspace: $0, model: model).map(\.id) } ?? [])
-        func keeps(_ route: PhoneSessionRoute) -> Bool {
-            model.tab(route.tabID) != nil && (route.tabID == model.selectedTabID || working.contains(route.tabID))
+        let front = front ?? phoneSelectionDestination
+        func keeps(on stack: PhoneTabDestination) -> (PhoneSessionRoute) -> Bool {
+            { navigation.stackKeepsPage($0.tabID, inFront: stack == front, model: model) }
         }
-        if !phoneChatPath.allSatisfy(keeps) { phoneChatPath = phoneChatPath.filter(keeps) }
-        if !phoneTerminalPath.allSatisfy(keeps) { phoneTerminalPath = phoneTerminalPath.filter(keeps) }
+        let chatKeeps = keeps(on: .chat), terminalKeeps = keeps(on: .terminal)
+        if !phoneChatPath.allSatisfy(chatKeeps) { phoneChatPath = phoneChatPath.filter(chatKeeps) }
+        if !phoneTerminalPath.allSatisfy(terminalKeeps) { phoneTerminalPath = phoneTerminalPath.filter(terminalKeeps) }
         if let session = phoneWorkspaceSession {
             if session.depth != phoneWorkspacePath.count {
                 phoneWorkspaceSession = nil
-            } else if !keeps(PhoneSessionRoute(tabID: session.tabID)) {
+            } else if !navigation.stackKeepsPage(session.tabID, inFront: true, model: model) {
                 phoneWorkspacePath.removeLast()
                 phoneWorkspaceSession = nil
             }

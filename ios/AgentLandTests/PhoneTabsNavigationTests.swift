@@ -106,6 +106,36 @@ import AgentLandCore
         XCTAssertTrue(host.requests.isEmpty, "Switching ends nothing on the host")
     }
 
+    /// The switcher's task in another workspace, on the other tab: the stack left behind keeps the old workspace's page
+    /// until it is in front again, so no stack changes as its tab leaves the screen (owner, 2026-10-23: "switching from
+    /// a chat to terminal in another workspace or vice versa makes the chat or terminal screen go black").
+    func testAStackLeftBehindKeepsItsPageUntilItIsInFrontAgain() throws {
+        let (model, _, defaults, suite) = try closeFixture()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        model.phoneNavigation.drawerHoldsBrowsers = true
+        model.projects = [Project(id: "a", name: "Alpha"), Project(id: "b", name: "Beta")]
+        let chat = WorkspaceTab(kind: .chat, projectID: "a", resourceID: "codex:review", title: "Review")
+        let terminal = WorkspaceTab(kind: .terminal, projectID: "b", resourceID: "server", title: "Server")
+        let other = WorkspaceTab(kind: .terminal, projectID: "a", resourceID: "shell", title: "Shell")
+        model.tabs = [chat, terminal, other]
+        model.selectedTabID = chat.id
+        let navigation = model.phoneNavigation
+
+        navigation.selectSwitcherTask(terminal.id, model: model)
+        XCTAssertEqual(model.currentProject?.id, "b")
+        XCTAssertTrue(navigation.stackKeepsPage(terminal.id, inFront: true, model: model), "The task in front")
+        XCTAssertTrue(navigation.stackKeepsPage(chat.id, inFront: false, model: model),
+                      "Chat's stack, on its way out, keeps Alpha's chat")
+        XCTAssertFalse(navigation.stackKeepsPage(other.id, inFront: true, model: model),
+                       "Terminal's stack in front keeps only Beta's pages")
+        XCTAssertFalse(navigation.stackKeepsPage(chat.id, inFront: true, model: model),
+                       "Chat chosen again from the tab bar shows Beta's Home")
+        model.tabs = [terminal, other]
+        XCTAssertTrue(navigation.stackKeepsPage(chat.id, inFront: false, model: model),
+                      "A closed task's page stays on a stack that isn't in front")
+        XCTAssertFalse(navigation.stackKeepsPage(chat.id, inFront: true, model: model), "and goes once it is")
+    }
+
     /// A workspace's row shows its Home, with it the workspace in use; every tab stays open and its session goes on.
     func testChoosingASwitcherWorkspaceShowsItsHomeWithEveryTabOpen() throws {
         let (model, host, defaults, suite) = try closeFixture()
