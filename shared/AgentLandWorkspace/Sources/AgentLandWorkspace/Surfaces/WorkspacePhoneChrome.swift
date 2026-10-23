@@ -21,6 +21,46 @@ struct WorkspaceSurfaceMenu {
     }
 }
 
+/// Ends editing in every window, then runs `action` once the on-screen keyboard has gone: at once when none was up,
+/// else when it has finished going down (or after `limit`, should that never be said). A presentation started while
+/// the keyboard still goes down keeps it and gives it back as it ends, as one started over the keyboard does.
+@MainActor func endEditingInEveryWindow(limit: TimeInterval = 0.6, then action: @escaping @MainActor () -> Void) {
+    let watch = KeyboardDepartureWatch()
+    endEditingInEveryWindow()
+    watch.wait(limit: limit, then: action)
+}
+
+/// Whether ending editing sent the keyboard down (UIKit says so while the responder resigns), and when it has gone.
+@MainActor final class KeyboardDepartureWatch: NSObject {
+    private var leaving = false
+    private var action: (@MainActor () -> Void)?
+
+    override init() {
+        super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(willHide), name: UIResponder.keyboardWillHideNotification,
+                                               object: nil)
+    }
+
+    @objc private func willHide() { leaving = true }
+    @objc private func didHide() { finish() }
+
+    func wait(limit: TimeInterval, then action: @escaping @MainActor () -> Void) {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+        guard leaving else { action(); return }
+        self.action = action
+        NotificationCenter.default.addObserver(self, selector: #selector(didHide), name: UIResponder.keyboardDidHideNotification,
+                                               object: nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + limit) { self.finish() }
+    }
+
+    private func finish() {
+        NotificationCenter.default.removeObserver(self)
+        let action = self.action
+        self.action = nil
+        action?()
+    }
+}
+
 /// The active terminal's opaque backdrop, shared by the header, safe areas and status-bar appearance.
 public struct WorkspacePhoneChromeAppearance {
     public let background: Color
@@ -118,11 +158,18 @@ private struct PhoneTaskSwitcherButton: View {
         .onChange(of: scenePhase) { _, phase in if phase == .background { presented = false } }
     }
 
+    /// The popover comes up once the keyboard has gone. Presented while it was still on its way down, the popover
+    /// kept it and gave it back as it closed, for a moment, with no one typing: a terminal's rows shrank and grew
+    /// again under it, and the program redrew itself into a blank screen (owner, 2026-10-23: "going back and forth
+    /// between chat and terminal breaks them respectively, showing black screens").
     private func open() {
-        endEditingInEveryWindow()
         heightLimit = switcherHeightLimit()
-        model.phoneNavigation.tabSwitcherShown = true
-        presented = true
+        let navigation = model.phoneNavigation
+        navigation.tabSwitcherShown = true
+        endEditingInEveryWindow {
+            // Closed meanwhile (the page changed, Escape): nothing to show.
+            if navigation.tabSwitcherShown { presented = true }
+        }
     }
 
     /// The switcher grows with its rows up to 60% of the window's height, then scrolls.

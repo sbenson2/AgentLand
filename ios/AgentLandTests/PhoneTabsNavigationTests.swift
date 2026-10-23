@@ -259,6 +259,32 @@ import AgentLandCore
         return (model, host, defaults, suite)
     }
 
+    /// The task switcher opens once the keyboard has gone (owner, 2026-10-23: "showing black screens"): with no
+    /// keyboard going down, at once; with one going down, when it has gone, and once only.
+    func testSwitcherWaitsForTheKeyboardToGo() {
+        var opened = 0
+        KeyboardDepartureWatch().wait(limit: 5) { opened += 1 }
+        XCTAssertEqual(opened, 1, "No keyboard on its way down: the switcher opens at once")
+
+        let watch = KeyboardDepartureWatch()
+        NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
+        watch.wait(limit: 5) { opened += 1 }
+        XCTAssertEqual(opened, 1, "The switcher waits while the keyboard goes down")
+        NotificationCenter.default.post(name: UIResponder.keyboardDidHideNotification, object: nil)
+        XCTAssertEqual(opened, 2, "The switcher opens once the keyboard has gone")
+        NotificationCenter.default.post(name: UIResponder.keyboardDidHideNotification, object: nil)
+        XCTAssertEqual(opened, 2, "It opens once")
+    }
+
+    /// A keyboard that never says it has gone holds the switcher back no longer than the limit.
+    func testSwitcherOpensAfterTheLimitWithoutTheKeyboardsWord() {
+        let opened = expectation(description: "opened")
+        let watch = KeyboardDepartureWatch()
+        NotificationCenter.default.post(name: UIResponder.keyboardWillHideNotification, object: nil)
+        watch.wait(limit: 0.1) { opened.fulfill() }
+        wait(for: [opened], timeout: 2)
+    }
+
 }
 
 
