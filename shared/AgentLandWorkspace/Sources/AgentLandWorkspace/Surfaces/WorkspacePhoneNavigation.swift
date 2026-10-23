@@ -3,8 +3,8 @@ import Observation
 import SwiftUI
 import AgentLandCore
 
-/// The iPhone's task switcher (the title menu, `switcherSections`) and the Files and Git pages that Workspace opens
-/// (owner, 2026-10-11: bottom tabs replace the left drawer).
+/// The iPhone's task switcher (the panel under the page's title, `switcherSections`) and the Files and Git pages that
+/// Workspace opens (owner, 2026-10-11: bottom tabs replace the left drawer).
 @MainActor @Observable final class WorkspacePhoneNavigation {
     /// Files and Git browse the current workspace.
     enum DrawerSection: String, Hashable, CaseIterable, Identifiable {
@@ -35,6 +35,7 @@ import AgentLandCore
             }
         }
     }
+    /// The task switcher's popover is up (`PhoneTaskSwitcherTitle`); `dismissPopovers()` closes it.
     var tabSwitcherShown = false
     /// The views that show a standalone terminal's screen (`StandaloneTerminalView`, pushed from the Workspace tab): that
     /// screen is an open session surface, so the bottom tab bar hides while one shows (2026-10-11: "Only open session
@@ -119,7 +120,7 @@ import AgentLandCore
         case task(UUID)
     }
 
-    /// The title menu of Chat's and Terminal's Home and of every session's page on iPhone (owner, 2026-10-22: switching
+    /// The task switcher of Chat's and Terminal's Home and of every session's page on iPhone (owner, 2026-10-22: switching
     /// between terminals of different projects took Home, Workspace, a workspace and the way back). Every workspace open
     /// on this device, as the Workspaces screen lists them (`WorkspaceManager.open`: the one in use first, then by last
     /// use; a closed workspace has no tabs here and is not listed), each with its open terminals and chats; then the

@@ -48,65 +48,293 @@ public extension WorkspaceModel {
     }
 }
 
-/// The iPhone's task switcher, the title menu of Chat's and Terminal's Home and of every session's page (owner,
-/// 2026-10-22; `WorkspacePhoneNavigation.switcherSections`): each open workspace is a section, its name a row with
-/// a house that shows its Home, then its open terminals and chats; the open chats no workspace owns come last under
-/// "Chats". A checkmark marks where you are. Choosing a row switches workspace when it is another's and never closes
-/// anything; its page pushes once the menu has gone (`MenuAction.afterDismissal`).
+/// The middle of the navigation bar of Chat's and Terminal's Home and of every session's page on iPhone (owner,
+/// 2026-10-22): the page's title and a small chevron, as the system's title menu draws them, opening the task switcher
+/// (`PhoneTaskSwitcher`) in a popover under it. The keyboard goes first (B-8). The switcher closes on Escape, when the
+/// page or the host changes (`WorkspacePhoneNavigation.dismissPopovers()`) and when the app goes to the background.
 ///
-/// The model and the shell's actions are handed over rather than read from the environment, since the menu is drawn in
-/// the navigation bar.
-struct PhoneTaskSwitcher: View {
+/// The model and the shell's actions are handed over rather than read from the environment, since the title is drawn
+/// in the navigation bar.
+struct PhoneTaskSwitcherTitle: ToolbarContent {
     let model: WorkspaceModel
     let shell: WorkspaceShellActions
+    let title: String
     /// Where you are: the task in front, or the workspace whose Home shows; nil on a page the switcher doesn't list
     /// (an editor, a browser tab).
     let current: WorkspacePhoneNavigation.SwitcherItem?
     /// Home's: the UI tests' controls, which a session's page keeps in its ••• menu.
     var testControls = false
 
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            PhoneTaskSwitcherButton(model: model, shell: shell, title: title, current: current, testControls: testControls)
+        }
+        // The title, not a control on glass, as the system's title menu is.
+        .sharedBackgroundVisibility(.hidden)
+    }
+}
+
+/// `PhoneTaskSwitcherTitle`'s button and the popover it opens.
+private struct PhoneTaskSwitcherButton: View {
+    @Environment(\.scenePhase) private var scenePhase
+    let model: WorkspaceModel
+    let shell: WorkspaceShellActions
+    let title: String
+    let current: WorkspacePhoneNavigation.SwitcherItem?
+    let testControls: Bool
+    /// This title's popover is up; `WorkspacePhoneNavigation.tabSwitcherShown` says one is, for Escape and the shell.
+    @State private var presented = false
+    @State private var heightLimit: CGFloat = 480
+
     var body: some View {
-        ForEach(model.phoneNavigation.switcherSections(model: model)) { section in
-            if let projectID = section.projectID {
-                Section {
-                    row(section.title, systemImage: "house", item: .home(projectID: projectID),
-                        identifier: "switcherWorkspace-\(projectID)") { shell.showPhoneWorkspaceHome(projectID) }
-                    tasks(section.tasks)
+        let navigation = model.phoneNavigation
+        Button(action: open) {
+            HStack(spacing: AgentLandSpacing.xxSmall) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(AgentLandColor.text)
+                    .lineLimit(1)
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AgentLandColor.textSecondary)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: AgentLandTapTarget.iOSMinimum)
+            .contentShape(Rectangle())
+            // A bar's title keeps the bar's size, as the system's does.
+            .dynamicTypeSize(...DynamicTypeSize.large)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityHint("Shows your open workspaces and tasks")
+        .accessibilityIdentifier("taskSwitcher")
+        .popover(isPresented: $presented) {
+            PhoneTaskSwitcher(model: model, shell: shell, current: current, testControls: testControls,
+                              heightLimit: heightLimit)
+                .presentationCompactAdaptation(.popover)
+        }
+        .onChange(of: presented) { _, shown in if !shown { navigation.tabSwitcherShown = false } }
+        .onChange(of: navigation.tabSwitcherShown) { _, shown in if !shown { presented = false } }
+        .onChange(of: scenePhase) { _, phase in if phase == .background { presented = false } }
+    }
+
+    private func open() {
+        endEditingInEveryWindow()
+        heightLimit = switcherHeightLimit()
+        model.phoneNavigation.tabSwitcherShown = true
+        presented = true
+    }
+
+    /// The switcher grows with its rows up to 60% of the window's height, then scrolls.
+    private func switcherHeightLimit() -> CGFloat {
+        let window = UIApplication.shared.connectedScenes.lazy.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+        return (window?.bounds.height ?? 800) * 0.6
+    }
+}
+
+/// The iPhone's task switcher, a popover on the system's glass under the page's title (`PhoneTaskSwitcherTitle`;
+/// owner, 2026-10-22; `WorkspacePhoneNavigation.switcherSections`): each open workspace is a row with a house that
+/// shows its Home, its open terminals and chats indented under it on a tree line that turns right into each (`├─`,
+/// the last `└─`); the open chats no workspace owns come last under a plain "Chats" header. A checkmark marks where you
+/// are. Choosing a row switches workspace when it is another's and never closes anything; the popover goes first and
+/// the row acts once it has gone, so the page it pushes isn't lost to the dismissal.
+struct PhoneTaskSwitcher: View {
+    @Environment(\.dismiss) private var dismiss
+    let model: WorkspaceModel
+    let shell: WorkspaceShellActions
+    let current: WorkspacePhoneNavigation.SwitcherItem?
+    let testControls: Bool
+    /// The tallest it grows before it scrolls.
+    let heightLimit: CGFloat
+    /// The chosen row's action, run once the popover has gone.
+    @State private var chosen: (@MainActor () -> Void)?
+
+    var body: some View {
+        let sections = model.phoneNavigation.switcherSections(model: model)
+        ScrollView {
+            VStack(alignment: .leading, spacing: AgentLandSpacing.xSmall) {
+                ForEach(sections) { section($0) }
+                if sections.isEmpty {
+                    Text("No workspaces or chats are open.")
+                        .font(.body)
+                        .foregroundStyle(AgentLandColor.textSecondary)
+                        .padding(.horizontal, AgentLandSpacing.medium)
+                        .agentLandRowHeight()
                 }
+                if testControls && workspaceUITestHooks { testButtons }
+            }
+            .padding(.vertical, AgentLandSpacing.xSmall)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(minWidth: 300, maxWidth: 340)
+        .frame(maxHeight: heightLimit)
+        .onDisappear {
+            let action = chosen
+            chosen = nil
+            action?()
+        }
+    }
+
+    @ViewBuilder private func section(_ section: WorkspacePhoneNavigation.SwitcherSection) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let projectID = section.projectID {
+                let item = WorkspacePhoneNavigation.SwitcherItem.home(projectID: projectID)
+                Button { choose { shell.showPhoneWorkspaceHome(projectID) } } label: {
+                    PhoneSwitcherRow(title: section.title, systemImage: "house", place: .workspace(hasTasks: !section.tasks.isEmpty),
+                                     checked: current == item)
+                }
+                .buttonStyle(PhoneSwitcherRowStyle())
+                .accessibilityLabel("\(section.title), Home")
+                .accessibilityAddTraits(current == item ? .isSelected : [])
+                .accessibilityIdentifier("switcherWorkspace-\(projectID)")
             } else {
-                Section(section.title) { tasks(section.tasks) }
+                PhoneSwitcherRow(title: section.title, systemImage: "bubble.left.and.bubble.right",
+                                 place: .workspace(hasTasks: !section.tasks.isEmpty), secondary: true)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(section.title)
+                    .accessibilityAddTraits(.isHeader)
             }
-        }
-        if testControls && workspaceUITestHooks {
-            Section {
-                Button("List VoiceOver elements", systemImage: "list.bullet", action: shell.debugListVoiceOverElements)
-                    .accessibilityIdentifier("debugListVoiceOverElements")
-                Button("Rebuild surfaces", systemImage: "arrow.triangle.2.circlepath", action: shell.debugRebuildSurfaces)
-                    .accessibilityIdentifier("debugRebuildSurfaces")
+            ForEach(section.tasks) { tab in
+                let item = WorkspacePhoneNavigation.SwitcherItem.task(tab.id)
+                Button { choose { model.phoneNavigation.selectSwitcherTask(tab.id, model: model) } } label: {
+                    PhoneSwitcherRow(title: tab.title, systemImage: tabIcon(tab.kind),
+                                     place: tab.id == section.tasks.last?.id ? .lastTask : .task, checked: current == item)
+                }
+                .buttonStyle(PhoneSwitcherRowStyle())
+                .accessibilityLabel("\(tab.title), \(tab.kind == .chat ? "Chat" : "Terminal"), in \(section.title)")
+                .accessibilityAddTraits(current == item ? .isSelected : [])
+                .accessibilityIdentifier("quickTab-\(tab.id.uuidString)")
             }
         }
     }
 
-    private func tasks(_ tabs: [WorkspaceTab]) -> some View {
-        ForEach(tabs) { tab in
-            row(tab.title, systemImage: tabIcon(tab.kind), item: .task(tab.id), identifier: "quickTab-\(tab.id.uuidString)") {
-                model.phoneNavigation.selectSwitcherTask(tab.id, model: model)
-            }
+    /// The UI tests' controls, on Home's switcher only.
+    private var testButtons: some View {
+        HStack(spacing: AgentLandSpacing.xSmall) {
+            Button("List VoiceOver elements") { choose(shell.debugListVoiceOverElements) }
+                .accessibilityIdentifier("debugListVoiceOverElements")
+            Button("Rebuild surfaces") { choose(shell.debugRebuildSurfaces) }
+                .accessibilityIdentifier("debugRebuildSurfaces")
         }
+        .font(.footnote)
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .padding(.horizontal, AgentLandSpacing.medium)
     }
 
-    /// A row with the menu's checkmark while it is where you are (a menu's toggle draws it, as a picker's choice).
-    private func row(_ title: String, systemImage: String, item: WorkspacePhoneNavigation.SwitcherItem, identifier: String,
-                     action: @escaping @MainActor () -> Void) -> some View {
-        Toggle(isOn: Binding(get: { current == item }, set: { _ in MenuAction.afterDismissal { action() } })) {
-            Label(title, systemImage: systemImage)
+    /// Closes the popover, then runs `action` once it has gone (`onDisappear`).
+    private func choose(_ action: @escaping @MainActor () -> Void) {
+        chosen = action
+        dismiss()
+    }
+}
+
+/// A row of the task switcher: an icon and a one-line title, at least 44 pt tall and the panel's width, and a
+/// checkmark while it is where you are. A task's row is indented under its workspace's, on the tree line.
+private struct PhoneSwitcherRow: View {
+    enum Place {
+        /// A workspace's row, or the Chats header; the line starts under its icon when tasks follow.
+        case workspace(hasTasks: Bool)
+        /// A task with another after it (`├─`).
+        case task
+        /// Its workspace's last task (`└─`).
+        case lastTask
+    }
+
+    let title: String
+    let systemImage: String
+    let place: Place
+    var checked = false
+    /// The Chats header, which can't be chosen.
+    var secondary = false
+    /// `AgentLandIconSize.regular`, which the tree line's column follows.
+    @ScaledMetric(relativeTo: .body) private var iconSide = AgentLandIconSize.regular.baseSide
+    private let inset = AgentLandSpacing.medium
+    private let spacing = AgentLandSpacing.small
+
+    private var isTask: Bool {
+        if case .workspace = place { false } else { true }
+    }
+
+    var body: some View {
+        HStack(spacing: spacing) {
+            // A task's indent: the column of its workspace's icon, where the line runs.
+            if isTask { Color.clear.frame(width: iconSide, height: 1) }
+            Image(systemName: systemImage)
+                .frame(width: iconSide, height: iconSide)
+                .foregroundStyle(secondary ? AgentLandColor.textSecondary : AgentLandColor.text)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(isTask ? .body : .body.weight(.semibold))
+                .foregroundStyle(secondary ? AgentLandColor.textSecondary : AgentLandColor.text)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: AgentLandSpacing.xSmall)
+            if checked {
+                Image(systemName: "checkmark")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(AgentLandColor.tint)
+                    .accessibilityHidden(true)
+            }
         }
-        .accessibilityIdentifier(identifier)
+        .padding(.horizontal, inset)
+        .agentLandRowHeight()
+        .background {
+            PhoneSwitcherTreeLine(place: place, column: inset + iconSide / 2, iconSide: iconSide,
+                                  turnEnd: inset + iconSide + spacing - AgentLandSpacing.xSmall)
+                .stroke(AgentLandColor.glyphTertiary, style: StrokeStyle(lineWidth: 1.5, lineJoin: .miter))
+                .flipsForRightToLeftLayoutDirection(true)
+                .accessibilityHidden(true)
+        }
+        .contentShape(Rectangle())
+    }
+}
+
+/// A switcher row's part of the tree line, in the column of its workspace's icon: from under a workspace's icon down
+/// to its first task's row; through a task's row, turning 90° right into it at its middle (`├─`), or ending there at
+/// the last (`└─`).
+private struct PhoneSwitcherTreeLine: Shape {
+    let place: PhoneSwitcherRow.Place
+    /// The line's x: the middle of the workspace's icon.
+    let column: CGFloat
+    let iconSide: CGFloat
+    /// Where the turn ends, clear of the task's icon (a symbol is drawn a little wider than its frame).
+    let turnEnd: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        switch place {
+        case .workspace(hasTasks: false):
+            break
+        case .workspace(hasTasks: true):
+            path.move(to: CGPoint(x: column, y: rect.midY + iconSide / 2 + AgentLandSpacing.xxSmall))
+            path.addLine(to: CGPoint(x: column, y: rect.maxY))
+        case .task:
+            path.move(to: CGPoint(x: column, y: rect.minY))
+            path.addLine(to: CGPoint(x: column, y: rect.maxY))
+            path.move(to: CGPoint(x: column, y: rect.midY))
+            path.addLine(to: CGPoint(x: turnEnd, y: rect.midY))
+        case .lastTask:
+            path.move(to: CGPoint(x: column, y: rect.minY))
+            path.addLine(to: CGPoint(x: column, y: rect.midY))
+            path.addLine(to: CGPoint(x: turnEnd, y: rect.midY))
+        }
+        return path
+    }
+}
+
+/// A switcher row's button: the panel is no List, so it draws a row's pressed state itself, filled with the separator
+/// token's tone while pressed, as the Workspace tab's rows are.
+private struct PhoneSwitcherRowStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background { if configuration.isPressed { AgentLandColor.separator.color.opacity(0.6) } }
     }
 }
 
 /// A session's page on iPhone (native-full side build, 2026-10-16): the system navigation bar shows its name, inline,
-/// over the task switcher (`PhoneTaskSwitcher`), and a ••• button at its trailing end holds the surface's own actions
+/// with a chevron, and opens the task switcher (`PhoneTaskSwitcherTitle`, owner, 2026-10-22); the name stays the page's
+/// navigation title, for Back and VoiceOver. A ••• button at the bar's trailing end holds the surface's own actions
 /// (owner, 2026-10-22; `surfaceTitle`'s items: a chat's model, mode, Continue, Pin, Export and Delete; a terminal's
 /// keyboard, Paste, Keys and Reconnect; an editor's Save, Reload, Copy and Find), then, last, the way out: a chat's
 /// Close Chat closes at once, an editor with unsaved edits asks Close Without Saving or Keep Editing
@@ -125,8 +353,8 @@ struct PhoneSessionTitle<Items: View>: ViewModifier {
             content
                 .navigationTitle(title)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarTitleMenu { PhoneTaskSwitcher(model: model, shell: shell, current: .task(tab.id)) }
                 .toolbar {
+                    PhoneTaskSwitcherTitle(model: model, shell: shell, title: title, current: .task(tab.id))
                     ToolbarItem(placement: .primaryAction) { actionsMenu(tab) }
                 }
         } else {

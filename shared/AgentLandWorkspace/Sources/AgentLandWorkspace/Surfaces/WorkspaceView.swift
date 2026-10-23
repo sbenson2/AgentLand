@@ -336,8 +336,8 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
     // MARK: iPhone tabs
 
     /// iPhone (native-full side build, 2026-10-16): four native tabs, each with its own navigation stack and the system's
-    /// bars. Chat and Terminal show Home (the art and that tab's launchers) under the workspace's name, whose title menu
-    /// is the task switcher (`PhoneTaskSwitcher`: every open workspace and its terminals and chats, owner, 2026-10-22);
+    /// bars. Chat and Terminal show Home (the art and that tab's launchers) under the workspace's name, which opens the
+    /// task switcher (`PhoneTaskSwitcher`: every open workspace and its terminals and chats, owner, 2026-10-22);
     /// a session is a page pushed on its tab's stack. Workspace pushes Files, Git and their pages, and editors and
     /// browser tabs; Settings pushes its pages. The tab bar shows on every screen but an open
     /// chat's or terminal's page (owner, 2026-10-16: "i dont want the bottom nativigation to appear on the chat or
@@ -385,9 +385,11 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
         .overlay(alignment: .topLeading) { voiceOverList }
         // The questions no row asks (an editor closed from a menu, a chat's Delete) point under the title (`DialogAnchor`).
         .overlay(alignment: DialogAnchor.titleMenu) { tabConfirmationAnchor }
-        .task(id: "\(phoneTab)|\(String(describing: model.selectedTabID))|\(phoneWorkspacePath.count)|\(phoneSettingsPath.count)") {
+        .task(id: phonePageID) {
             if workspaceUITestHooks { listVoiceOverElements() }
         }
+        // The task switcher closes when the page in front changes (owner, 2026-10-22).
+        .onChange(of: phonePageID) { _, _ in navigation.dismissPopovers() }
         // Files and Git are Workspace's pages on iPhone: opening one (Browse files, a folder from search) shows it there (B-3).
         .onAppear {
             navigation.drawerHoldsBrowsers = true
@@ -408,6 +410,11 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
         #endif
     }
 
+    /// The page in front: the tab and its stack's top.
+    private var phonePageID: String {
+        "\(phoneTab)|\(String(describing: model.selectedTabID))|\(phoneWorkspacePath.count)|\(phoneSettingsPath.count)"
+    }
+
     /// A page of a tab: the connection's and the app's notices under its bar while it is in front, and the canvas
     /// behind it and its bars (the system's Liquid Glass and scroll-edge effect over it). A painted terminal's backdrop
     /// stands in for the canvas behind its page.
@@ -419,13 +426,14 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
             .containerBackground(fill, for: .navigation)
     }
 
-    /// Chat's and Terminal's root: Home with that tab's launchers, under the workspace in use's name; its title menu is
-    /// the task switcher, with this workspace's Home checked, and the UI tests' controls (Home has no ••• button). Each
-    /// tab keeps its own Home; only the one in front animates.
+    /// Chat's and Terminal's root: Home with that tab's launchers, under the workspace in use's name, which opens the
+    /// task switcher (`PhoneTaskSwitcherTitle`, owner, 2026-10-22) with this workspace's Home checked and the UI tests'
+    /// controls at its foot (Home has no ••• button). Each tab keeps its own Home; only the one in front animates.
     private func phoneHomeRoot(_ destination: PhoneTabDestination) -> some View {
         let atRoot = destination == .terminal ? phoneTerminalPath.isEmpty : phoneChatPath.isEmpty
         let inFront = phoneTab == destination && atRoot
         let opening = inFront && showSessionOpening
+        let title = model.currentProject?.name ?? "AgentLand"
         return phonePage(
             HomeView(tabID: nil, tabLaunchers: AnyView(PhoneLaunchButtons(destination: destination)), visible: inFront)
                 .environment(\.workspaceSurfaceTabID, nil)
@@ -434,12 +442,12 @@ public struct WorkspaceView<Settings: View, Notices: View>: View {
                 .overlay(alignment: .topLeading) { if inFront { phoneSessionStarters } }
                 // A new chat or terminal is being made: the loader in the work area, the bars in reach.
                 .overlay { if opening { creatingIndicator } }
-                .navigationTitle(model.currentProject?.name ?? "AgentLand")
+                .navigationTitle(title)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarTitleMenu {
-                    PhoneTaskSwitcher(model: model, shell: shellActions,
-                                      current: model.phoneNavigation.switcherWorkspaceID(model: model).map { .home(projectID: $0) },
-                                      testControls: true)
+                .toolbar {
+                    PhoneTaskSwitcherTitle(model: model, shell: shellActions, title: title,
+                                           current: model.phoneNavigation.switcherWorkspaceID(model: model).map { .home(projectID: $0) },
+                                           testControls: true)
                 },
             notices: inFront)
     }

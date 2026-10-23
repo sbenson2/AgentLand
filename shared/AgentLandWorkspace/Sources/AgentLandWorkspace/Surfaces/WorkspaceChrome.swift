@@ -116,7 +116,7 @@ private struct SurfaceTitleModifier<Items: View>: ViewModifier {
 
     @ViewBuilder func body(content: Content) -> some View {
         if WorkspacePlatform.isPhone {
-            // A session's page on iPhone: its name in the system bar over the task switcher, its actions in •••.
+            // A session's page on iPhone: its name in the system bar opens the task switcher, its actions in •••.
             #if os(iOS)
             content.modifier(PhoneSessionTitle(title: title, items: items))
             #else
