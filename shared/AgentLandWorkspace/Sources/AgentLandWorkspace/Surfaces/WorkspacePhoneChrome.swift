@@ -230,7 +230,7 @@ struct PhoneTaskSwitcher: View {
 }
 
 /// A row of the task switcher: an icon and a one-line title, at least 44 pt tall and the panel's width, and a
-/// checkmark while it is where you are. A task's row is indented under its workspace's, on the tree line.
+/// checkmark right after the title while it is where you are. A task's row is indented under its workspace's, on the tree line.
 private struct PhoneSwitcherRow: View {
     enum Place {
         /// A workspace's row, or the Chats header; the line starts under its icon when tasks follow.
@@ -269,13 +269,14 @@ private struct PhoneSwitcherRow: View {
                 .foregroundStyle(secondary ? AgentLandColor.textSecondary : AgentLandColor.text)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            Spacer(minLength: AgentLandSpacing.xSmall)
+            // Right after the title, not at the panel's edge (owner, 2026-10-22: "too much" space between them).
             if checked {
                 Image(systemName: "checkmark")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(AgentLandColor.tint)
                     .accessibilityHidden(true)
             }
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, inset)
         .agentLandRowHeight()
