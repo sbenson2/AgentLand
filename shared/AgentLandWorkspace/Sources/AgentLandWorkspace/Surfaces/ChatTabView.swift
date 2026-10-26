@@ -31,6 +31,8 @@ struct ChatTabView: View {
     private var refreshToken: UUID? { workspace.tabRefreshGeneration[tab.id] }
 
     private struct EnvironmentKey: Equatable {
+        /// The chat the tab shows: one that went on in another hands the tab to it, and its new store needs this too.
+        let chat: String
         let client: ObjectIdentifier?
         let capabilities: CapabilitiesResponse?
         let reachable: Bool
@@ -42,7 +44,7 @@ struct ChatTabView: View {
     }
 
     private var environmentKey: EnvironmentKey {
-        EnvironmentKey(client: workspace.client.map(ObjectIdentifier.init), capabilities: workspace.capabilities, reachable: workspace.reachable,
+        EnvironmentKey(chat: tab.resourceID, client: workspace.client.map(ObjectIdentifier.init), capabilities: workspace.capabilities, reachable: workspace.reachable,
                        epoch: workspace.connectionEpoch, active: active, refresh: refreshToken, workspaceIDs: workspace.workspaceIDs,
                        continueWorkspace: continueWorkspace)
     }

@@ -53,6 +53,20 @@ type terminalLauncher struct {
 	hostExecutable, statePath string
 }
 
+// hostNames are this host's own program (os.Executable) and its state file,
+// made absolute, each "" when unknown: what its terminals and Claude Code
+// chats name (AGENTLAND_HOST, AGENTLAND_HOST_STATE), so `agentland-host
+// terminals continue` and `chats continue` run in them reach this host.
+func hostNames(store *Store) (executable, state string) {
+	if path, err := os.Executable(); err == nil {
+		executable = path
+	}
+	if path, err := filepath.Abs(store.Path); err == nil {
+		state = path
+	}
+	return executable, state
+}
+
 // newHostTerminalLauncher is the host's launcher: the Mac's own programs, the
 // user's environment without AgentLand's secrets, and the host's OpenCode
 // for its TUI. newHost adds the agent catalog.
@@ -64,12 +78,9 @@ func newHostTerminalLauncher(store *Store, agent Agent, options HostOptions) *te
 	if home, err := os.UserHomeDir(); err == nil {
 		launcher.privateFolders = append(launcher.privateFolders, filepath.Join(home, "Library", "Application Support", "AgentLand"))
 	}
-	if state, err := filepath.Abs(store.Path); err == nil {
-		launcher.privateFolders = append(launcher.privateFolders, filepath.Dir(state))
-		launcher.statePath = state
-	}
-	if executable, err := os.Executable(); err == nil {
-		launcher.hostExecutable = executable
+	launcher.hostExecutable, launcher.statePath = hostNames(store)
+	if launcher.statePath != "" {
+		launcher.privateFolders = append(launcher.privateFolders, filepath.Dir(launcher.statePath))
 	}
 	hidden := slices.Clone(options.TerminalHiddenEnv)
 	launcher.hidden = func() []string {

@@ -155,6 +155,11 @@ type ChatInfo struct {
 	Model       string `json:"model,omitempty"`
 	Mode        string `json:"mode,omitempty"`
 	Effort      string `json:"effort,omitempty"`
+	// ContinuedIn is the chat this one continued in (chat_continue.go), the
+	// newest when it continued more than once, and ContinuedAt when (UTC RFC
+	// 3339 with milliseconds); both omitted until it has.
+	ContinuedIn string `json:"continuedIn,omitempty"`
+	ContinuedAt string `json:"continuedAt,omitempty"`
 }
 
 // chatTime formats a millisecond timestamp as UTC RFC 3339 with milliseconds;

@@ -307,7 +307,9 @@ and a parent Claude Code session's markers (`CLAUDECODE`, `CLAUDE_CODE_SESSION_I
 `CLAUDE_CODE_MESSAGING_*` and the like), plus
 `CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING=true`,
 `CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS=1` and `CLAUDE_CODE_STARTUP_FAILURE_RESULTS=1`,
-so it uses the Mac user's own Claude sign-in and settings. Prompts go only on stdin.
+so it uses the Mac user's own Claude sign-in and settings. Last come `AGENTLAND_CHAT=<the
+chat's ID>`, `AGENTLAND_HOST` and `AGENTLAND_HOST_STATE`, for `agentland-host chats
+continue` (docs/HOST-API.md, "Continuing a chat in a new one"). Prompts go only on stdin.
 `--permission-prompt-tool stdio` is what sends approvals to the host; without it
 Claude Code denies every request. `--allow-dangerously-skip-permissions` (2026-10-12)
 lets a running process switch into Bypass permissions; it allows nothing by itself.

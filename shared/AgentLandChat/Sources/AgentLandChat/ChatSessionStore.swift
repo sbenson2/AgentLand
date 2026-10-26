@@ -202,6 +202,9 @@ public final class ChatSessionStore {
         public var openChat: (@MainActor (Session) -> Void)?
         /// The chat's name changed (`name`): the host's title, or its first prompt while that is a default.
         public var nameChanged: (@MainActor (String) -> Void)?
+        /// The chat went on in another (`ChatInfo.continuedIn`: the handoff skill started its next session there) while
+        /// this store showed it: the app gives the tab to that chat. A chat opened after it went on is not followed.
+        public var continued: (@MainActor (_ next: String) -> Void)?
         /// A turn ended on this chat's stream (`turn.finished`), with the reply in the transcript.
         public var turnFinished: (@MainActor (ChatTurnOutcome) -> Void)?
         /// Opens a terminal of `program` in the chat's workspace (the sign-in notice's Open in Terminal).
@@ -296,6 +299,10 @@ public final class ChatSessionStore {
     @ObservationIgnored private var shutDown = false
     /// The last `name` the app heard.
     @ObservationIgnored private var reportedName: String?
+    /// When this store began showing the chat: a chat that went on in another since then is followed (`continued`).
+    @ObservationIgnored var shownSince = Date()
+    /// The last chat the app was told this one went on in.
+    @ObservationIgnored private var reportedContinuation: String?
     /// The failed reply whose sign-in notice the person dismissed; it does not come back for that reply.
     @ObservationIgnored private var dismissedSignInReply: String?
     /// The device's saved copy, read once before the first network load.
@@ -809,7 +816,18 @@ public final class ChatSessionStore {
         announce(changes)
         noteMemorySaves(reset: changes.reset)
         reportName()
+        reportContinuation()
         for finished in changes.finishedTurns { callbacks.turnFinished?(finished) }
+    }
+
+    /// Tells the app when the chat went on in another since this store began showing it: live (`chat.updated`), or
+    /// while the stream was away (the snapshot that follows). The host's time against this device's, so a chat that
+    /// went on before it was opened, from the history or a restored tab, stays where it is.
+    private func reportContinuation() {
+        guard let next = info?.continuedIn, next != identity.sessionID, next != reportedContinuation,
+              let at = info?.continuedDate, at >= shownSince else { return }
+        reportedContinuation = next
+        callbacks.continued?(next)
     }
 
     /// The agent's name from the host's catalog, for an agent this version cannot name (an ACP agent). A

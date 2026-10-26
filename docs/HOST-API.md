@@ -234,8 +234,8 @@ One JSON object per line: `{"seq": N, "type": "…", …}`. The host sends:
 | type | fields | notes |
 |---|---|---|
 | `ready` | `cursor`, `resumed` | First line. `resumed=false` means a `snapshot` follows. |
-| `snapshot` | `chat{id, title, titleSource, titleBasis?, provider, model, mode, effort}`, `messages` (newest 40, oldest first), `hasMore`, `status`, `interactions`, `queue`, `rewind?` | Sent when there is no cursor, the epoch changed, or the cursor fell out of the ring. Replaces all client state. |
-| `chat.updated` | `title?`, `titleSource?`, `titleBasis?`, `model?`, `mode?`, `effort?` | `title` and `titleSource` come together whenever the title, its source or its basis changes, with `titleBasis` when the title has one ("Chat names"). |
+| `snapshot` | `chat{id, title, titleSource, titleBasis?, provider, model, mode, effort, continuedIn?, continuedAt?}`, `messages` (newest 40, oldest first), `hasMore`, `status`, `interactions`, `queue`, `rewind?` | Sent when there is no cursor, the epoch changed, or the cursor fell out of the ring. Replaces all client state. |
+| `chat.updated` | `title?`, `titleSource?`, `titleBasis?`, `model?`, `mode?`, `effort?`, `continuedIn?`, `continuedAt?` | `title` and `titleSource` come together whenever the title, its source or its basis changes, with `titleBasis` when the title has one ("Chat names"). `continuedIn` and `continuedAt` come together once the chat continued in a new one ("Continuing a chat in a new one"). |
 | `status` | `state: idle\|running\|waiting\|retry\|error`, `retry?{attempt, nextAt, message}` | `waiting` = an interaction is pending. |
 | `message.created` | `message` | |
 | `message.updated` | `messageId`, `status?`, `completedAt?`, `usage?`, `error?` | |
@@ -346,6 +346,12 @@ recorded).
 Each Claude Code chat runs its own `claude -p` process speaking the Agent SDK
 stream-json protocol (tested with Claude Code 2.1.280; arguments, environment and
 lifecycle in `desktop/README.md`).
+
+- Since 2026-10-26 each chat's process has `AGENTLAND_CHAT=<the chat's ID>`,
+  `AGENTLAND_HOST=<the host's own executable>` and `AGENTLAND_HOST_STATE=<the host's state
+  file>` last in its environment, in place of any inherited, so its tools can run
+  `agentland-host chats continue` ("Continuing a chat in a new one"). Codex chats are
+  unchanged.
 
 - `GET /v1/chat/options` for a Claude chat, or with `provider=claude` and no
   `sessionId` for a new one, lists `models` from the CLI's `initialize` answer as
@@ -578,7 +584,8 @@ Sources:
 - `provider`: a title AgentLand did not make. For OpenCode chats: OpenCode's own generated
   title, and any other title OpenCode holds that the host did not set (a rename in
   OpenCode's own apps). For every chat: a title it was given when it was created that is
-  not a placeholder (by a client or a continue).
+  not a placeholder (by a client or a continue), and the title a Claude Code chat continued
+  in a new one passes on, placeholder or not ("Continuing a chat in a new one").
 - `auto`: the host's free naming, below.
 - `device`: a name a device wrote through `POST /v1/chat/title`.
 
@@ -2036,6 +2043,61 @@ terminal's end names the new one.
   1 any other failure, with the host's message on stderr.
 - **The apps**: a tab whose terminal ends with `continuedIn` switches to that terminal in
   place.
+
+### Continuing a chat in a new one (2026-10-26)
+
+The owner's handoff skill ends a Claude Code session and goes on in a fresh one, which works in
+AgentLand's terminals (above). Owner, 2026-10-26: "handoff needs to work in the chat screen
+too". The owner's choices: the new chat keeps the old chat's model, effort and permission mode
+(no asking again); it takes the old chat's title ("Same title"); the old chat stays in
+history and usable, with its reply stopped and its process freed. So `agentland-host chats
+continue -- <prompt>`, run by a Claude Code chat's tool, has the host start a new Claude Code
+chat in the same workspace with the prompt as its first message, and the old chat names it.
+
+- **The op**, on the same socket (`terminals-local.sock`, this user's processes only; no HTTP
+  route continues a chat this way): the CLI sends `{op: "continueChat", chat, prompt,
+  version}` within 2 s; the host answers `{id}` (the new chat's ID) or `{error: {code,
+  message}}`, and hangs up. `chat` is the chat whose process runs the command
+  (`$AGENTLAND_CHAT`).
+- **Checks**, refusing in this order: `terminals_unavailable` when the host runs no Claude
+  Code chats; `version_mismatch`; `invalid_request` for a prompt as the terminal continue
+  refuses it (empty once trimmed, over 4096 bytes, not UTF-8, any control character, or
+  starting with `-`); `chat_not_continuable` when `chat` is not a chat ID, not a Claude Code
+  chat (Codex chats share one app-server process and are not continued), a chat the host does
+  not have, a plain chat of the Chats space, in a workspace since removed, or deleted from the
+  archive; then, while Claude Code cannot run Chat (subscriptions only, "Chat in workspaces",
+  Subscriptions and refusals), `terminals_unavailable` with the provider's message. Then the
+  new chat is made and its prompt sent as `POST /v1/sessions` and `POST /v1/messages` do:
+  `terminal_limit` (here: six Claude Code chats are working, the 429 `agent_capacity` of a
+  send), `host_stopping`, else `terminals_unavailable` (Claude Code reported an API key, did
+  not confirm the prompt in time, or did not start). On any refusal nothing is recorded, and a
+  new chat already made is removed (from the chats, the event stream and the archive, whose
+  change feed then carries its delete).
+- **The new chat** is a Claude Code chat of the old chat's workspace, titled with the old
+  chat's current title with `titleSource` `provider`, so the host's free naming never renames
+  it (a device can still rename it). Its model, mode and effort are the old chat's, as a create
+  with them sets them. The prompt, trimmed, is its first user message, delivered as a device's
+  send is (no device, no attachments; archived and in its event stream as usual). The host logs
+  one line, `chats: continued id=<old> in id=<new> workspace=<workspace>`, and never the
+  prompt.
+- **`continuedIn` and `continuedAt`** on the old chat's `ChatInfo`: the new chat's ID and when
+  (UTC RFC 3339 with milliseconds), saved in the chat's record so they outlive host restarts,
+  in its `snapshot`, and sent at once to anyone following it as `chat.updated`. A chat
+  continued again names the newest. Omitted until a chat has continued.
+- **The close-out**, after the answer and never holding it up: the old chat's turn (the one
+  whose tool ran the command) has 10 s to end on its own; if it has not, it is stopped as
+  `POST /v1/abort` does (its reply ends `aborted`). Then the old chat's process stops, freeing
+  its place among the six; its next send starts one again. A turn that began meanwhile (someone
+  sent to the old chat) is left alone.
+- **The CLI**: `agentland-host chats continue [--state <host.json>] -- <prompt>`. `--state`
+  defaults to `$AGENTLAND_HOST_STATE`, else the default state. It waits at most 90 s (the host
+  may check the sign-in, start Claude Code and wait for the prompt's echo first) and prints
+  only the new chat's ID and a newline on stdout. Exit codes: 0 success; 5 when this chat
+  cannot be continued here (no `$AGENTLAND_CHAT`, the socket missing or refusing the
+  connection, or `chat_not_continuable`), so the caller goes on its own way; 2 usage; 1 any
+  other failure, with the host's message on stderr.
+- **The apps**: a tab that was showing the chat when it continued follows it; a chat opened
+  from history afterwards does not redirect.
 
 ### Mac-only terminal routes
 

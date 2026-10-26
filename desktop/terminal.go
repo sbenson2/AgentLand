@@ -577,16 +577,24 @@ func (h *Host) dropUnlisted(entry *terminalEntry) {
 // reaches that host (terminal_continue.go). terminalEnvironment already drops
 // every inherited AGENTLAND_ variable, so a nested host's never leak.
 func terminalEnvironmentWithID(env []string, id, executable, state string) []string {
+	return environmentNaming(env, "AGENTLAND_TERMINAL", id, executable, state)
+}
+
+// environmentNaming is env with variable=<id>, then AGENTLAND_HOST=<executable>
+// and AGENTLAND_HOST_STATE=<state> (each only when known), last and in place
+// of any it had: what a terminal (AGENTLAND_TERMINAL) or a Claude Code chat's
+// process (AGENTLAND_CHAT, chat_continue.go) is, and which host runs it.
+func environmentNaming(env []string, variable, id, executable, state string) []string {
 	result := make([]string, 0, len(env)+3)
 	for _, item := range env {
 		name, _, _ := strings.Cut(item, "=")
 		switch name {
-		case "AGENTLAND_TERMINAL", "AGENTLAND_HOST", "AGENTLAND_HOST_STATE":
+		case variable, "AGENTLAND_HOST", "AGENTLAND_HOST_STATE":
 			continue
 		}
 		result = append(result, item)
 	}
-	result = append(result, "AGENTLAND_TERMINAL="+id)
+	result = append(result, variable+"="+id)
 	if executable != "" {
 		result = append(result, "AGENTLAND_HOST="+executable)
 	}

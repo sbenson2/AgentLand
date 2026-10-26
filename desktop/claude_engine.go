@@ -147,8 +147,12 @@ type claudeEngineRunner interface {
 func (HostCLIChatRunner) claudeEngineConfig() claudeConfig { return claudeConfig{} }
 
 type claudeEngine struct {
-	cli     *CLIChats
-	hub     atomic.Pointer[chatHub] // set once the host exists (setClaudeHub)
+	cli *CLIChats
+	hub atomic.Pointer[chatHub] // set once the host exists (setClaudeHub)
+	// host is the host's own program and state file, which each chat's
+	// process names (chatEnvironment); set once the host exists
+	// (setClaudeHost).
+	host    atomic.Pointer[claudeHostNames]
 	options claudeConfig
 	slots   chan struct{}
 
@@ -260,6 +264,18 @@ func (c *CLIChats) setClaudeHub(hub *chatHub) {
 
 func (e *claudeEngine) chatHub() *chatHub { return e.hub.Load() }
 
+// claudeHostNames are the host's own program and state file (hostNames).
+type claudeHostNames struct{ executable, state string }
+
+// setClaudeHost gives the Claude engine the host's names, which every chat's
+// process carries (chatEnvironment).
+func (c *CLIChats) setClaudeHost(executable, state string) {
+	if c == nil || c.claude == nil {
+		return
+	}
+	c.claude.host.Store(&claudeHostNames{executable: executable, state: state})
+}
+
 func (e *claudeEngine) executable() (string, bool) {
 	return e.options.executable()
 }
@@ -288,6 +304,19 @@ func (e *claudeEngine) environment() []string {
 	}
 	result = append(result, "CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING=true", "CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS=1", "CLAUDE_CODE_STARTUP_FAILURE_RESULTS=1")
 	return append(result, e.options.env...)
+}
+
+// chatEnvironment is environment for chat id's process, naming the chat
+// (AGENTLAND_CHAT=<id>) and, once known, the host that runs it
+// (AGENTLAND_HOST, AGENTLAND_HOST_STATE), in place of any inherited: so
+// `agentland-host chats continue`, run by the chat's tools, reaches that host
+// and names the chat (chat_continue.go).
+func (e *claudeEngine) chatEnvironment(id string) []string {
+	var names claudeHostNames
+	if known := e.host.Load(); known != nil {
+		names = *known
+	}
+	return environmentNaming(e.environment(), "AGENTLAND_CHAT", id, names.executable, names.state)
 }
 
 // chat returns the engine's state for a Claude chat, reading it from the

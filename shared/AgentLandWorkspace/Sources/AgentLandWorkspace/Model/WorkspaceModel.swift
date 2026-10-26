@@ -911,6 +911,19 @@ public struct WorkspaceStorageKeys: Sendable, Equatable {
         Task { _ = await client.closeTerminal(projectID: old.projectID, terminalID: terminalID) }
     }
 
+    /// A chat that went on in another while its tab showed it (`ChatInfo.continuedIn`: the handoff skill started its
+    /// next Claude Code session there, owner 2026-10-26: "handoff needs to work in the chat screen to") gives its tab to
+    /// that chat, in place, as a terminal's does (`followContinuation`): the same tab and page, with its model, mode,
+    /// effort and confirmed mode, so the new chat never asks again (owner: "Keep it, no re-ask"). The old chat stays in
+    /// the history. Nothing happens once the tab closed or shows another chat, or when another tab shows the new one.
+    func followChatContinuation(of tabID: UUID, from chatID: String, to next: String) {
+        guard let index = tabs.firstIndex(where: { $0.id == tabID }), tabs[index].kind == .chat,
+              tabs[index].resourceID == chatID, next != chatID,
+              !tabs.contains(where: { $0.kind == .chat && $0.resourceID == next }) else { return }
+        tabs[index].resourceID = next
+        saveTabs()
+    }
+
     private func closeImmediately(_ id: UUID) {
         let closing = tabs.first(where: { $0.id == id })
         let projectID = closing.flatMap { workspaceID(for: $0) }
@@ -1213,6 +1226,11 @@ public struct WorkspaceStorageKeys: Sendable, Equatable {
             }
             // The tab follows the chat's title as its stream brings it, whether or not a view shows it.
             store.callbacks.nameChanged = { [weak self] name in self?.chatNamed(tabID: id, name) }
+            // The chat went on in another (the handoff skill): the tab follows it, once the store has published.
+            let chatID = tab.resourceID
+            store.callbacks.continued = { [weak self] next in
+                Task { @MainActor in self?.followChatContinuation(of: id, from: chatID, to: next) }
+            }
             // A finished turn names the chat for what it worked on, where the host takes names.
             store.callbacks.turnFinished = { [weak self, weak store] _ in
                 guard let self, let store else { return }

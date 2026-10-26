@@ -260,6 +260,17 @@ func TestTerminalsRunNeedsACommand(t *testing.T) {
 	}
 }
 
+func TestChatsNeedsASubcommand(t *testing.T) {
+	for _, args := range [][]string{{"chats"}, {"chats", "nope"}} {
+		if err := run(args); err == nil || !strings.Contains(err.Error(), "usage: agentland-host chats <continue>") {
+			t.Errorf("%q: %v", args, err)
+		}
+	}
+	if err := run(nil); err == nil || !strings.Contains(err.Error(), "|chats continue|") {
+		t.Errorf("the usage does not name chats continue: %v", err)
+	}
+}
+
 func TestTerminalsRunLeavesArgumentsAfterDashDashAlone(t *testing.T) {
 	state, name, args, err := parseRunArgs([]string{"--state", "s", "--", "claude", "--state", "x"})
 	if err != nil || state != "s" || name != "claude" || !slices.Equal(args, []string{"--state", "x"}) {

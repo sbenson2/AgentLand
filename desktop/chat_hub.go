@@ -370,6 +370,9 @@ type evChatUpdated struct {
 	Model       string  `json:"model,omitempty"`
 	Mode        string  `json:"mode,omitempty"`
 	Effort      string  `json:"effort,omitempty"`
+	// A chat continued in a new one (chat_continue.go).
+	ContinuedIn string `json:"continuedIn,omitempty"`
+	ContinuedAt string `json:"continuedAt,omitempty"`
 }
 
 type rewindRef struct {
@@ -711,13 +714,16 @@ func (c *hubChat) recomputeStatus() {
 }
 
 // applyInfo applies a provider's read or update of the chat: its title,
-// turned into the name the host shows (named), and a model, mode or effort
-// it gives.
+// turned into the name the host shows (named), a model, mode or effort it
+// gives, and where it continued.
 func (c *hubChat) applyInfo(info ChatInfo) {
 	info = c.named(info)
 	event := evChatUpdated{Type: "chat.updated"}
 	changed := c.takeName(chatName{Title: info.Title, Source: info.TitleSource, Basis: info.TitleBasis}, &event)
 	if c.takeSettings(info.Model, info.Mode, info.Effort, &event) {
+		changed = true
+	}
+	if c.takeContinuation(info.ContinuedIn, info.ContinuedAt, &event) {
 		changed = true
 	}
 	if changed {
@@ -787,6 +793,17 @@ func (c *hubChat) takeSettings(model, mode, effort string, event *evChatUpdated)
 		c.info.Effort, event.Effort, changed = effort, effort, true
 	}
 	return changed
+}
+
+// takeContinuation takes the chat a chat continued in and when
+// (chat_continue.go); a read without one leaves the one the hub has.
+func (c *hubChat) takeContinuation(in, at string, event *evChatUpdated) bool {
+	if in == "" || (in == c.info.ContinuedIn && at == c.info.ContinuedAt) {
+		return false
+	}
+	c.info.ContinuedIn, c.info.ContinuedAt = in, at
+	event.ContinuedIn, event.ContinuedAt = in, at
+	return true
 }
 
 // fitInteraction keeps an interaction event within its line budget.

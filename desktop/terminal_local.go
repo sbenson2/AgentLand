@@ -30,7 +30,9 @@ import (
 //
 // The same socket takes `agentland-host terminals continue`, typed in an
 // AgentLand terminal, which has the host start Claude Code in a new one
-// (terminal_continue.go).
+// (terminal_continue.go), and `agentland-host chats continue`, run by a
+// Claude Code chat's tool, which has it continue that chat in a new one
+// (chat_continue.go).
 //
 // The socket (localterm.SocketPath) is bound 0600 by localsock and each
 // connection is checked with SameUserPeer, so only this user's own processes
@@ -151,8 +153,9 @@ func (l *localTerminals) untrack(conn net.Conn) {
 	l.mu.Unlock()
 }
 
-// serve is one registration or one continue (the package localterm's
-// flows). A connection from another user's process is closed without a word.
+// serve is one registration, one terminal's continue or one chat's
+// continue (the package localterm's flows). A connection from another
+// user's process is closed without a word.
 func (l *localTerminals) serve(conn net.Conn) {
 	defer conn.Close()
 	if err := localsock.SameUserPeer(conn); err != nil {
@@ -167,8 +170,24 @@ func (l *localTerminals) serve(conn net.Conn) {
 	if errors.Is(err, io.EOF) {
 		return
 	}
-	if err != nil || (request.Op != localterm.OpRegister && request.Op != localterm.OpContinue) {
-		localReply(conn, localterm.Reply{Error: &localterm.Error{Code: localterm.CodeBadRequest, Message: "AgentLand expected a terminal to register or continue."}})
+	if err != nil || (request.Op != localterm.OpRegister && request.Op != localterm.OpContinue && request.Op != localterm.OpContinueChat) {
+		localReply(conn, localterm.Reply{Error: &localterm.Error{Code: localterm.CodeBadRequest, Message: "AgentLand expected a terminal to register or continue, or a chat to continue."}})
+		return
+	}
+	if request.Op == localterm.OpContinueChat {
+		// One answer, then the host hangs up and closes the old chat out
+		// (chat_continue.go), never holding the answer up. The prompt is
+		// never logged.
+		id, closeOut, refusal := h.continueLocalChat(request)
+		if refusal != nil {
+			log.Printf("chats: refused to continue a chat: %s", refusal.Code)
+			localReply(conn, localterm.Reply{Error: refusal})
+			return
+		}
+		if err := localReply(conn, localterm.Reply{ID: id}); err != nil {
+			log.Printf("chats: id=%s started, but the continue that asked for it went away: %v", id, err)
+		}
+		go closeOut()
 		return
 	}
 	if request.Op == localterm.OpContinue {

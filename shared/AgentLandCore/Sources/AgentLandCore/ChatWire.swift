@@ -425,14 +425,22 @@ public struct ChatInfo: Codable, Hashable, Sendable {
     public var titleSource: ChatTitleSource?
     /// The ID of the newest message the title describes (`titleBasis`).
     public var titleBasis: String?
+    /// The chat this one went on in (`continuedIn`: the handoff skill started its next session there), the newest when
+    /// it went on more than once, and when (`continuedAt`, UTC RFC 3339); nil until it has.
+    public var continuedIn: String?
+    public var continuedAt: String?
 
     public init(id: String, title: String = "", provider: String = "opencode", model: String? = nil, mode: String? = nil,
-                effort: String? = nil, titleSource: ChatTitleSource? = nil, titleBasis: String? = nil) {
+                effort: String? = nil, titleSource: ChatTitleSource? = nil, titleBasis: String? = nil,
+                continuedIn: String? = nil, continuedAt: String? = nil) {
         self.id = id; self.title = title; self.provider = provider; self.model = model; self.mode = mode; self.effort = effort
-        self.titleSource = titleSource; self.titleBasis = titleBasis
+        self.titleSource = titleSource; self.titleBasis = titleBasis; self.continuedIn = continuedIn; self.continuedAt = continuedAt
     }
 
-    enum CodingKeys: String, CodingKey { case id, title, provider, model, mode, effort, titleSource, titleBasis }
+    /// When the chat went on in `continuedIn`, nil when the host did not say or said it in a form this version cannot read.
+    public var continuedDate: Date? { continuedAt.flatMap(TerminalEnd.parseDate) }
+
+    enum CodingKeys: String, CodingKey { case id, title, provider, model, mode, effort, titleSource, titleBasis, continuedIn, continuedAt }
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .id) ?? ""
@@ -442,6 +450,15 @@ public struct ChatInfo: Codable, Hashable, Sendable {
         mode = try container.decodeIfPresent(String.self, forKey: .mode)
         effort = try container.decodeIfPresent(String.self, forKey: .effort)
         (titleSource, titleBasis) = ChatTitleSource.decodeNaming(from: container, source: .titleSource, basis: .titleBasis)
+        (continuedIn, continuedAt) = Self.decodeContinuation(from: container, chat: .continuedIn, at: .continuedAt)
+    }
+
+    /// `continuedIn` and `continuedAt` where a container carries them: a chat ID as a terminal's is checked, and an
+    /// unreadable value counts as none and never costs the rest.
+    static func decodeContinuation<Key: CodingKey>(from container: KeyedDecodingContainer<Key>, chat: Key, at: Key) -> (String?, String?) {
+        let next = (try? container.decodeIfPresent(String.self, forKey: chat)).flatMap { $0 }.flatMap(TerminalEnd.validTerminalID)
+        let at = (try? container.decodeIfPresent(String.self, forKey: at)).flatMap { $0 }
+        return next == nil ? (nil, nil) : (next, at?.isEmpty == false ? at : nil)
     }
 }
 
@@ -482,10 +499,13 @@ public struct ChatInfoUpdate: Hashable, Sendable {
     public var effort: String?
     public var titleSource: ChatTitleSource?
     public var titleBasis: String?
+    /// The chat went on in another (`ChatInfo.continuedIn`), and when.
+    public var continuedIn: String?
+    public var continuedAt: String?
     public init(title: String? = nil, model: String? = nil, mode: String? = nil, effort: String? = nil,
-                titleSource: ChatTitleSource? = nil, titleBasis: String? = nil) {
+                titleSource: ChatTitleSource? = nil, titleBasis: String? = nil, continuedIn: String? = nil, continuedAt: String? = nil) {
         self.title = title; self.model = model; self.mode = mode; self.effort = effort
-        self.titleSource = titleSource; self.titleBasis = titleBasis
+        self.titleSource = titleSource; self.titleBasis = titleBasis; self.continuedIn = continuedIn; self.continuedAt = continuedAt
     }
 }
 
@@ -551,7 +571,7 @@ public struct ChatEventEnvelope: Hashable, Sendable, Decodable {
         case seq, type, cursor, resumed, chat, messages, hasMore, status, interactions, queue, rewind
         case title, model, mode, effort, state, retry, message, messageId, completedAt, usage, error
         case part, partId, field, offset, delta, interaction, id, outcome, items, turnId
-        case titleSource, titleBasis
+        case titleSource, titleBasis, continuedIn, continuedAt
     }
 
     public init(from decoder: Decoder) throws {
@@ -573,11 +593,13 @@ public struct ChatEventEnvelope: Hashable, Sendable, Decodable {
                 rewind: try container.decodeIfPresent(RewindState.self, forKey: .rewind)))
         case "chat.updated":
             let (titleSource, titleBasis) = ChatTitleSource.decodeNaming(from: container, source: .titleSource, basis: .titleBasis)
+            let (continuedIn, continuedAt) = ChatInfo.decodeContinuation(from: container, chat: .continuedIn, at: .continuedAt)
             event = .chatUpdated(ChatInfoUpdate(title: try container.decodeIfPresent(String.self, forKey: .title),
                                                 model: try container.decodeIfPresent(String.self, forKey: .model),
                                                 mode: try container.decodeIfPresent(String.self, forKey: .mode),
                                                 effort: try container.decodeIfPresent(String.self, forKey: .effort),
-                                                titleSource: titleSource, titleBasis: titleBasis))
+                                                titleSource: titleSource, titleBasis: titleBasis,
+                                                continuedIn: continuedIn, continuedAt: continuedAt))
         case "status":
             event = .status(ChatStatusInfo(state: try container.decodeIfPresent(ChatRunState.self, forKey: .state) ?? .unknown,
                                            retry: try container.decodeIfPresent(ChatRetryInfo.self, forKey: .retry)))

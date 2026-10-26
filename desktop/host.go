@@ -5,6 +5,7 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -68,6 +69,9 @@ type Host struct {
 	chatWriteWait       time.Duration
 	chatPace            time.Duration
 	chatExtendDeadlines bool
+	// chatContinueWait is how long a continued chat's turn has to end on
+	// its own (chat_continue.go); a field so tests can shorten it.
+	chatContinueWait time.Duration
 
 	// Web previews (preview.go, preview_proxy.go): sessions and the proxy
 	// behind the preview listener; nil unless HostOptions.Preview is set.
@@ -183,6 +187,7 @@ func newHost(store *Store, agent Agent, options HostOptions) *Host {
 	host.receipts = newSendReceipts()
 	host.chatStreamFor, host.chatBeatEvery, host.chatAuthEvery = chatStreamLifetime, chatBeatInterval, chatAuthInterval
 	host.chatWriteWait, host.chatPace, host.chatExtendDeadlines = chatWriteTimeout, chatStreamPace, true
+	host.chatContinueWait = chatContinueTurnWait
 	// Agents (agents_catalog.go): the catalog, which also names the managed
 	// OpenCode and the agents' commands for terminals (terminal_launch.go).
 	if options.Agents != nil {
@@ -195,8 +200,10 @@ func newHost(store *Store, agent Agent, options HostOptions) *Host {
 		options.CLIChats.setObserver(host.chat.cliChanged)
 		// Codex streaming: the Codex engine mirrors its chats to the hub.
 		options.CLIChats.setHub(host.chat)
-		// Claude Code streaming: the Claude engine pushes its chats' changes.
+		// Claude Code streaming: the Claude engine pushes its chats' changes,
+		// and each chat's process names its host (chat_continue.go).
 		options.CLIChats.setClaudeHub(host.chat)
+		options.CLIChats.setClaudeHost(hostNames(store))
 		// ACP chats: the engine runs the catalog's agents and pushes to the hub.
 		if host.agents != nil {
 			options.CLIChats.setACPAgents(host.agents, host.chat)
@@ -611,7 +618,7 @@ func (h *Host) createSession(w http.ResponseWriter, r *http.Request) {
 			writeError(w, 503, "agent_unavailable", "This Mac agent is unavailable")
 			return
 		}
-		s, err = h.cliChats.CreateSession(p, in.Title, in.Provider)
+		s, err = h.createCLIChat(p, chatName{Title: in.Title}, in.Provider, settings)
 	} else if h.agents != nil && h.cliChats != nil && agentIDPattern.MatchString(in.Provider) {
 		// ACP chats (acp_engine.go): an agent of the catalog.
 		if _, known := h.agents.knownAgent(in.Provider); !known {
@@ -638,18 +645,36 @@ func (h *Host) createSession(w http.ResponseWriter, r *http.Request) {
 	if s.Directory == "" {
 		s.Directory = p.Directory
 	}
-	// Claude Code streaming: the settings the first turn starts with.
-	if settings != (PromptOptions{}) {
-		if err := h.cliChats.claude.configure(p, s.ID, settings); err != nil {
-			internal(w)
-			return
-		}
-	}
 	if s, err = h.session(p, s.ID); err != nil {
 		notFound(w)
 		return
 	}
 	writeJSON(w, 201, s)
+}
+
+// errChatSettings: a new Claude Code chat was made, but the model, mode and
+// effort its first turn starts with could not be set (createCLIChat).
+var errChatSettings = errors.New("the new chat's settings could not be set")
+
+// createCLIChat creates a Claude Code or Codex chat named name in workspace p
+// (a name without a source takes the one its title gives) and gives a Claude
+// Code chat the model, mode and effort its first turn starts with: POST
+// /v1/sessions, and a chat continued in a new one (chat_continue.go). Settings
+// go only to a Claude Code chat of the Claude engine. When they cannot be
+// set, the chat is still made: the answer is that chat and errChatSettings,
+// which wraps no other error.
+func (h *Host) createCLIChat(p Project, name chatName, provider string, settings PromptOptions) (Session, error) {
+	s, err := h.cliChats.createSession(p, name, provider)
+	if err != nil {
+		return Session{}, err
+	}
+	// Claude Code streaming: the settings the first turn starts with.
+	if settings != (PromptOptions{}) {
+		if err := h.cliChats.claude.configure(p, s.ID, settings); err != nil {
+			return s, fmt.Errorf("%w: %v", errChatSettings, err)
+		}
+	}
+	return s, nil
 }
 func (h *Host) messages(w http.ResponseWriter, r *http.Request) {
 	p, s, ok := h.chatScoped(w, r.URL.Query().Get("projectId"), r.URL.Query().Get("sessionId"))

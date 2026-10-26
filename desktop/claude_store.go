@@ -48,6 +48,11 @@ type claudeRecord struct {
 	CostSession string  `json:"costSession,omitempty"`
 	CostSaved   float64 `json:"costSaved,omitempty"`
 	CostTotal   float64 `json:"costTotal,omitempty"`
+	// ContinuedIn is the chat this one continued in (chat_continue.go), the
+	// newest when it continued more than once, and ContinuedAt when (UTC RFC
+	// 3339 with milliseconds).
+	ContinuedIn string `json:"continuedIn,omitempty"`
+	ContinuedAt string `json:"continuedAt,omitempty"`
 }
 
 type claudeTurnRecord struct {

@@ -718,6 +718,56 @@ final class ChatSessionStoreTests: XCTestCase {
         XCTAssertFalse(ChatSessionStore.isDefaultTitle("Claude Code review", provider: .claude))
     }
 
+    /// A chat that went on in another (the handoff skill, `continuedIn`) while the store showed it tells the app once,
+    /// live or in the snapshot after the stream was away; one that went on before it was opened tells nothing.
+    func testAChatThatWentOnWhileShownIsReportedOnce() async throws {
+        let now = Date().addingTimeInterval(1).formatted(.iso8601)
+        let host = ScriptedHost()
+        host.enqueue([Self.ready, Self.snapshot(messages: Self.oneTurn)])
+        let store = ChatSessionStore(identity: identity)
+        var followed: [String] = []
+        store.callbacks.continued = { followed.append($0) }
+        store.update(environment(try client(host)))
+        await eventually("snapshot") { store.hasContent }
+        XCTAssertEqual(followed, [])
+
+        host.push(#"{"seq":1,"type":"chat.updated","continuedIn":"claude:next","continuedAt":"\#(now)"}"#)
+        await eventually("the continuation") { !followed.isEmpty }
+        XCTAssertEqual(followed, ["claude:next"])
+        XCTAssertEqual(store.info?.continuedIn, "claude:next")
+        XCTAssertEqual(store.info?.title, "Fix login", "An update without a title keeps it")
+        host.push(#"{"seq":2,"type":"chat.updated","continuedIn":"claude:next","continuedAt":"\#(now)"}"#)
+        host.push(#"{"seq":3,"type":"beat","cursor":"e1.3"}"#)
+        await eventually("the beat") { store.state.cursor == "e1.3" }
+        XCTAssertEqual(followed, ["claude:next"], "Reported once")
+
+        // Opened from the history after it went on: it stays.
+        let earlier = ScriptedHost()
+        earlier.enqueue([Self.ready, Self.continuedSnapshot(at: "2026-10-01T09:00:00.000Z")])
+        let history = ChatSessionStore(identity: identity)
+        var historyFollowed: [String] = []
+        history.callbacks.continued = { historyFollowed.append($0) }
+        history.update(environment(try client(earlier)))
+        await eventually("history snapshot") { history.hasContent }
+        XCTAssertEqual(history.info?.continuedIn, "claude:next")
+        XCTAssertEqual(historyFollowed, [], "A chat that went on before it was shown is not followed")
+
+        // Shown since before it went on, and back after the stream was away: the snapshot says so.
+        let away = ScriptedHost()
+        away.enqueue([Self.ready, Self.continuedSnapshot(at: now)])
+        let shown = ChatSessionStore(identity: identity)
+        shown.shownSince = Date().addingTimeInterval(-600)
+        var shownFollowed: [String] = []
+        shown.callbacks.continued = { shownFollowed.append($0) }
+        shown.update(environment(try client(away)))
+        await eventually("the continuation in the snapshot") { !shownFollowed.isEmpty }
+        XCTAssertEqual(shownFollowed, ["claude:next"])
+    }
+
+    private static func continuedSnapshot(at: String) -> String {
+        #"{"seq":0,"type":"snapshot","chat":{"id":"s","title":"Fix login","provider":"claude","continuedIn":"claude:next","continuedAt":"\#(at)"},"messages":\#(oneTurn),"hasMore":false,"status":{"state":"idle"},"interactions":[],"queue":[]}"#
+    }
+
     /// Chat names its agents Claude Code and Codex (2026-10-12 ~20:50): new chats are "Claude Code chat" and "Codex chat",
     /// and the host names untitled ones "Claude Code" and "Codex". Chats saved while Chat said Claude and ChatGPT keep
     /// "Claude chat", "ChatGPT chat", "Claude" and "ChatGPT"; old and new defaults alike give way to the first prompt,

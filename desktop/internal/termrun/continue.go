@@ -61,52 +61,117 @@ type ContinueOptions struct {
 // 0 with the new terminal's ID on stdout, or ContinueNotHere or
 // ContinueFailed with one line on stderr.
 func Continue(o ContinueOptions) int {
-	fail := func(code int, format string, args ...any) int {
-		fmt.Fprintf(o.Stderr, format+"\n", args...)
-		return code
-	}
 	if o.From == "" {
-		return fail(ContinueNotHere, "This isn't an AgentLand terminal.")
+		return continueFail(o.Stderr, ContinueNotHere, "This isn't an AgentLand terminal.")
+	}
+	request := localterm.Request{Op: localterm.OpContinue, From: o.From, Prompt: o.Prompt, Rows: o.Rows, Cols: o.Cols, Version: o.Version}
+	return continueExchange(continueCall{statePath: o.StatePath, request: request, wait: o.Wait, notHere: localterm.CodeNotContinuable,
+		noID: "AgentLand's host answered without a terminal.", stdout: o.Stdout, stderr: o.Stderr})
+}
+
+// ContinueChat is `agentland-host chats continue -- <prompt>` (docs/HOST-API.md,
+// "Continuing a chat in a new one"). Run by a Claude Code chat's tool, it asks
+// the host on the same private socket to start a new Claude Code chat in the
+// chat's workspace, with its title, model, effort and mode, and the prompt as
+// its first message, and prints the new chat's ID and nothing else on stdout.
+// The host then stops the old chat's reply and its process; the old chat
+// stays in history, usable.
+
+// ContinueChatOptions is one `chats continue`.
+type ContinueChatOptions struct {
+	// StatePath is the host's state file; the socket sits beside it.
+	StatePath string
+	// Version is this build's version, which must be the host's.
+	Version string
+	// Chat is the chat whose tool runs it ($AGENTLAND_CHAT), empty outside
+	// one.
+	Chat string
+	// Prompt is the new chat's first message.
+	Prompt string
+	// Stdout takes the new chat's ID, Stderr why there is none.
+	Stdout, Stderr io.Writer
+	// Wait bounds the exchange; 0 means ContinueChatWait.
+	Wait time.Duration
+}
+
+// ContinueChatWait bounds a chat continue's exchange: the host may check
+// Claude Code's sign-in (10 s), start its process (30 s) and wait for the
+// prompt's echo (30 s) before it answers, more than ContinueWait.
+const ContinueChatWait = 90 * time.Second
+
+// ContinueChat asks the host to continue the chat and answers the exit code
+// as Continue does: 0 with the new chat's ID on stdout, or ContinueNotHere or
+// ContinueFailed with one line on stderr.
+func ContinueChat(o ContinueChatOptions) int {
+	if o.Chat == "" {
+		return continueFail(o.Stderr, ContinueNotHere, "This isn't an AgentLand chat.")
 	}
 	wait := o.Wait
+	if wait <= 0 {
+		wait = ContinueChatWait
+	}
+	request := localterm.Request{Op: localterm.OpContinueChat, Chat: o.Chat, Prompt: o.Prompt, Version: o.Version}
+	return continueExchange(continueCall{statePath: o.StatePath, request: request, wait: wait, notHere: localterm.CodeChatNotContinuable,
+		noID: "AgentLand's host answered without a chat.", stdout: o.Stdout, stderr: o.Stderr})
+}
+
+// continueCall is one continue's exchange: the request, the refusal code
+// that means "not here" (ContinueNotHere), and what to say for an answer
+// without an ID.
+type continueCall struct {
+	statePath      string
+	request        localterm.Request
+	wait           time.Duration
+	notHere, noID  string
+	stdout, stderr io.Writer
+}
+
+func continueFail(stderr io.Writer, code int, format string, args ...any) int {
+	fmt.Fprintf(stderr, format+"\n", args...)
+	return code
+}
+
+// continueExchange sends the request on the state's local socket and reads
+// the one answer within the call's wait (ContinueWait by default).
+func continueExchange(c continueCall) int {
+	wait := c.wait
 	if wait <= 0 {
 		wait = ContinueWait
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), wait)
 	defer cancel()
 	var dialer net.Dialer
-	conn, err := dialer.DialContext(ctx, "unix", localterm.SocketPath(o.StatePath))
+	conn, err := dialer.DialContext(ctx, "unix", localterm.SocketPath(c.statePath))
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, syscall.ECONNREFUSED) {
-			return fail(ContinueNotHere, "AgentLand isn't running.")
+			return continueFail(c.stderr, ContinueNotHere, "AgentLand isn't running.")
 		}
-		return fail(ContinueFailed, "AgentLand's host could not be reached: %v", err)
+		return continueFail(c.stderr, ContinueFailed, "AgentLand's host could not be reached: %v", err)
 	}
 	defer conn.Close()
 	if deadline, ok := ctx.Deadline(); ok {
 		_ = conn.SetDeadline(deadline)
 	}
-	request := localterm.Request{Op: localterm.OpContinue, From: o.From, Prompt: o.Prompt, Rows: o.Rows, Cols: o.Cols, Version: o.Version}
 	var reply localterm.Reply
-	err = localterm.WriteLine(conn, request)
+	err = localterm.WriteLine(conn, c.request)
 	if err == nil {
 		err = localterm.ReadLine(bufio.NewReader(conn), &reply)
 	}
 	var netErr net.Error
 	switch {
 	case errors.Is(err, localterm.ErrLineTooLong):
-		return fail(ContinueFailed, "The prompt is too long.")
+		return continueFail(c.stderr, ContinueFailed, "The prompt is too long.")
 	case errors.As(err, &netErr) && netErr.Timeout():
-		return fail(ContinueFailed, "AgentLand didn't answer in time.")
+		return continueFail(c.stderr, ContinueFailed, "AgentLand didn't answer in time.")
 	case err != nil:
-		return fail(ContinueFailed, "AgentLand's host did not answer.")
-	case reply.Error != nil && reply.Error.Code == localterm.CodeNotContinuable:
-		return fail(ContinueNotHere, "%s", reply.Error.Message)
+		return continueFail(c.stderr, ContinueFailed, "AgentLand's host did not answer.")
+	case reply.Error != nil && reply.Error.Code == c.notHere:
+		return continueFail(c.stderr, ContinueNotHere, "%s", reply.Error.Message)
 	case reply.Error != nil:
-		return fail(ContinueFailed, "%s", reply.Error.Message)
+		return continueFail(c.stderr, ContinueFailed, "%s", reply.Error.Message)
 	case reply.ID == "":
-		return fail(ContinueFailed, "AgentLand's host answered without a terminal.")
+		return continueFail(c.stderr, ContinueFailed, "%s", c.noID)
 	}
-	fmt.Fprintln(o.Stdout, reply.ID)
+	fmt.Fprintln(c.stdout, reply.ID)
 	return 0
 }

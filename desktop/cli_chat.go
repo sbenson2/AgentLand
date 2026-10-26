@@ -247,6 +247,13 @@ func (c *CLIChats) saveLocked() error {
 }
 
 func (c *CLIChats) CreateSession(project Project, title, provider string) (Session, error) {
+	return c.createSession(project, chatName{Title: title}, provider)
+}
+
+// createSession is CreateSession with a name: one without a source takes the
+// source its title gives (a placeholder is "default"; a title the chat was
+// created with is its creator's, like a provider's own).
+func (c *CLIChats) createSession(project Project, name chatName, provider string) (Session, error) {
 	if provider != "claude" && provider != "codex" {
 		return Session{}, ErrCLIChatUnavailable
 	}
@@ -264,12 +271,16 @@ func (c *CLIChats) CreateSession(project Project, title, provider string) (Sessi
 		return Session{}, ErrCLIChatUnavailable
 	}
 	id := provider + ":" + cliMessageID()
+	title := name.Title
 	if title == "" {
 		title = chatProviderNames[provider]
 	}
-	// Chat names (chat_title.go): a placeholder is "default"; a title the
-	// chat was created with is its creator's, like a provider's own.
-	session := Session{ID: id, Title: title, ProjectID: project.ID, Directory: project.Directory, Provider: provider, TitleSource: titleSourceFor(title)}
+	// Chat names (chat_title.go).
+	source := name.Source
+	if source == "" {
+		source = titleSourceFor(title)
+	}
+	session := Session{ID: id, Title: title, ProjectID: project.ID, Directory: project.Directory, Provider: provider, TitleSource: source, TitleBasis: name.Basis}
 	c.records[id] = &cliChatRecord{Session: session, Directory: project.Directory, Messages: []Message{}, UpdatedAt: time.Now()}
 	if err := c.saveLocked(); err != nil {
 		delete(c.records, id)

@@ -1,9 +1,11 @@
-// Package localterm is the wire between the host and two of its CLI's
+// Package localterm is the wire between the host and three of its CLI's
 // commands: `agentland-host terminals run`, which registers a coding agent
 // typed in Terminal.app as an AgentLand terminal (docs/HOST-API.md,
-// "Terminals started in Terminal on the Mac"), and `agentland-host terminals
+// "Terminals started in Terminal on the Mac"), `agentland-host terminals
 // continue`, which starts Claude Code in a new AgentLand terminal in place of
-// the one it runs in ("Continuing a terminal in a new one").
+// the one it runs in ("Continuing a terminal in a new one"), and
+// `agentland-host chats continue`, which does the same for a Claude Code chat
+// ("Continuing a chat in a new one").
 //
 // The socket is terminals-local.sock beside the keeper's: 0600, this user's,
 // and checked per connection, so only this user's own processes reach it. It
@@ -22,6 +24,10 @@
 // Or one continue: the CLI sends {op: "continue"} with the terminal it runs
 // in (from), the prompt, its window size and its version; the host starts
 // the new terminal and answers {id}, or {error}, and hangs up.
+//
+// Or one chat continue: the CLI sends {op: "continueChat"} with the chat whose
+// tool runs it (chat), the prompt and its version; the host starts the new
+// chat with the prompt and answers {id}, or {error}, and hangs up.
 //
 // Each message is one JSON object on one line, at most MaxLine bytes.
 package localterm
@@ -53,6 +59,8 @@ const (
 	OpAdopted  = "adopted"
 	OpCancel   = "cancel"
 	OpContinue = "continue"
+	// OpContinueChat continues a Claude Code chat in a new one.
+	OpContinueChat = "continueChat"
 )
 
 // The codes a refusal names.
@@ -68,6 +76,10 @@ const (
 	// can continue (not an AgentLand terminal it follows, not running, an
 	// agent typed in Terminal.app, or not Claude Code's).
 	CodeNotContinuable = "terminal_not_continuable"
+	// CodeChatNotContinuable: the chat a chat continue names is not one the
+	// host can continue (not a chat it has, deleted, not Claude Code's, or
+	// not in a workspace).
+	CodeChatNotContinuable = "chat_not_continuable"
 )
 
 // Request is the CLI's message. Register carries the command as typed (its
@@ -77,7 +89,8 @@ const (
 // Continue carries From (the terminal's ID, $AGENTLAND_TERMINAL), Prompt (the
 // new Claude Code's first message, which the host passes as its last
 // argument), the window's size (0 when the CLI has no terminal) and the
-// version.
+// version. ContinueChat carries Chat (the chat's ID, $AGENTLAND_CHAT), Prompt
+// (the new chat's first message) and the version.
 //
 // Folder must be the caller's own cwd, canonical: on macOS the path
 // fcntl(F_GETPATH) gives for "." (symbolic links resolved, each name in its
@@ -95,11 +108,12 @@ type Request struct {
 	Version        string `json:"version,omitempty"`
 	From           string `json:"from,omitempty"`
 	Prompt         string `json:"prompt,omitempty"`
+	Chat           string `json:"chat,omitempty"`
 }
 
 // Reply is the host's message: the terminal's id and the record the keeper
 // is to hold for it (register), OK (adopted), the new terminal's id
-// (continue), or why not.
+// (continue), the new chat's id (continueChat), or why not.
 type Reply struct {
 	OK    bool   `json:"ok,omitempty"`
 	ID    string `json:"id,omitempty"`

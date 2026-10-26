@@ -102,6 +102,26 @@ final class ChatTitleClientTests: XCTestCase {
         XCTAssertEqual(plain.event, .chatUpdated(ChatInfoUpdate(model: "a/b")))
     }
 
+    /// A chat that went on in another names it and when (`continuedIn`, `continuedAt`); an ID that is not one counts as
+    /// none, and takes its time with it.
+    func testContinuationDecodesInTheSnapshotAndChatUpdated() throws {
+        let snapshot = try ChatEventEnvelope.decode(line: #"{"seq":3,"type":"snapshot","chat":{"id":"claude:a","title":"Fix login","provider":"claude","continuedIn":"claude:b","continuedAt":"2026-10-26T08:45:00.123Z"},"messages":[],"status":{"state":"idle"}}"#)
+        guard case let .snapshot(value) = snapshot.event else { return XCTFail("Expected a snapshot") }
+        XCTAssertEqual(value.chat.continuedIn, "claude:b")
+        XCTAssertEqual(value.chat.continuedAt, "2026-10-26T08:45:00.123Z")
+        XCTAssertEqual(value.chat.continuedDate, try Date("2026-10-26T08:45:00.123Z", strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true)))
+
+        let update = try ChatEventEnvelope.decode(line: #"{"seq":4,"type":"chat.updated","continuedIn":"claude:b","continuedAt":"2026-10-26T08:45:00Z"}"#)
+        XCTAssertEqual(update.event, .chatUpdated(ChatInfoUpdate(continuedIn: "claude:b", continuedAt: "2026-10-26T08:45:00Z")))
+
+        for bad in [#""../b""#, #""""#, "42", "\"\(String(repeating: "a", count: 129))\""] {
+            let decoded = try ChatEventEnvelope.decode(line: #"{"seq":5,"type":"chat.updated","title":"T","continuedIn":\#(bad),"continuedAt":"2026-10-26T08:45:00Z"}"#)
+            XCTAssertEqual(decoded.event, .chatUpdated(ChatInfoUpdate(title: "T")), bad)
+        }
+        let info = try JSONDecoder().decode(ChatInfo.self, from: JSONEncoder().encode(value.chat))
+        XCTAssertEqual(info, value.chat, "A saved copy keeps it")
+    }
+
     func testSessionsListCarriesTheNamingWhenTheHostSendsIt() throws {
         let json = #"""
         {"sessions":[{"id":"a","title":"New chat","projectId":"p"},

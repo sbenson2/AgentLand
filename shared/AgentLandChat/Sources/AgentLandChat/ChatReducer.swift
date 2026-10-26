@@ -202,6 +202,10 @@ public enum ChatReducer {
             } else if let basis = update.titleBasis {
                 chat.titleBasis = basis
             }
+            if let next = update.continuedIn {
+                chat.continuedIn = next
+                chat.continuedAt = update.continuedAt
+            }
             guard chat != state.chat else { return .ignored }
             state.chat = chat
             state.changes.meta = true

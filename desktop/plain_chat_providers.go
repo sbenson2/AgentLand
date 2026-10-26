@@ -363,6 +363,31 @@ func (h *Host) chatsSpaceReadOnly(w http.ResponseWriter, p Project, s Session) b
 // chat_subscription.go), else refuse's answer. The Chats space must exist
 // (h.plainChats).
 func (h *Host) cliProviderReady(w http.ResponseWriter, r *http.Request, provider string, refuse func()) bool {
+	ready, auth := h.cliProviderCheck(r.Context(), provider)
+	switch {
+	case ready:
+		return true
+	// Installed in a version Chat does not support: 503 agent_unavailable
+	// with why, never the sign-in code, whose notice would say to sign in.
+	case auth != nil && auth.Reason == plainVersionUnsupported:
+		writeError(w, 503, "agent_unavailable", auth.Message)
+	// Installed, but not signed in with a subscription: the agents' sign-in
+	// code, so clients show their sign-in notice (chat_subscription.go).
+	case auth != nil:
+		writeSubscriptionRequired(w, auth.Message)
+	default:
+		refuse()
+	}
+	return false
+}
+
+// cliProviderCheck reports whether provider is listed for Chat by the last
+// check of the sign-ins, or by one made now within ctx; when it is not, why,
+// as its entry among the unavailable providers says (nil when it says
+// nothing). cliProviderReady answers with it; a chat's continue on the local
+// socket refuses with it (chat_continue.go). The Chats space must exist
+// (h.plainChats).
+func (h *Host) cliProviderCheck(ctx context.Context, provider string) (bool, *plainChatAuth) {
 	listed := func(providers []plainChatProvider) bool {
 		return slices.ContainsFunc(providers, func(entry plainChatProvider) bool { return entry.ID == provider })
 	}
@@ -370,21 +395,11 @@ func (h *Host) cliProviderReady(w http.ResponseWriter, r *http.Request, provider
 	ready := listed(h.plainChats.cliProviders)
 	h.plainChats.mu.Unlock()
 	// The list is the last periodic check's; check again before refusing.
-	if ready || ((provider == "claude" || provider == "codex") && listed(h.plainChats.refreshProviders(r.Context()))) {
-		return true
+	if ready || ((provider == "claude" || provider == "codex") && listed(h.plainChats.refreshProviders(ctx))) {
+		return true, nil
 	}
-	// Installed in a version Chat does not support: 503 agent_unavailable
-	// with why, never the sign-in code, whose notice would say to sign in.
-	// Installed, but not signed in with a subscription: the agents' sign-in
-	// code, so clients show their sign-in notice (chat_subscription.go).
 	if entry, ok := h.plainChats.unavailableProvider(provider); ok && entry.Auth != nil {
-		if entry.Auth.Reason == plainVersionUnsupported {
-			writeError(w, 503, "agent_unavailable", entry.Auth.Message)
-			return false
-		}
-		writeSubscriptionRequired(w, entry.Auth.Message)
-		return false
+		return false, entry.Auth
 	}
-	refuse()
-	return false
+	return false, nil
 }

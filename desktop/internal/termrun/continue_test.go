@@ -120,3 +120,65 @@ func TestContinueExitCodes(t *testing.T) {
 		})
 	}
 }
+
+func runContinueChat(o ContinueChatOptions) (int, string, string) {
+	var stdout, stderr bytes.Buffer
+	o.Stdout, o.Stderr = &stdout, &stderr
+	code := ContinueChat(o)
+	return code, stdout.String(), stderr.String()
+}
+
+func TestContinueChatPrintsTheNewChat(t *testing.T) {
+	state := continueState(t)
+	requests := fakeContinueHost(t, state, &localterm.Reply{ID: "claude:new"})
+	code, stdout, stderr := runContinueChat(ContinueChatOptions{StatePath: state, Version: "1.2.3", Chat: "claude:old", Prompt: "go on"})
+	if code != 0 || stdout != "claude:new\n" || stderr != "" {
+		t.Fatalf("%d %q %q", code, stdout, stderr)
+	}
+	want := localterm.Request{Op: localterm.OpContinueChat, Chat: "claude:old", Prompt: "go on", Version: "1.2.3"}
+	if got := <-requests; got != want {
+		t.Fatalf("request %+v", got)
+	}
+}
+
+func TestContinueChatExitCodes(t *testing.T) {
+	notHere := &localterm.Reply{Error: &localterm.Error{Code: localterm.CodeChatNotContinuable, Message: "Only a Claude Code chat can be continued."}}
+	// A terminal's refusal code is another failure here.
+	terminalCode := &localterm.Reply{Error: &localterm.Error{Code: localterm.CodeNotContinuable, Message: "This terminal has ended."}}
+	limit := &localterm.Reply{Error: &localterm.Error{Code: localterm.CodeLimit, Message: "Six Claude Code chats are working in AgentLand; try again when one finishes."}}
+	cases := []struct {
+		name    string
+		prepare func(t *testing.T, state string)
+		chat    string
+		code    int
+		stderr  string
+	}{
+		{name: "outside a chat", chat: "", code: ContinueNotHere, stderr: "This isn't an AgentLand chat.\n"},
+		{name: "no socket", chat: "claude:old", code: ContinueNotHere, stderr: "AgentLand isn't running.\n"},
+		{name: "refused connection", prepare: func(t *testing.T, state string) {
+			listener, err := net.ListenUnix("unix", &net.UnixAddr{Name: localterm.SocketPath(state), Net: "unix"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			listener.SetUnlinkOnClose(false)
+			listener.Close()
+		}, chat: "claude:old", code: ContinueNotHere, stderr: "AgentLand isn't running.\n"},
+		{name: "not continuable", prepare: func(t *testing.T, state string) { fakeContinueHost(t, state, notHere) }, chat: "claude:old", code: ContinueNotHere, stderr: notHere.Error.Message + "\n"},
+		{name: "a terminal's code", prepare: func(t *testing.T, state string) { fakeContinueHost(t, state, terminalCode) }, chat: "claude:old", code: ContinueFailed, stderr: terminalCode.Error.Message + "\n"},
+		{name: "the chat limit", prepare: func(t *testing.T, state string) { fakeContinueHost(t, state, limit) }, chat: "claude:old", code: ContinueFailed, stderr: limit.Error.Message + "\n"},
+		{name: "no id", prepare: func(t *testing.T, state string) { fakeContinueHost(t, state, &localterm.Reply{}) }, chat: "claude:old", code: ContinueFailed, stderr: "AgentLand's host answered without a chat.\n"},
+		{name: "silent host", prepare: func(t *testing.T, state string) { fakeContinueHost(t, state, nil) }, chat: "claude:old", code: ContinueFailed, stderr: "AgentLand didn't answer in time.\n"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			state := continueState(t)
+			if c.prepare != nil {
+				c.prepare(t, state)
+			}
+			code, stdout, stderr := runContinueChat(ContinueChatOptions{StatePath: state, Chat: c.chat, Prompt: "go on", Wait: 300 * time.Millisecond})
+			if code != c.code || stdout != "" || stderr != c.stderr {
+				t.Fatalf("%d %q %q", code, stdout, stderr)
+			}
+		})
+	}
+}

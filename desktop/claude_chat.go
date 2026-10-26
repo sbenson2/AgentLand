@@ -306,7 +306,8 @@ func (c *claudeChat) findLocked(id string) int {
 }
 
 func (c *claudeChat) infoLocked() ChatInfo {
-	info := ChatInfo{ID: c.id, Title: c.title, Provider: "claude", Model: "claude/" + claudeModelName(c.rec.Model), Mode: c.rec.Mode, Effort: c.rec.Effort}
+	info := ChatInfo{ID: c.id, Title: c.title, Provider: "claude", Model: "claude/" + claudeModelName(c.rec.Model), Mode: c.rec.Mode, Effort: c.rec.Effort,
+		ContinuedIn: c.rec.ContinuedIn, ContinuedAt: c.rec.ContinuedAt}
 	// Chat names (chat_title.go): the registry has the name as the host
 	// last gave it, which may be newer than the title read at load.
 	if name, ok := c.engine.cli.storedName(c.id); ok {
@@ -743,7 +744,7 @@ func (c *claudeChat) spawn(want claudeSettings, addDir string) (*claudeProcess, 
 		lastEntry = ""
 	}
 	launch.settings, launch.addDir = want, addDir
-	spec := claudeSpawn{executable: executable, args: launch.args(), dir: c.project.Directory, env: c.engine.environment(), lineLimit: c.engine.options.lineLimit, stderrTail: c.engine.options.stderrTail, writeWait: 10 * time.Second, trace: c.engine.options.trace}
+	spec := claudeSpawn{executable: executable, args: launch.args(), dir: c.project.Directory, env: c.engine.chatEnvironment(c.id), lineLimit: c.engine.options.lineLimit, stderrTail: c.engine.options.stderrTail, writeWait: 10 * time.Second, trace: c.engine.options.trace}
 	if c.engine.options.onSpawn != nil {
 		c.engine.options.onSpawn(spec.args)
 	}

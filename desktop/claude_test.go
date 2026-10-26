@@ -928,11 +928,16 @@ func TestClaudeLateEcho(t *testing.T) {
 }
 
 // The CLI gets the stream-json settings but none of AgentLand's or
-// OpenCode's variables, nor a parent Claude Code session's markers.
+// OpenCode's variables, nor a parent Claude Code session's markers. It names
+// its chat and the host that runs it (chat_continue.go), in place of any it
+// inherited.
 func TestClaudeEnvironment(t *testing.T) {
 	t.Setenv("AGENTLAND_SECRET_PROBE", "x")
 	t.Setenv("OPENCODE_SERVER_PASSWORD", "y")
 	t.Setenv("CLAUDECODE", "1")
+	t.Setenv("AGENTLAND_CHAT", "claude:outer")
+	t.Setenv("AGENTLAND_HOST", "/outer/agentland-host")
+	t.Setenv("AGENTLAND_HOST_STATE", "/outer/host.json")
 	f := newClaudeFixture(t, nil)
 	f.script(0, step(map[string]any{"do": "init"}), textTurn("msg_1", "ok", "", 0.001))
 	id := f.newChat()
@@ -940,7 +945,11 @@ func TestClaudeEnvironment(t *testing.T) {
 	var started struct{ Env map[string]string }
 	data, _ := os.ReadFile(filepath.Join(f.dir, "argv-1.json"))
 	json.Unmarshal(data, &started)
-	if len(started.Env) != 3 || started.Env["CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING"] != "true" {
+	executable, _ := os.Executable()
+	state, _ := filepath.Abs(f.store.Path)
+	want := map[string]string{"CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING": "true", "CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS": "1", "CLAUDE_CODE_STARTUP_FAILURE_RESULTS": "1",
+		"AGENTLAND_CHAT": id, "AGENTLAND_HOST": executable, "AGENTLAND_HOST_STATE": state}
+	if !reflect.DeepEqual(started.Env, want) {
 		t.Fatalf("environment: %v", started.Env)
 	}
 }

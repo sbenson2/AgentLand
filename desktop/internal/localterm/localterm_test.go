@@ -94,3 +94,29 @@ func TestContinueRoundTrip(t *testing.T) {
 		t.Fatalf("refusal %q, %v", buffer.String(), err)
 	}
 }
+
+func TestContinueChatRoundTrip(t *testing.T) {
+	var buffer bytes.Buffer
+	sent := Request{Op: OpContinueChat, Chat: "claude:0123456789abcdef", Prompt: `Read HANDOFF.md — "go on"`, Version: "1.2.3"}
+	if err := WriteLine(&buffer, sent); err != nil {
+		t.Fatal(err)
+	}
+	line := buffer.String()
+	if !strings.Contains(line, `"op":"continueChat"`) || !strings.Contains(line, `"chat":"claude:0123456789abcdef"`) || strings.Contains(line, `"from"`) || strings.Contains(line, `"rows"`) {
+		t.Fatalf("line %q", line)
+	}
+	var got Request
+	if err := ReadLine(bufio.NewReader(&buffer), &got); err != nil || got != sent {
+		t.Fatalf("read %+v, %v", got, err)
+	}
+	// A terminal's continue leaves the chat off the wire.
+	buffer.Reset()
+	if err := WriteLine(&buffer, Request{Op: OpContinue, From: "term_1"}); err != nil || strings.Contains(buffer.String(), "chat") {
+		t.Fatalf("continue %q, %v", buffer.String(), err)
+	}
+	buffer.Reset()
+	reply := Reply{Error: &Error{Code: CodeChatNotContinuable, Message: "Only a Claude Code chat can be continued."}}
+	if err := WriteLine(&buffer, reply); err != nil || !strings.Contains(buffer.String(), `"code":"chat_not_continuable"`) {
+		t.Fatalf("refusal %q, %v", buffer.String(), err)
+	}
+}
