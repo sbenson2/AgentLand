@@ -149,8 +149,16 @@ struct ChatConversation: View {
                 if let emptyLanding, store.showsLanding {
                     emptyLanding()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        #if os(iOS)
+                        .contentShape(Rectangle())
+                        .simultaneousGesture(keyboardTap)
+                        .simultaneousGesture(keyboardSwipe)
+                        #endif
                 } else {
                     transcript.id(layoutGeneration)
+                        #if os(iOS)
+                        .simultaneousGesture(keyboardTap)
+                        #endif
                 }
                 floatingControls
             }
@@ -171,6 +179,21 @@ struct ChatConversation: View {
             return true
         }
     }
+
+    #if os(iOS)
+    /// A tap on the conversation puts the keyboard away, as in Messages (owner, 2026-10-26: "i cant close the keyboard
+    /// in the chat window by swiping or tapping above it"). A swipe down does too: the transcript's own scrolling
+    /// (`scrollDismissesKeyboard`), and `keyboardSwipe` on the landing, which doesn't scroll.
+    private var keyboardTap: some Gesture {
+        TapGesture().onEnded { composerFocused = false }
+    }
+
+    private var keyboardSwipe: some Gesture {
+        DragGesture(minimumDistance: 24).onEnded { drag in
+            if drag.translation.height > abs(drag.translation.width) { composerFocused = false }
+        }
+    }
+    #endif
 
     /// The composer and what sits on it, its top edge kept for the cards it may cover.
     private var measuredBottomArea: some View {

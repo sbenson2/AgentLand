@@ -26,10 +26,6 @@
 	<string>Unlock AgentLand with Face ID.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>AgentLand connects to the Mac you paired with on your local network.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>AgentLand listens only while you dictate a chat message.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>AgentLand turns your dictation into chat text, on this device when possible.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

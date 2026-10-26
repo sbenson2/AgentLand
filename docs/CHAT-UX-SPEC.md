@@ -477,7 +477,7 @@ It hides when nothing is pending.
 - **Voice conversations:** a separate full-screen spoken-conversation mode exists.
 
 **AgentLand:**
-- **Dictation (on-device, SpeechAnalyzer, 2026-10-25):** the mic turns into Stop at once. While listening, a scrolling waveform of the voice's level and a running timer take the place of + and the pill, and the empty field says **Listening…**. Words show in the draft as they are spoken and settle phrase by phrase; pauses keep every phrase. Stop, Send or Queue first settles the last words (at most two seconds), so they go with the message. Typing stops dictation, keeping what was heard. A call or a microphone change ends it the same way. Text goes after the draft and is never sent automatically (existing rule). System dictation also works in the field.
+- **Dictation (2026-10-26):** the keyboard's own dictation key; the composer has no mic button of its own (owner: "remove the mic button in the chat pill. rely on the keyboard dictation micbutton"). Text is never sent automatically (existing rule). The composer's field starts at one line, set as far from the composer's top as from its side, and grows to ten lines on iPhone (twelve on iPad and Mac) before it scrolls. A tap on the conversation, or a swipe down over it, puts the keyboard away.
 - **Spoken conversations:** SKIP.
 
 ### 5.7 Slash commands and mentions

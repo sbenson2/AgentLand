@@ -51,8 +51,6 @@ targets:
         NSFaceIDUsageDescription: Unlock AgentLand with Face ID.
         NSLocalNetworkUsageDescription: AgentLand connects to the Mac you paired with on your local network.
         NSCameraUsageDescription: AgentLand scans the pairing QR code shown by your computer and takes photos you attach to a chat.
-        NSMicrophoneUsageDescription: AgentLand listens only while you dictate a chat message.
-        NSSpeechRecognitionUsageDescription: AgentLand turns your dictation into chat text, on this device when possible.
         # The brand navy (AgentLandColor.brand), so launch shows no white before the cover.
         UILaunchScreen:
           UIColorName: LaunchBackground

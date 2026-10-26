@@ -21,15 +21,12 @@ struct ChatComposer: View {
     let takePhoto: (() -> Void)?
     let pasteImage: (() -> Void)?
     let sent: () -> Void
-    @StateObject private var dictation = ChatDictation()
     /// Settings → Chat: a long paste goes as a text file (off by default).
     @AppStorage(ChatSettings.longPasteAsFileKey) private var longPastesAsFiles = ChatSettings.longPasteAsFileDefault
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: .body) private var circle: CGFloat = 32
-    /// A send or queue waiting for dictation's last words, so a second tap doesn't send twice.
-    @State private var submitting = false
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
@@ -65,14 +62,9 @@ struct ChatComposer: View {
                 RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(AgentLandColor.tint.color, lineWidth: 2)
             }
         }
-        .onChange(of: dictation.problem) { _, problem in
-            if let problem { store.report(problem); dictation.problem = nil }
-        }
         .onChange(of: store.attachments.problem) { _, problem in
             if let problem { store.report(problem); store.attachments.problem = nil }
         }
-        .onChange(of: inputEnabled) { _, enabled in if !enabled { dictation.stop() } }
-        .onDisappear { dictation.stop() }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("chatComposer")
     }
@@ -83,22 +75,19 @@ struct ChatComposer: View {
     private var field: some View {
         // The prompt in the theme's secondary color: the system placeholder
         // color is too faint on the glass composer.
-        TextField(text: Binding(get: { store.draft }, set: { text in
-                      if text != store.draft { dictation.draftEdited(text) }
-                      store.editDraft(text, longPastesAsFiles: longPastesAsFiles)
-                  }),
-                  prompt: Text(dictation.isActive ? "Listening…" : placeholder).foregroundStyle(AgentLandColor.textSecondary.color),
+        TextField(text: Binding(get: { store.draft }, set: { store.editDraft($0, longPastesAsFiles: longPastesAsFiles) }),
+                  prompt: Text(placeholder).foregroundStyle(AgentLandColor.textSecondary.color),
                   axis: .vertical) { Text(placeholder) }
             // The composer is the field's frame; no second bezel on the Mac.
             .textFieldStyle(.plain)
             .font(.body)
-            // Two lines to start, for prompts that are mostly dictated; it grows to ten on iPhone before it scrolls
-            // (owner, 2026-10-25).
-            .lineLimit(2...(compact ? 10 : 12))
+            // One line to start, set in the composer as far from its top as from its side, as Claude's app does (owner,
+            // 2026-10-26: a second empty line left "space below it"); it grows to ten on iPhone before it scrolls.
+            .lineLimit(1...(compact ? 10 : 12))
             .focused(focused)
             .disabled(!inputEnabled || store.phase == .deleted)
             .padding(.horizontal, 10)
-            .padding(.top, 6)
+            .padding(.top, 10)
             .accessibilityIdentifier("chatDraft")
             .onKeyPress(keys: [.return], phases: .down) { press in
                 // Hardware keyboards only: Return sends (or queues while the
@@ -118,51 +107,19 @@ struct ChatComposer: View {
     }
 
     private var toolbar: some View {
+        // No dictation button of its own: the keyboard's dictation key fills the field (owner, 2026-10-26).
         HStack(spacing: 2) {
-            ZStack(alignment: .leading) {
-                if dictation.isActive {
-                    listening.transition(.opacity)
-                } else {
-                    HStack(spacing: 4) {
-                        attachMenu
-                        // As a last resort the pill scrolls sideways: its name is never cut short. No ViewThatFits:
-                        // on iOS 27 one here never finished its first layout on a physical iPhone (2026-10-07).
-                        ScrollView(.horizontal) { pill }
-                            .scrollIndicators(.hidden)
-                            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-                    }
-                    .transition(.opacity)
-                }
+            HStack(spacing: 4) {
+                attachMenu
+                // As a last resort the pill scrolls sideways: its name is never cut short. No ViewThatFits:
+                // on iOS 27 one here never finished its first layout on a physical iPhone (2026-10-07).
+                ScrollView(.horizontal) { pill }
+                    .scrollIndicators(.hidden)
+                    .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .animation(.smooth(duration: 0.25), value: dictation.isActive)
-            ChatDictationButton(dictation: dictation, draft: { store.draft }, vocabulary: [store.provider.displayName],
-                                update: { store.setDraft($0) })
-                .disabled(!inputEnabled || store.sending)
             actionButtons
         }
-    }
-
-    /// While dictating, the waveform and the running time take the place of Add and the pill.
-    private var listening: some View {
-        HStack(spacing: 10) {
-            ChatDictationWaveform(meter: dictation.meter)
-                .frame(height: 28)
-            Group {
-                if let since = dictation.listeningSince {
-                    Text(timerInterval: since...Date.distantFuture, countsDown: false)
-                } else {
-                    Text("Starting…")
-                }
-            }
-            .font(.footnote.monospacedDigit())
-            .foregroundStyle(AgentLandColor.textSecondary.color)
-            .fixedSize()
-        }
-        .padding(.leading, 12)
-        .frame(minHeight: ChatMetrics.target)
-        // Dictate's own button says it is listening.
-        .accessibilityHidden(true)
     }
 
     @ViewBuilder private var actionButtons: some View {
@@ -227,8 +184,7 @@ struct ChatComposer: View {
         .help(title)
     }
 
-    /// Return and the Send button: sends, or queues while the agent works. Dictation stops first, and the words
-    /// still settling go with the message.
+    /// Return and the Send button: sends, or queues while the agent works.
     private func submit() {
         guard inputEnabled else { return }
         if store.isWorking {
@@ -236,24 +192,15 @@ struct ChatComposer: View {
             queue()
             return
         }
-        guard store.sendEnabled || !store.reachable, !submitting else { return }
-        submitting = true
+        guard store.sendEnabled || !store.reachable else { return }
         Task {
-            await dictation.finish()
             await store.send()
-            submitting = false
             sent()
         }
     }
 
     private func queue() {
-        guard !submitting else { return }
-        submitting = true
-        Task {
-            await dictation.finish()
-            await store.queueDraft()
-            submitting = false
-        }
+        Task { await store.queueDraft() }
     }
 
     private var attachMenu: some View {
