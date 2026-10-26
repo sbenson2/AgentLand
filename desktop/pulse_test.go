@@ -208,6 +208,10 @@ func TestServeContextTellsPulsesTheHostIsStoppingAndDrainsQuickly(t *testing.T) 
 	if line := nextPulse(t, lines, time.Second); line.Type != "ready" {
 		t.Fatalf("first pulse line %+v", line)
 	}
+	// The default client may hold a connection it dialed for these requests
+	// but never used. The server counts one as busy for 5 s while it shuts
+	// down (net/http), which this test would read as a pulse holding it up.
+	http.DefaultClient.CloseIdleConnections()
 	began := time.Now()
 	cancel()
 	if line := nextPulse(t, lines, 2*time.Second); line.Type != "stopping" {

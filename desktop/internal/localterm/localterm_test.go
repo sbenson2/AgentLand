@@ -68,3 +68,29 @@ func TestLineRoundTripAndLimit(t *testing.T) {
 		t.Fatalf("socket %s", path)
 	}
 }
+
+func TestContinueRoundTrip(t *testing.T) {
+	var buffer bytes.Buffer
+	sent := Request{Op: OpContinue, From: "term_0123456789abcdef", Prompt: `Read HANDOFF.md — "go on"`, Rows: 40, Cols: 120, Version: "1.2.3"}
+	if err := WriteLine(&buffer, sent); err != nil {
+		t.Fatal(err)
+	}
+	line := buffer.String()
+	if !strings.Contains(line, `"op":"continue"`) || !strings.Contains(line, `"from":"term_0123456789abcdef"`) || !strings.Contains(line, `"prompt":"Read HANDOFF.md`) {
+		t.Fatalf("line %q", line)
+	}
+	var got Request
+	if err := ReadLine(bufio.NewReader(&buffer), &got); err != nil || got != sent {
+		t.Fatalf("read %+v, %v", got, err)
+	}
+	// A register leaves them off the wire.
+	buffer.Reset()
+	if err := WriteLine(&buffer, Request{Op: OpRegister}); err != nil || strings.Contains(buffer.String(), "from") || strings.Contains(buffer.String(), "prompt") {
+		t.Fatalf("register %q, %v", buffer.String(), err)
+	}
+	buffer.Reset()
+	reply := Reply{Error: &Error{Code: CodeNotContinuable, Message: "This terminal has ended."}}
+	if err := WriteLine(&buffer, reply); err != nil || !strings.Contains(buffer.String(), `"code":"terminal_not_continuable"`) {
+		t.Fatalf("refusal %q, %v", buffer.String(), err)
+	}
+}

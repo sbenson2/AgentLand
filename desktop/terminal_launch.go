@@ -46,6 +46,11 @@ type terminalLauncher struct {
 	// may be named outside AGENTLAND_ and OPENCODE_.
 	hidden func() []string
 	agents *agentCatalog
+	// hostExecutable is this host's own program (os.Executable) and
+	// statePath its state file, made absolute: each terminal the host starts
+	// names them (AGENTLAND_HOST, AGENTLAND_HOST_STATE), so `agentland-host
+	// terminals continue` typed in it reaches this host. Empty when unknown.
+	hostExecutable, statePath string
 }
 
 // newHostTerminalLauncher is the host's launcher: the Mac's own programs, the
@@ -61,6 +66,10 @@ func newHostTerminalLauncher(store *Store, agent Agent, options HostOptions) *te
 	}
 	if state, err := filepath.Abs(store.Path); err == nil {
 		launcher.privateFolders = append(launcher.privateFolders, filepath.Dir(state))
+		launcher.statePath = state
+	}
+	if executable, err := os.Executable(); err == nil {
+		launcher.hostExecutable = executable
 	}
 	hidden := slices.Clone(options.TerminalHiddenEnv)
 	launcher.hidden = func() []string {

@@ -68,7 +68,7 @@ func run(args []string) error {
 	}
 }
 func usage() error {
-	return errors.New("usage: agentland-host <init|config|tls|serve|install-opencode|chat-tools|terminals serve|terminals stop|terminals run|terminals attach|terminals hook|pair|devices|revoke|version> [options]")
+	return errors.New("usage: agentland-host <init|config|tls|serve|install-opencode|chat-tools|terminals serve|terminals stop|terminals run|terminals attach|terminals continue|terminals hook|pair|devices|revoke|version> [options]")
 }
 
 // chatToolsCommand is `chat-tools --state <host.json>`: the plain chats' tool

@@ -48,7 +48,7 @@ func (entry *terminalEntry) endLocked(status, reason string, device *Device, exi
 		return false
 	}
 	entry.info.Status = status
-	end := &TerminalEnd{Reason: reason, At: entry.now().UTC().Format(archiveTimeLayout), Program: entry.program, ConversationID: entry.info.ConversationID}
+	end := &TerminalEnd{Reason: reason, At: entry.now().UTC().Format(archiveTimeLayout), Program: entry.program, ConversationID: entry.info.ConversationID, ContinuedIn: entry.continuedIn}
 	if exitCode != nil {
 		code := *exitCode
 		end.ExitCode = &code

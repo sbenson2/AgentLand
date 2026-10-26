@@ -891,6 +891,26 @@ public struct WorkspaceStorageKeys: Sendable, Equatable {
         closeImmediately(tab.id)
     }
 
+    /// A terminal that ended by going on in another (`TerminalEnd.continuedIn`: the handoff skill started its next
+    /// Claude Code session there, owner 2026-10-26: "open a new terminal kinda behavior and close the old one out after a
+    /// moment") gives its tab to that terminal, in place: the same tab, its place in the switcher and its page kept. The
+    /// tab's session ends and its view makes one for the new terminal (`WorkspaceSessions`). This device's own ended
+    /// terminal is then closed on the host, so it stops counting toward the host's limit; a tab following another
+    /// device's terminal leaves that to its device. Nothing happens once the tab closed or shows another terminal.
+    func followContinuation(of tabID: UUID, from terminalID: String, to next: String) {
+        guard let index = tabs.firstIndex(where: { $0.id == tabID }), tabs[index].kind == .terminal,
+              tabs[index].resourceID == terminalID, next != terminalID else { return }
+        let old = tabs[index]
+        if old.sharedFrom == nil {
+            // This device draws the new terminal from its start, so it answers the queries there, as for one it made.
+            terminalOutputReadHere[next] = 0
+        }
+        tabs[index].resourceID = next
+        saveTabs()
+        guard old.sharedFrom == nil, let client else { return }
+        Task { _ = await client.closeTerminal(projectID: old.projectID, terminalID: terminalID) }
+    }
+
     private func closeImmediately(_ id: UUID) {
         let closing = tabs.first(where: { $0.id == id })
         let projectID = closing.flatMap { workspaceID(for: $0) }

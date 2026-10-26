@@ -1,11 +1,14 @@
-// Package localterm is the wire between the host and `agentland-host
-// terminals run`, which registers a coding agent typed in Terminal.app as an
-// AgentLand terminal (docs/HOST-API.md, "Terminals started in Terminal on the Mac").
+// Package localterm is the wire between the host and two of its CLI's
+// commands: `agentland-host terminals run`, which registers a coding agent
+// typed in Terminal.app as an AgentLand terminal (docs/HOST-API.md,
+// "Terminals started in Terminal on the Mac"), and `agentland-host terminals
+// continue`, which starts Claude Code in a new AgentLand terminal in place of
+// the one it runs in ("Continuing a terminal in a new one").
 //
 // The socket is terminals-local.sock beside the keeper's: 0600, this user's,
 // and checked per connection, so only this user's own processes reach it. It
 // is never bound to TCP or carried through the tunnel, and a shell has no
-// session token, so it is the only way to register.
+// session token, so it is the only way to register or continue.
 //
 // One connection is one registration:
 //
@@ -15,6 +18,10 @@
 //  3. The CLI has the keeper adopt its PTY with that id and meta, then sends
 //     {op: "adopted"}, or {op: "cancel"} when it gave up.
 //  4. The host follows the terminal and answers {ok: true}.
+//
+// Or one continue: the CLI sends {op: "continue"} with the terminal it runs
+// in (from), the prompt, its window size and its version; the host starts
+// the new terminal and answers {id}, or {error}, and hangs up.
 //
 // Each message is one JSON object on one line, at most MaxLine bytes.
 package localterm
@@ -45,6 +52,7 @@ const (
 	OpRegister = "register"
 	OpAdopted  = "adopted"
 	OpCancel   = "cancel"
+	OpContinue = "continue"
 )
 
 // The codes a refusal names.
@@ -56,12 +64,20 @@ const (
 	CodeUnknownProgram = "program_unknown"
 	CodeStopping       = "host_stopping"
 	CodeBadRequest     = "invalid_request"
+	// CodeNotContinuable: the terminal a continue names is not one the host
+	// can continue (not an AgentLand terminal it follows, not running, an
+	// agent typed in Terminal.app, or not Claude Code's).
+	CodeNotContinuable = "terminal_not_continuable"
 )
 
 // Request is the CLI's message. Register carries the command as typed (its
 // name or path), the folder it runs in, the window's size, the Claude Code
 // conversation the CLI chose (empty when it chose none) and the CLI's
 // version, which must be the host's. Adopted and cancel carry only Op.
+// Continue carries From (the terminal's ID, $AGENTLAND_TERMINAL), Prompt (the
+// new Claude Code's first message, which the host passes as its last
+// argument), the window's size (0 when the CLI has no terminal) and the
+// version.
 //
 // Folder must be the caller's own cwd, canonical: on macOS the path
 // fcntl(F_GETPATH) gives for "." (symbolic links resolved, each name in its
@@ -77,10 +93,13 @@ type Request struct {
 	Cols           int    `json:"cols,omitempty"`
 	ConversationID string `json:"conversationId,omitempty"`
 	Version        string `json:"version,omitempty"`
+	From           string `json:"from,omitempty"`
+	Prompt         string `json:"prompt,omitempty"`
 }
 
 // Reply is the host's message: the terminal's id and the record the keeper
-// is to hold for it (register), OK (adopted), or why not.
+// is to hold for it (register), OK (adopted), the new terminal's id
+// (continue), or why not.
 type Reply struct {
 	OK    bool   `json:"ok,omitempty"`
 	ID    string `json:"id,omitempty"`

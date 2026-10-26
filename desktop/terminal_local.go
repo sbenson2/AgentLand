@@ -28,10 +28,14 @@ import (
 // itself; the host never builds a command for it, and devices still start
 // only what the host chooses (terminal_launch.go).
 //
+// The same socket takes `agentland-host terminals continue`, typed in an
+// AgentLand terminal, which has the host start Claude Code in a new one
+// (terminal_continue.go).
+//
 // The socket (localterm.SocketPath) is bound 0600 by localsock and each
 // connection is checked with SameUserPeer, so only this user's own processes
 // reach it. It is never bound to TCP or carried through the tunnel, and no
-// HTTP route registers a terminal.
+// HTTP route registers or continues a terminal.
 
 // localRegisterWait bounds the registration's first line; localAdoptWait how
 // long the host waits for "adopted" after it answered.
@@ -147,8 +151,8 @@ func (l *localTerminals) untrack(conn net.Conn) {
 	l.mu.Unlock()
 }
 
-// serve is one registration (the package localterm's flow). A connection from
-// another user's process is closed without a word.
+// serve is one registration or one continue (the package localterm's
+// flows). A connection from another user's process is closed without a word.
 func (l *localTerminals) serve(conn net.Conn) {
 	defer conn.Close()
 	if err := localsock.SameUserPeer(conn); err != nil {
@@ -163,8 +167,21 @@ func (l *localTerminals) serve(conn net.Conn) {
 	if errors.Is(err, io.EOF) {
 		return
 	}
-	if err != nil || request.Op != localterm.OpRegister {
-		localReply(conn, localterm.Reply{Error: &localterm.Error{Code: localterm.CodeBadRequest, Message: "AgentLand expected a terminal to register."}})
+	if err != nil || (request.Op != localterm.OpRegister && request.Op != localterm.OpContinue) {
+		localReply(conn, localterm.Reply{Error: &localterm.Error{Code: localterm.CodeBadRequest, Message: "AgentLand expected a terminal to register or continue."}})
+		return
+	}
+	if request.Op == localterm.OpContinue {
+		// One answer, then the host hangs up. The prompt is never logged.
+		id, refusal := h.continueTerminal(request)
+		if refusal != nil {
+			log.Printf("terminals: refused to continue a terminal: %s", refusal.Code)
+			localReply(conn, localterm.Reply{Error: refusal})
+			return
+		}
+		if err := localReply(conn, localterm.Reply{ID: id}); err != nil {
+			log.Printf("terminals: id=%s started, but the continue that asked for it went away: %v", id, err)
+		}
 		return
 	}
 	registration, refusal := h.registerLocalTerminal(request)

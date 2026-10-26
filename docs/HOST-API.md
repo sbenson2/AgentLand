@@ -1671,7 +1671,7 @@ Terminal on the Mac" below).
   `running`:
 
   ```text
-  TerminalEnd { reason, at, exitCode?, device?, program?, conversationId? }
+  TerminalEnd { reason, at, exitCode?, device?, program?, conversationId?, continuedIn? }
   ```
 
   `reason` is `programExited` (its program exited, with `exitCode`, or the keeper ended it by
@@ -1687,7 +1687,10 @@ Terminal on the Mac" below).
   host no longer produces. It may be empty for a log from before archive v7; clients read a
   reason they do not know as none. `at` is RFC 3339 UTC with milliseconds. Top-level
   `exitCode` is the same value as `ended.exitCode`, for older clients. `program` is the
-  program the terminal was opened with; `conversationId` as below.
+  program the terminal was opened with; `conversationId` as below. `continuedIn` (2026-10-26)
+  is the ID of the terminal a continue started in its place ("Continuing a terminal in a new
+  one" below), whatever the reason; it is absent otherwise, and absent from an end read from
+  the archive.
 - Finished terminals stay listed for 24 hours after they finish, so their device can read how
   they ended; then the host clears them (the keeper forgets them, the host drops them) and
   they stop counting toward the 16-terminal limit. A terminal that finished more than a day
@@ -1923,9 +1926,10 @@ drive while the Terminal window shows the same session. Only zsh is covered.
 - **The registration socket** is not an HTTP route: `terminals-local.sock` beside the keeper's
   `terminals.sock` in the host state's folder, bound 0600, with each connection checked to come
   from this user's own processes (another user's is closed without a word). It is never bound to
-  TCP, carried through the tunnel or offered to the browser, and no HTTP route registers a
-  terminal. The host serves it with terminal access off too, to refuse at once. One connection
-  is one registration; each message is one JSON object on one line, at most 64 KiB:
+  TCP, carried through the tunnel or offered to the browser, and no HTTP route registers or
+  continues a terminal. The host serves it with terminal access off too, to refuse at once. One
+  connection is one registration, or one continue (`{op: "continue"}`, "Continuing a terminal
+  in a new one" below); each message is one JSON object on one line, at most 64 KiB:
 
   1. The CLI sends `{op: "register", command, folder, rows, cols, conversationId?, version}`
      within 2 s: the command as typed, its folder (the shell's cwd, absolute and canonical; on
@@ -1975,7 +1979,63 @@ drive while the Terminal window shows the same session. Only zsh is covered.
     CLI's 1 s setup never waits for a keeper to start.
 - **`AGENTLAND_TERMINAL=<id>`** is in the environment of every AgentLand terminal: the host sets
   it in each terminal it starts, and `terminals run` in the agent's. The hook routes nothing
-  where it is set, so an agent typed inside an AgentLand terminal is never routed again.
+  where it is set, so an agent typed inside an AgentLand terminal is never routed again. Since
+  2026-10-26 each terminal the host starts also has `AGENTLAND_HOST` and
+  `AGENTLAND_HOST_STATE` (next section); a routed agent's does not.
+
+### Continuing a terminal in a new one (2026-10-26)
+
+The owner's handoff ends a Claude Code session and goes on in a fresh one. In an AgentLand
+terminal, viewed on the iPhone, the owner asked for "confirm and then open a new terminal kinda
+behavior and close the old one out after a moment", with the tab following the new terminal. So
+`agentland-host terminals continue -- <prompt>`, typed in an AgentLand terminal, has the host
+start Claude Code with the prompt in a new terminal of the same workspace, for the same device;
+the caller then ends the old terminal's program itself (the host never ends it), and the old
+terminal's end names the new one.
+
+- **The op**, on the registration socket above (`terminals-local.sock`, this user's processes
+  only; no HTTP route continues a terminal). One connection is one exchange: the CLI sends
+  `{op: "continue", from, prompt, rows, cols, version}` within 2 s; the host answers `{id}` (the
+  new terminal's ID) or `{error: {code, message}}`, and hangs up. `from` is the terminal the
+  command runs in (`$AGENTLAND_TERMINAL`); `rows` and `cols` are its window's size, 0 when it
+  has no terminal.
+- **Checks**, refusing in this order: `terminal_disabled`; `version_mismatch`;
+  `invalid_request` for a prompt that is empty once its white space is trimmed, over 4096
+  bytes, not UTF-8, holding any control character (Unicode Cc, tab and newline included), or
+  starting with `-` once trimmed (so it is never read as an option);
+  `terminal_not_continuable` when `from` is not a terminal ID, not a terminal the host follows,
+  not running, a coding agent typed in Terminal on the Mac (routed), not Claude Code's, or in no
+  workspace (or one since removed). Then the new terminal starts as a device's Claude Code
+  terminal does (`POST /v1/terminals` with `program: "claude"` and a new conversation), with
+  the same agent update preparation, answering as close as this socket's codes come to that
+  route's answers: `program_unknown` when Claude Code is not available,
+  `terminals_unavailable` (the keeper cannot be used, or the start failed), `host_stopping`,
+  and `terminal_limit` under the 16-terminal limit, which counts it as a device's create does.
+  Nothing is recorded on a refusal.
+- **The new terminal** is the old one's owner's (its device, or `local-mac`), in its workspace,
+  under its creation title, at the request's size when it is valid, else the old terminal's size
+  when the host knows it, else 24×80. The host builds the arguments: `--session-id <new
+  conversation>`, then the prompt, trimmed, as one final argument. Devices still never send
+  arguments or commands; only this same-user socket can pass a prompt. The host logs one line,
+  `terminals: created id=… workspace=… program=claude device=… continued from=<old id>`, and
+  never the prompt.
+- **`continuedIn`**: once the new terminal runs, the old terminal's `TerminalEnd` names it,
+  whenever and however the old one ends: in `GET /v1/terminals`, in output answers, and in the
+  `ended` of a 404 `terminal_not_found` while the host remembers it. It is the host's memory
+  only: the archive does not store it, so a host that restarts between the continue and the old
+  terminal's end loses the link.
+- **The environment**: each terminal the host starts has, after `AGENTLAND_TERMINAL=<id>`,
+  `AGENTLAND_HOST=<the host's own executable>` and `AGENTLAND_HOST_STATE=<the host's state
+  file>`, in place of any inherited (a host run inside another host's terminal never passes the
+  outer host's on). Routed agents' terminals are unchanged.
+- **The CLI**: `agentland-host terminals continue [--state <host.json>] -- <prompt>`. `--state`
+  defaults to `$AGENTLAND_HOST_STATE`, else the default state. It waits at most 60 s and prints
+  only the new terminal's ID and a newline on stdout. Exit codes: 0 success; 5 when this
+  terminal cannot be continued here (no `$AGENTLAND_TERMINAL`, the socket missing or refusing
+  the connection, or `terminal_not_continuable`), so the caller goes on its own way; 2 usage;
+  1 any other failure, with the host's message on stderr.
+- **The apps**: a tab whose terminal ends with `continuedIn` switches to that terminal in
+  place.
 
 ### Mac-only terminal routes
 

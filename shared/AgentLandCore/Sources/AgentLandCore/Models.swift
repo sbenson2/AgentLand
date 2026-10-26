@@ -510,12 +510,16 @@ public struct TerminalEnd: Codable, Hashable, Sendable {
     public let program: String?
     /// A Claude Code terminal's conversation, which Resume continues.
     public let conversationID: String?
+    /// The terminal it went on in (docs/HOST-API.md "Continuing a terminal in a new one", 2026-10-26): a tab showing
+    /// this one switches to that one in place.
+    public let continuedIn: String?
 
-    public init(reason: Reason?, at: Date?, exitCode: Int? = nil, device: String? = nil, program: String? = nil, conversationID: String? = nil) {
+    public init(reason: Reason?, at: Date?, exitCode: Int? = nil, device: String? = nil, program: String? = nil, conversationID: String? = nil,
+                continuedIn: String? = nil) {
         self.reason = reason; self.at = at; self.exitCode = exitCode; self.device = device; self.program = program
-        self.conversationID = conversationID
+        self.conversationID = conversationID; self.continuedIn = continuedIn
     }
-    enum CodingKeys: String, CodingKey { case reason, at, exitCode, device, program, conversationID = "conversationId" }
+    enum CodingKeys: String, CodingKey { case reason, at, exitCode, device, program, conversationID = "conversationId", continuedIn }
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         reason = (try? container.decodeIfPresent(String.self, forKey: .reason)).flatMap { $0 }.flatMap(Reason.init(rawValue:))
@@ -525,6 +529,7 @@ public struct TerminalEnd: Codable, Hashable, Sendable {
             .map { HostText.line($0, limit: 100) }.flatMap { $0.isEmpty ? nil : $0 }
         program = (try? container.decodeIfPresent(String.self, forKey: .program)).flatMap { $0 }.flatMap { $0.isEmpty ? nil : $0 }
         conversationID = (try? container.decodeIfPresent(String.self, forKey: .conversationID)).flatMap { $0 }.flatMap(TerminalResume.validConversation)
+        continuedIn = (try? container.decodeIfPresent(String.self, forKey: .continuedIn)).flatMap { $0 }.flatMap(Self.validTerminalID)
     }
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
@@ -534,6 +539,12 @@ public struct TerminalEnd: Codable, Hashable, Sendable {
         try container.encodeIfPresent(device, forKey: .device)
         try container.encodeIfPresent(program, forKey: .program)
         try container.encodeIfPresent(conversationID, forKey: .conversationID)
+        try container.encodeIfPresent(continuedIn, forKey: .continuedIn)
+    }
+    /// A terminal ID as hosts make them: 1 to 128 of `A-Z a-z 0-9 . _ : -`.
+    static func validTerminalID(_ text: String) -> String? {
+        let allowed = Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._:-")
+        return (1...128).contains(text.count) && text.allSatisfy(allowed.contains) ? text : nil
     }
     static func parseDate(_ text: String) -> Date? {
         (try? Date(text, strategy: Date.ISO8601FormatStyle(includingFractionalSeconds: true))) ?? (try? Date(text, strategy: .iso8601))

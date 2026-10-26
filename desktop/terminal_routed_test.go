@@ -323,7 +323,7 @@ func TestEveryHostTerminalGetsItsID(t *testing.T) {
 	if !slices.Equal(marked, []string{"AGENTLAND_TERMINAL=" + info.ID}) {
 		t.Fatalf("environment marks %v", marked)
 	}
-	if env := terminalEnvironmentWithID([]string{"A=1", "AGENTLAND_TERMINAL=term_outer", "B=2"}, "term_new"); !slices.Equal(env, []string{"A=1", "B=2", "AGENTLAND_TERMINAL=term_new"}) {
+	if env := terminalEnvironmentWithID([]string{"A=1", "AGENTLAND_TERMINAL=term_outer", "B=2"}, "term_new", "", ""); !slices.Equal(env, []string{"A=1", "B=2", "AGENTLAND_TERMINAL=term_new"}) {
 		t.Fatalf("environment %v", env)
 	}
 }

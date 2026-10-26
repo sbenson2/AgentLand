@@ -407,6 +407,12 @@ public enum TerminalAction: String, CaseIterable, Sendable {
         // Nothing can be typed into it: the keyboard and key bar go away (`rendererTakesInput`).
         showKeyboard = false
         focusRequest &+= 1
+        // It went on in another terminal: the tab follows it, once this read has returned. A standalone screen has no
+        // tab to hand over and stays ended.
+        if let next = end?.continuedIn, !standalone, let workspace {
+            let tabID = tabID, terminalID = terminalID
+            Task { @MainActor in workspace.followContinuation(of: tabID, from: terminalID, to: next) }
+        }
     }
 
     /// What Resume continues: a Claude Code terminal that ended, on a host that resumes conversations

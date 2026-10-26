@@ -22,20 +22,23 @@ import (
 )
 
 // terminalsUsage names the terminals subcommands.
-const terminalsUsage = "usage: agentland-host terminals <serve|stop|run|attach|hook> …"
+const terminalsUsage = "usage: agentland-host terminals <serve|stop|run|attach|continue|hook> …"
 
 const (
-	terminalsRunUsage    = "usage: agentland-host terminals run [--state <host.json>] -- <command> [args…]"
-	terminalsAttachUsage = "usage: agentland-host terminals attach [--state <host.json>] <id>"
-	terminalsHookUsage   = "usage: agentland-host terminals hook <on|off|pause|status> [--state <host.json>] [--executable <path>]"
+	terminalsRunUsage      = "usage: agentland-host terminals run [--state <host.json>] -- <command> [args…]"
+	terminalsAttachUsage   = "usage: agentland-host terminals attach [--state <host.json>] <id>"
+	terminalsContinueUsage = "usage: agentland-host terminals continue [--state <host.json>] -- <prompt>"
+	terminalsHookUsage     = "usage: agentland-host terminals hook <on|off|pause|status> [--state <host.json>] [--executable <path>]"
 )
 
 // terminalsCommand is `terminals serve|stop --state <host.json>`, the
 // terminal keeper's own process and the way to end it; `terminals run`,
 // which runs a coding agent typed in Terminal.app as an AgentLand terminal;
-// `terminals attach`, which opens a running terminal in a window; and
-// `terminals hook`, the Mac app's switch for the zsh hook that routes those
-// agents into `terminals run`.
+// `terminals attach`, which opens a running terminal in a window;
+// `terminals continue`, which has the host start Claude Code in a new
+// AgentLand terminal in place of the one it runs in; and `terminals hook`,
+// the Mac app's switch for the zsh hook that routes those agents into
+// `terminals run`.
 func terminalsCommand(args []string) error {
 	if len(args) == 0 {
 		return errors.New(terminalsUsage)
@@ -73,6 +76,8 @@ func terminalsCommand(args []string) error {
 			StatePath: *state, Version: version, ID: fs.Arg(0),
 			Stdin: os.Stdin, Stdout: os.Stdout, Stderr: os.Stderr,
 		}))
+	case "continue":
+		os.Exit(continueCommand(args[1:], os.Stdout, os.Stderr))
 	case "hook":
 		// The Mac app shows what goes to stderr as it is, so without "error:".
 		if err := hookCommand(args[1:], os.Stdout); err != nil {
@@ -166,6 +171,36 @@ func hookCommand(args []string, stdout io.Writer) error {
 		return json.NewEncoder(stdout).Encode(status)
 	}
 	return errors.New(terminalsHookUsage)
+}
+
+// continueCommand is `terminals continue [--state <host.json>] -- <prompt>`
+// (termrun.Continue), run inside an AgentLand terminal: it answers its exit
+// code, termrun.ContinueUsage when it is not used as terminalsContinueUsage
+// says. The state is $AGENTLAND_HOST_STATE, which the host sets in each of its
+// terminals, unless --state names another; the terminal is
+// $AGENTLAND_TERMINAL, and the size its stdin's or stdout's window's.
+func continueCommand(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("terminals continue", flag.ContinueOnError)
+	fs.SetOutput(stderr)
+	defaultState := os.Getenv("AGENTLAND_HOST_STATE")
+	if defaultState == "" {
+		defaultState = host.DefaultStatePath()
+	}
+	state := fs.String("state", defaultState, "path to protected host state")
+	if err := fs.Parse(args); errors.Is(err, flag.ErrHelp) {
+		return 0
+	} else if err != nil {
+		return termrun.ContinueUsage
+	}
+	if fs.NArg() != 1 {
+		fmt.Fprintln(stderr, terminalsContinueUsage)
+		return termrun.ContinueUsage
+	}
+	rows, cols := termrun.WindowSize(os.Stdin, os.Stdout)
+	return termrun.Continue(termrun.ContinueOptions{
+		StatePath: *state, Version: version, From: os.Getenv("AGENTLAND_TERMINAL"), Prompt: fs.Arg(0),
+		Rows: rows, Cols: cols, Stdout: stdout, Stderr: stderr,
+	})
 }
 
 // parseRunArgs reads `terminals run`'s own flags. Everything from the

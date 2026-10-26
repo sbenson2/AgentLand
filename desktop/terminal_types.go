@@ -124,8 +124,12 @@ const (
 )
 
 // TerminalEnd is how a terminal ended: why, when, the program's exit code
-// when the backend still knew it, the device that ended it, and what a
-// device needs to offer Resume (the program, and Claude Code's conversation).
+// when the backend still knew it, the device that ended it, what a device
+// needs to offer Resume (the program, and Claude Code's conversation), and
+// the terminal it went on in, when a continue started one for it
+// (ContinuedIn, terminal_continue.go). ContinuedIn is the host's memory only:
+// the archive does not store it, so an end read after the host started again
+// has none.
 type TerminalEnd struct {
 	Reason         string `json:"reason"`
 	At             string `json:"at"`
@@ -133,6 +137,7 @@ type TerminalEnd struct {
 	Device         string `json:"device,omitempty"`
 	Program        string `json:"program,omitempty"`
 	ConversationID string `json:"conversationId,omitempty"`
+	ContinuedIn    string `json:"continuedIn,omitempty"`
 }
 
 type terminalEntry struct {
@@ -208,6 +213,10 @@ type terminalEntry struct {
 	following bool
 	done      chan struct{}
 	clock     func() time.Time
+	// continuedIn is the terminal a continue started for this one
+	// (terminal_continue.go), under mu: every end recorded after it is set
+	// names it (TerminalEnd.ContinuedIn).
+	continuedIn string
 }
 
 type terminalManager struct {

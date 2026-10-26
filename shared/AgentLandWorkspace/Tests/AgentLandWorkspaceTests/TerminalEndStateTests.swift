@@ -87,6 +87,49 @@ import AgentLandCore
         XCTAssertEqual(host.bodies("/v1/terminals").last?["resume"] as? String, "pick")
     }
 
+    /// A terminal that went on in another (the handoff skill's next session, `continuedIn`) hands its tab to that one in
+    /// place: the same tab, still selected, now reading the new terminal; the old one is closed on the host. A tab
+    /// following another device's terminal follows too, but leaves closing to that device.
+    func testATerminalThatWentOnInAnotherHandsItsTabToIt() async throws {
+        let ended = #"{"data":"","cursor":0,"reset":false,"status":"exited","exitCode":143,"ended":{"reason":"programExited","#
+            + #""at":"2026-10-26T07:41:03.000Z","exitCode":143,"program":"claude","continuedIn":"t2"}}"#
+        let (workspace, host) = try await workspace { request in
+            request.url?.query?.contains("terminalId=t1") == true ? (200, ended)
+                : (200, #"{"data":"","cursor":0,"reset":false,"status":"running"}"#)
+        }
+        let (tab, session) = openTerminal(workspace, label: "Claude Code")
+        XCTAssertEqual(workspace.selectedTabID, tab.id)
+        await session.poll(view: UUID(), viewActive: true)
+        XCTAssertEqual(session.howEnded?.continuedIn, "t2")
+        await waitUntil("the tab to follow the new terminal") { workspace.tabs.first { $0.id == tab.id }?.resourceID == "t2" }
+        XCTAssertEqual(workspace.tabs.filter { $0.kind == .terminal }.count, 1, "The same tab, not a second one")
+        XCTAssertEqual(workspace.selectedTabID, tab.id)
+        let followed = try XCTUnwrap(workspace.tabs.first { $0.id == tab.id })
+        XCTAssertEqual(workspace.terminalSession(for: followed).terminalID, "t2")
+        await waitUntil("the old terminal to be closed on the host") { !host.bodies("/v1/terminal/close").isEmpty }
+        XCTAssertEqual(host.bodies("/v1/terminal/close").first?["terminalId"] as? String, "t1")
+
+        let (shared, sharedHost) = try await self.workspace { _ in (200, ended) }
+        let origin = SharedOrigin(deviceName: "Wes's iPhone", onMac: false, routed: false)
+        let sharedTab = WorkspaceTab.terminal(RemoteTerminal(id: "t1", title: "Claude Code", projectID: "p1", status: .running, exitCode: nil),
+                                              projectID: "p1", sharedFrom: origin)
+        shared.open(sharedTab)
+        await shared.terminalSession(for: sharedTab).poll(view: UUID(), viewActive: true)
+        await waitUntil("the shared tab to follow") { shared.tabs.first { $0.id == sharedTab.id }?.resourceID == "t2" }
+        XCTAssertTrue(sharedHost.bodies("/v1/terminal/close").isEmpty, "Another device's terminal is closed by that device")
+    }
+
+    func testContinuedInTakesOnlyATerminalID() throws {
+        func decode(_ value: String) throws -> TerminalEnd {
+            try JSONDecoder().decode(TerminalEnd.self, from: Data(#"{"reason":"programExited","continuedIn":\#(value)}"#.utf8))
+        }
+        XCTAssertEqual(try decode(#""term_0123456789abcdef""#).continuedIn, "term_0123456789abcdef")
+        XCTAssertNil(try decode(#""""#).continuedIn)
+        XCTAssertNil(try decode(#""../t2""#).continuedIn)
+        XCTAssertNil(try decode("42").continuedIn)
+        XCTAssertNil(try decode("\"\(String(repeating: "a", count: 129))\"").continuedIn)
+    }
+
     /// Resume never runs a second Claude Code beside one the host may still have: when ending the old terminal fails
     /// or is uncertain, nothing opens and the ended state says so. One the host already forgot is fine.
     func testResumeOpensNothingWhileTheOldTerminalMayStillRun() async throws {

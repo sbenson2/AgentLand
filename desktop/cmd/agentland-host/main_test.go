@@ -255,7 +255,7 @@ func TestTerminalsRunNeedsACommand(t *testing.T) {
 	if err := run([]string{"terminals", "attach"}); err == nil || !strings.Contains(err.Error(), "usage: agentland-host terminals attach") {
 		t.Errorf("attach without an id: %v", err)
 	}
-	if err := run([]string{"terminals", "nope"}); err == nil || !strings.Contains(err.Error(), "usage: agentland-host terminals <serve|stop|run|attach|hook>") {
+	if err := run([]string{"terminals", "nope"}); err == nil || !strings.Contains(err.Error(), "usage: agentland-host terminals <serve|stop|run|attach|continue|hook>") {
 		t.Errorf("an unknown subcommand: %v", err)
 	}
 }

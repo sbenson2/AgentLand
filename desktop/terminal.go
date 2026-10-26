@@ -191,7 +191,6 @@ func (h *Host) createTerminal(w http.ResponseWriter, r *http.Request) {
 	if title == "" {
 		title = "Terminal"
 	}
-	manager := h.terminals
 	program := strings.TrimSpace(input.Program)
 	if program == "" {
 		program = "shell"
@@ -264,20 +263,94 @@ func (h *Host) createTerminal(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Err() != nil {
 		return
 	}
+	info, err := h.startTerminal(terminalStart{owner: device.ID, project: project, title: title, program: program, conversation: conversation,
+		rows: input.Rows, cols: input.Cols, updateNotice: updateNotice})
+	switch {
+	case errors.Is(err, errTerminalStartStopping):
+		writeError(w, 503, "host_stopping", "The host is stopping. No terminal was created.")
+	case errors.Is(err, errHostStopping):
+		// The device hears that no terminal was created, so none is left.
+		writeError(w, 503, "host_stopping", "The host is stopping")
+	case errors.Is(err, errTerminalLimit):
+		writeError(w, 429, "terminal_limit", fmt.Sprintf("%d terminals are open on this Mac across all your devices and Terminal windows, including finished ones that haven't been closed. Close one, or end or clear one in AgentLand on the Mac (Settings → Terminals).", terminalCapacity))
+	case errors.Is(err, errTerminalProgramUnavailable):
+		writeError(w, 400, "terminal_program_unavailable", "That terminal program is not available on this host")
+	case errors.Is(err, errTerminalPathTooLong):
+		// No keeper can run there: a clear error, and nothing to retry.
+		writeError(w, 500, "terminal_path_too_long", terminalPathTooLongMessage)
+	case errors.Is(err, errTerminalsUnusable):
+		writeError(w, 503, "terminals_unavailable", terminalsUnavailableMessage)
+	case errors.Is(err, errTerminalNotListed):
+		notFound(w)
+	case err != nil:
+		internal(w)
+	default:
+		logTerminalCreated(info, project, program, device)
+		writeJSON(w, 201, info)
+	}
+}
+
+// terminalStart is a terminal the host starts (startTerminal): its owner (a
+// device's ID, or local-mac), workspace and title, the program and, for
+// Claude Code, its conversation, its size, and the agent's update notice.
+// after are arguments the host itself puts after the program's own: only a
+// continue's prompt (terminal_continue.go), which comes from this user's
+// local socket. Devices never send arguments.
+type terminalStart struct {
+	owner        string
+	project      Project
+	title        string
+	program      string
+	conversation *terminalConversation
+	after        []string
+	rows, cols   int
+	updateNotice string
+}
+
+// Why startTerminal started no terminal; createTerminal and a continue each
+// answer them their own way.
+var (
+	// errTerminalStartStopping: the host began stopping before the command
+	// was built.
+	errTerminalStartStopping = errors.New("the host is stopping; no terminal was created")
+	// errTerminalLimit: terminalCapacity terminals are open or starting.
+	errTerminalLimit = errors.New("the terminal limit is reached")
+	// errTerminalProgramUnavailable: the program's command could not be built.
+	errTerminalProgramUnavailable = errors.New("the terminal program is unavailable")
+	// errTerminalPathTooLong: no keeper can run at the state's path.
+	errTerminalPathTooLong = errors.New("the terminal service's path is too long")
+	// errTerminalsUnusable: a keeper runs that cannot be used.
+	errTerminalsUnusable = errors.New("the terminal service cannot be used")
+	// errTerminalNotStarted: the record could not be written, or the keeper
+	// did not start the terminal.
+	errTerminalNotStarted = errors.New("the terminal did not start")
+	// errTerminalNotListed: the terminal started but was not listed (its
+	// workspace was removed as it started).
+	errTerminalNotListed = errors.New("the terminal was not listed")
+)
+
+// startTerminal starts what program runs (terminal_launch.go) in the keeper,
+// under the 16-terminal cap, and lists and follows it (installEntry): the
+// shared part of createTerminal and of a continue (terminal_continue.go),
+// after the agent's update preparation. It answers the terminal as
+// createTerminal does, or one of the errors above, or errHostStopping when the
+// terminals closed as it started.
+func (h *Host) startTerminal(start terminalStart) (TerminalInfo, error) {
+	manager := h.terminals
+	project, program := start.project, start.program
 	select {
 	case <-h.stopping:
-		writeError(w, 503, "host_stopping", "The host is stopping. No terminal was created.")
-		return
+		return TerminalInfo{}, errTerminalStartStopping
 	default:
 	}
 	// What the terminal runs (terminal_launch.go): the program the device
 	// named, never a command of its own.
-	command, err := manager.launcher.command(project, program, conversation)
+	command, err := manager.launcher.command(project, program, start.conversation)
 	if err != nil {
-		writeError(w, 400, "terminal_program_unavailable", "That terminal program is not available on this host")
-		return
+		return TerminalInfo{}, errTerminalProgramUnavailable
 	}
-	names := terminalGenericNames(program, title)
+	command.Args = append(command.Args, start.after...)
+	names := terminalGenericNames(program, start.title)
 	switch program {
 	case "shell", "opencode", "claude", "codex":
 	default:
@@ -288,13 +361,11 @@ func (h *Host) createTerminal(w http.ResponseWriter, r *http.Request) {
 	manager.mu.Lock()
 	if manager.closed {
 		manager.mu.Unlock()
-		writeError(w, 503, "host_stopping", "The host is stopping")
-		return
+		return TerminalInfo{}, errHostStopping
 	}
 	if len(manager.entries)+manager.starting >= terminalCapacity {
 		manager.mu.Unlock()
-		writeError(w, 429, "terminal_limit", fmt.Sprintf("%d terminals are open on this Mac across all your devices and Terminal windows, including finished ones that haven't been closed. Close one, or end or clear one in AgentLand on the Mac (Settings → Terminals).", terminalCapacity))
-		return
+		return TerminalInfo{}, errTerminalLimit
 	}
 	manager.starting++
 	manager.creating.Add(1)
@@ -305,35 +376,30 @@ func (h *Host) createTerminal(w http.ResponseWriter, r *http.Request) {
 		manager.mu.Unlock()
 		manager.creating.Done()
 	}()
-	info := TerminalInfo{ID: newTerminalID(), Title: title, ProjectID: project.ID, Status: "running", UpdateNotice: updateNotice, Directory: project.Directory}
-	if conversation != nil && !conversation.Pick {
-		info.ConversationID = conversation.ID
+	info := TerminalInfo{ID: newTerminalID(), Title: start.title, ProjectID: project.ID, Status: "running", UpdateNotice: start.updateNotice, Directory: project.Directory}
+	if start.conversation != nil && !start.conversation.Pick {
+		info.ConversationID = start.conversation.ID
 	}
-	meta := terminalMeta{Owner: device.ID, Project: project.ID, Program: program, ConversationID: info.ConversationID, Title: title, Version: command.Version, Created: h.now().UTC()}
+	meta := terminalMeta{Owner: start.owner, Project: project.ID, Program: program, ConversationID: info.ConversationID, Title: start.title, Version: command.Version, Created: h.now().UTC()}
 	record, err := meta.encode()
 	if err != nil {
 		log.Printf("terminals: could not record a terminal in workspace=%s program=%s: %v", project.ID, program, err)
-		internal(w)
-		return
+		return TerminalInfo{}, errTerminalNotStarted
 	}
 	spawnContext, cancelSpawn := context.WithTimeout(context.Background(), terminalRequestWait)
-	spawned, err := manager.backend.Spawn(spawnContext, keeper.SpawnRequest{ID: info.ID, Dir: project.Directory, Path: command.Path, Args: command.Args, Env: terminalEnvironmentWithID(command.Env, info.ID),
-		Rows: input.Rows, Cols: input.Cols, Meta: record})
+	spawned, err := manager.backend.Spawn(spawnContext, keeper.SpawnRequest{ID: info.ID, Dir: project.Directory, Path: command.Path, Args: command.Args,
+		Env: terminalEnvironmentWithID(command.Env, info.ID, manager.launcher.hostExecutable, manager.launcher.statePath), Rows: start.rows, Cols: start.cols, Meta: record})
 	cancelSpawn()
 	if err != nil {
 		log.Printf("terminals: could not start a terminal in workspace=%s program=%s: %v", project.ID, program, err)
 		if errors.Is(err, localsock.ErrTooLong) {
-			// No keeper can run there: a clear error, and nothing to retry.
-			writeError(w, 500, "terminal_path_too_long", terminalPathTooLongMessage)
-			return
+			return TerminalInfo{}, errTerminalPathTooLong
 		}
 		if manager.spawnFoundUnusable(err) {
 			manager.setUnusable()
-			writeError(w, 503, "terminals_unavailable", terminalsUnavailableMessage)
-			return
+			return TerminalInfo{}, errTerminalsUnusable
 		}
-		internal(w)
-		return
+		return TerminalInfo{}, errTerminalNotStarted
 	}
 	info.PID = spawned.PID
 	started := spawned.Started
@@ -342,20 +408,16 @@ func (h *Host) createTerminal(w http.ResponseWriter, r *http.Request) {
 	}
 	// Terminal titles: the tracker compares titles with this terminal's own
 	// names.
-	entry := &terminalEntry{owner: device.ID, project: project, info: info, meta: meta, output: []byte{}, changed: make(chan struct{}), pid: spawned.PID, started: started, program: program,
-		following: true, done: make(chan struct{}), clock: h.now, rows: input.Rows, cols: input.Cols}
+	entry := &terminalEntry{owner: start.owner, project: project, info: info, meta: meta, output: []byte{}, changed: make(chan struct{}), pid: spawned.PID, started: started, program: program,
+		following: true, done: make(chan struct{}), clock: h.now, rows: start.rows, cols: start.cols}
 	entry.titles.names = names
 	switch err := h.installEntry(entry); {
 	case errors.Is(err, errHostStopping):
-		// The device hears that no terminal was created, so none is left.
-		writeError(w, 503, "host_stopping", "The host is stopping")
-		return
+		return TerminalInfo{}, errHostStopping
 	case err != nil:
-		notFound(w)
-		return
+		return TerminalInfo{}, errTerminalNotListed
 	}
-	logTerminalCreated(info, project, program, device)
-	writeJSON(w, 201, info)
+	return info, nil
 }
 
 // errHostStopping: the host closed before a terminal was listed.
@@ -507,17 +569,31 @@ func (h *Host) dropUnlisted(entry *terminalEntry) {
 	}
 }
 
-// terminalEnvironmentWithID is env with AGENTLAND_TERMINAL=<id> last, in
-// place of any it had: every AgentLand terminal says which it is, so a coding
-// agent typed in it is never routed into AgentLand again.
-func terminalEnvironmentWithID(env []string, id string) []string {
-	result := make([]string, 0, len(env)+1)
+// terminalEnvironmentWithID is env with AGENTLAND_TERMINAL=<id> last, then
+// AGENTLAND_HOST=<executable> and AGENTLAND_HOST_STATE=<state> (each only
+// when known), in place of any it had: every AgentLand terminal says which it
+// is, so a coding agent typed in it is never routed into AgentLand again, and
+// which host runs it, so `agentland-host terminals continue` typed in it
+// reaches that host (terminal_continue.go). terminalEnvironment already drops
+// every inherited AGENTLAND_ variable, so a nested host's never leak.
+func terminalEnvironmentWithID(env []string, id, executable, state string) []string {
+	result := make([]string, 0, len(env)+3)
 	for _, item := range env {
-		if !strings.HasPrefix(item, "AGENTLAND_TERMINAL=") {
-			result = append(result, item)
+		name, _, _ := strings.Cut(item, "=")
+		switch name {
+		case "AGENTLAND_TERMINAL", "AGENTLAND_HOST", "AGENTLAND_HOST_STATE":
+			continue
 		}
+		result = append(result, item)
 	}
-	return append(result, "AGENTLAND_TERMINAL="+id)
+	result = append(result, "AGENTLAND_TERMINAL="+id)
+	if executable != "" {
+		result = append(result, "AGENTLAND_HOST="+executable)
+	}
+	if state != "" {
+		result = append(result, "AGENTLAND_HOST_STATE="+state)
+	}
+	return result
 }
 
 // discard ends and forgets a terminal no device was told about, within ctx
