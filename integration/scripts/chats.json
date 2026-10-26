@@ -116,6 +116,7 @@
     {"do": "helper", "name": "newAgentChat", "argument": "opencode"},
     {"do": "screenshot", "name": "agent-landing", "note": "the plain chat's landing over the composer, no tiles (2026-10-07)"},
     {"do": "helper", "name": "chooseFixtureModel"},
+    {"do": "tap", "id": "chatModelMenu", "soft": true},
     {"do": "tap", "id": "chatModeMenu", "soft": true},
     {"do": "screenshot", "name": "agent-mode-menu"},
     {"do": "tapIfExists", "type": "button", "label": "Plan", "timeout": 3},

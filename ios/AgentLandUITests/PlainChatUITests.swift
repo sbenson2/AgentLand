@@ -100,12 +100,11 @@ extension FullWorkspaceUITests {
             attach(app, "chat-providers-\(provider)")
             app.buttons["chatProvider-" + provider].tap()
             XCTAssertTrue(app.descendants(matching: .any)["chatDraft"].firstMatch.waitForExistence(timeout: 20))
-            let mode = app.buttons["chatModeMenu"]
-            XCTAssertTrue(mode.waitForExistence(timeout: 10), "Chat offers the agent's own modes")
-            XCTAssertTrue((mode.value as? String ?? "").contains("Ask"), "A new chat starts in Ask")
-            XCTAssertNotNil(workspaceLine(app), "The chat runs in the workspace, and says which")
+            // One pill holds the model, its thinking and the agent's own modes (owner, 2026-10-25).
             let model = app.buttons["chatModelMenu"].firstMatch
             XCTAssertTrue(model.waitForExistence(timeout: 10))
+            XCTAssertTrue((model.value as? String ?? "").hasSuffix(", Ask"), "A new chat starts in Ask")
+            XCTAssertNotNil(workspaceLine(app), "The chat runs in the workspace, and says which")
             XCTAssertTrue(model.isEnabled, "The provider offers its model choices")
             app.buttons["chatOptions"].tap()
             XCTAssertTrue(app.buttons["chatAttachPhotos"].waitForExistence(timeout: 5), "The provider offers photos")
@@ -172,7 +171,8 @@ extension FullWorkspaceUITests {
         let composer = app.descendants(matching: .any)["chatDraft"].firstMatch
         XCTAssertTrue(composer.waitForExistence(timeout: 10), "The composer is under the landing")
         XCTAssertEqual(composer.placeholderValue, "Message")
-        XCTAssertFalse(app.buttons["chatModeMenu"].exists, "OpenCode's Chats-space chat (--opencode-chat) takes no mode; Claude Code's and Codex's do")
+        XCTAssertFalse((app.buttons["chatModelMenu"].value as? String ?? "").contains(", "),
+                       "OpenCode's Chats-space chat (--opencode-chat) takes no mode; Claude Code's and Codex's do")
         attach(app, "plain-landing")
 
         chooseFixtureModel(app)

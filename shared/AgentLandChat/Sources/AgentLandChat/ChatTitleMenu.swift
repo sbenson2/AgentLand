@@ -20,58 +20,24 @@ import AgentLandCore
 import AgentLandDesign
 
 /// The chat's own actions for an app that shows the chat's title in its navigation bar, as a title
-/// menu: the model and effort (one submenu, the composer's model menu) and the mode the next message
-/// uses, Copy Chat, Save as Markdown…, Continue with Another Model… and Refresh. The app adds what it
-/// owns around them (Pin, Delete).
+/// menu: Copy Chat, Save as Markdown…, Continue with Another Model… and Refresh. The app adds what it
+/// owns around them (Pin, Delete). The model, its thinking and the mode live in the composer's pill alone
+/// (owner, 2026-10-25: one home each).
 public struct ChatTitleMenuItems: View {
     let store: ChatSessionStore
     let title: String
     let workspace: String?
-    let inputEnabled: Bool
     let continueWithAnotherModel: () -> Void
-    let chosen: (() -> Void)?
 
-    /// `chosen` runs after a model, effort or mode is chosen from its submenu, for an app whose menu does not close
-    /// itself then (the iPhone task menu).
-    public init(store: ChatSessionStore, title: String, workspace: String?, inputEnabled: Bool,
-                continueWithAnotherModel: @escaping () -> Void, chosen: (() -> Void)? = nil) {
+    public init(store: ChatSessionStore, title: String, workspace: String?,
+                continueWithAnotherModel: @escaping () -> Void) {
         self.store = store
         self.title = title
         self.workspace = workspace
-        self.inputEnabled = inputEnabled
         self.continueWithAnotherModel = continueWithAnotherModel
-        self.chosen = chosen
     }
 
     public var body: some View {
-        if let models = store.options?.models, !models.isEmpty {
-            // The composer's model menu as a submenu, so both offer the same models and efforts (2026-10-07).
-            Menu { ChatModelMenuContent(store: store, chosen: chosen) } label: {
-                Label("Model", systemImage: "cpu")
-                Text(store.modelMenuSummary)
-            }
-            .menuOrder(.fixed)
-            // The menu opens from its own row: the iPhone task menu's buttons act only once its panel has gone.
-            .buttonStyle(.automatic)
-            .disabled(!inputEnabled)
-            .accessibilityIdentifier("chatTitleModel")
-        }
-        if store.modeChoices.count > 1 {
-            // Bypass permissions and Full access ask first, on the `DialogAnchor` under this menu
-            // (`chatModeConfirmation(_:origin: .titleMenu)`).
-            Picker(selection: Binding(get: { store.selectedModeChoice?.id ?? "" }, set: { store.selectMode($0, from: .titleMenu); chosen?() })) {
-                ForEach(store.modeChoices) { choice in
-                    Label(choice.name, systemImage: choice.symbol).tag(choice.id)
-                }
-            } label: {
-                Label("Mode", systemImage: store.selectedModeChoice?.symbol ?? "slider.horizontal.3")
-                Text(store.selectedModeChoice?.summary ?? "Default mode")
-            }
-            .pickerStyle(.menu)
-            // Like the composer's chip: the mode changes between turns.
-            .disabled(!inputEnabled || store.isWorking)
-            .accessibilityIdentifier("chatTitleMode")
-        }
         Section {
             Button("Copy Chat", systemImage: "doc.on.doc") {
                 ChatClipboard.copy(store.markdownExport(workspace: workspace))

@@ -477,7 +477,7 @@ It hides when nothing is pending.
 - **Voice conversations:** a separate full-screen spoken-conversation mode exists.
 
 **AgentLand:**
-- **Dictation (existing, on-device):** the mic toggles recording. The recording strip shows a level indicator, timer, Cancel and Done. Text goes in at the cursor and is never sent automatically (existing rule). System dictation also works in the field.
+- **Dictation (on-device, SpeechAnalyzer, 2026-10-25):** the mic turns into Stop at once. While listening, a scrolling waveform of the voice's level and a running timer take the place of + and the pill, and the empty field says **Listening…**. Words show in the draft as they are spoken and settle phrase by phrase; pauses keep every phrase. Stop, Send or Queue first settles the last words (at most two seconds), so they go with the message. Typing stops dictation, keeping what was heard. A call or a microphone change ends it the same way. Text goes after the draft and is never sent automatically (existing rule). System dictation also works in the field.
 - **Spoken conversations:** SKIP.
 
 ### 5.7 Slash commands and mentions
@@ -515,24 +515,24 @@ It hides when nothing is pending.
 - **Defaults:** a save-as-default link appears only on a new chat. The selection is stored with the chat, and the default applies to new chats.
 
 **AgentLand:**
-- **Provider:** chosen when the chat is created (Home or the empty chat) and never changed. It shows in the header subtitle. A plain chat (§15) has no provider choice, mode chip or effort; its header subtitle is the model's name, and its model chip lists OpenCode's models.
-- **Model and effort chip:** in the composer toolbar, formatted **Sonnet 4.5 · High** (proposed; the effort part is omitted when the provider has none). It opens one native menu, with no search (owner's request, 2026-10-07), in this order wherever it opens (it opens upward from the composer, and the system would otherwise turn it over):
+- **Provider:** chosen when the chat is created (Home or the empty chat) and never changed. It shows in the header subtitle. A plain chat (§15) has no provider choice, mode or effort; its header subtitle is the model's name, and its pill lists OpenCode's models.
+- **The pill (owner, 2026-10-25):** one control in the composer toolbar for the model, its thinking and the mode, as Claude's and ChatGPT's composers have one, formatted **Sonnet 4.5 · High** with the effort in the secondary colour (omitted when the provider has none) and a chevron. When the mode isn't one that asks first (Claude Code's Ask, Codex's Ask), its symbol leads the pill, in the danger colour for Bypass permissions and Full access, so the mode stays visible. It opens one native menu, with no search (owner's request, 2026-10-07), in this order wherever it opens (it opens upward from the composer, and the system would otherwise turn it over):
   - the host's first five models, in the host's own order (the host sends no dates, so its order decides): the name, the context size under it when the host gives one, and the system's checkmark on the chosen one
   - **More Models** (existing), a submenu that slides in over the menu with every other model, under each provider's name when they come from more than one provider (providers by name, models in the host's order); absent with five models or fewer
-  - an **Effort** (existing) section of host-advertised levels, for models that support it, checked the same way
+  - then, in their own section, **Thinking**, a submenu whose row shows the current effort (host-advertised levels, each with a one-line summary: Low "Quick answers", Medium "Balanced", High "Thinks longer", Extra High "Thinks much longer", Max "Thinks the longest"), and **Permissions**, a submenu whose row shows the current mode (below)
   - on an empty chat only, **Use for New Claude Code Chats** (proposed) to set the per-provider default
   - with no models, one disabled row: **No Models**, **This provider has no models set up. Choose one in AgentLand on your Mac.** (existing)
-  - The chat's title menu (on iPhone, the task menu) offers the same menu as its **Model** submenu, so both list the same models and efforts.
-- **Mode chip:** left of the model chip. It shows the current mode's short name and a symbol that signals risk:
+  - The model, effort and mode have this one home: the chat's title menu (on iPhone, the ••• menu) no longer repeats them (owner, 2026-10-25).
+- **Mode:** the pill's **Permissions** submenu. Each mode has a symbol that signals risk:
   - hand: asks first
   - pencil: edits on its own
   - list: plans only
   - bolt: runs without asking
 
-  Tapping it opens a Menu of host-advertised provider modes (for example OpenCode's Build and Plan), each with a one-line description; an inline picker checks the mode in use. AgentLand's short summaries (proposed): **Asks first**, **Edits on its own**, **Plans only**, **Runs without asking**. The mode belongs to the chat, and the default comes from provider settings.
+  It lists the host-advertised provider modes (for example OpenCode's Build and Plan), each with a one-line description; an inline picker checks the mode in use. AgentLand's short summaries (proposed): **Asks first**, **Edits on its own**, **Plans only**, **Runs without asking**. The mode belongs to the chat, and the default comes from provider settings.
 - **Escalation (SHOULD):** moving to a more permissive mode than the chat default asks for confirmation once per chat.
 - **Mid-chat changes:** they apply from the next turn. They are disabled while a turn runs, unless the provider supports live switching (capability-gated). The change leaves a small divider in the transcript: **Switched to Opus 4.1** or **Mode: Plan** (proposed).
-- **Large text on compact width:** at accessibility text sizes the chips collapse into one **Options** (proposed) menu holding Mode and, as a submenu, the model menu (models and Effort).
+- **Large text on compact width:** at accessibility text sizes the pill shows its symbol alone (the mode's, or a chip), and the Large Content Viewer shows the rest.
 
 ## 7. Chat library
 
@@ -591,7 +591,7 @@ It hides when nothing is pending.
 
   The header shows the provider. Saved drafts, messages, pending interactions and running turns bypass the landing.
 - **Plain chat landing (§15):** the same circus, **What's on your mind?** under it, and the composer. It has no workspace actions.
-- **Starting:** Start a chat reveals and focuses the composer (existing). From then on the mode and model chips are visible.
+- **Starting:** Start a chat reveals and focuses the composer (existing). From then on the pill (model, thinking and mode) is visible.
 - **Starter prompts: SKIP in v1.** The actions already offer starting points, and generic prompts don't fit a code workspace.
 - **First send:**
   - The tent fades out (instantly under Reduce Motion). The user bubble appears, the reply placeholder shows its status line, and the composer docks at the bottom.
@@ -698,7 +698,7 @@ There is no rebinding UI or custom shortcut sheet; the menu bar and the ⌘ over
 - **Reduced motion:** honored only by the phone drawer. The shimmer, pulsing caret, word fade-in and slide animations ignore it.
 
 **AgentLand (MUST unless noted):**
-- **Dynamic Type:** every text uses a text style, with code in monospace relative to body. At accessibility sizes, action rows wrap, composer chips collapse into Options, and bubbles widen to 90%.
+- **Dynamic Type:** every text uses a text style, with code in monospace relative to body. At accessibility sizes, action rows wrap, the composer's pill shows its symbol alone, and bubbles widen to 90%.
 - **VoiceOver structure:**
   - Each message is one element: **Your message, 9:41: …** or **Claude Code: …** (proposed), with its actions as custom actions (§3).
   - Disclosures report their state (expanded, running, failed).
@@ -799,7 +799,7 @@ Constraints: no automatic resend after uncertain delivery; one shared implementa
 | Composer | Per-tab drafts, with secrets excluded | MUST | Existing; no lost work |
 | Selection | Provider fixed per chat and shown in the header | MUST | Sessions are provider-native |
 | Selection | Model and effort chip; a menu of the host's first five models, with More Models for the rest | MUST | OpenCode lists can be long |
-| Selection | Mode chip always visible, with host-advertised modes | MUST | The user must know whether the agent asks first |
+| Selection | Mode always findable in the pill, its symbol shown when it doesn't ask first | MUST | The user must know whether the agent asks first |
 | Selection | Default for new chats; confirm permission escalation | SHOULD | Fewer repeated choices; fewer surprises |
 | Selection | Multi-model compare and merge | SKIP | One agent per chat |
 | Library | Date-grouped list per workspace; selection highlight; New Chat entry points | MUST | Basic navigation |
@@ -836,9 +836,9 @@ The owner's request of 2026-09-27: standard AI chats, not programming ones, with
   It can't run commands or read or change files. The chat belongs to no workspace: it lives in the host's reserved Chats space.
 - **Starting:** New Chat (the library row, Home, ⌘N, the Mac toolbar) starts one at once; no workspace is needed. While offline it's refused at once with the offline notice, and nothing is sent. The coding agents stay under **New Agent Chat…** (§7).
 - **Screen:**
-  - It's the chat screen of §1–5, without the workspace and export lines, the mode chip, and the sentences about files the agent changed.
+  - It's the chat screen of §1–5, without the workspace and export lines, the mode, and the sentences about files the agent changed.
   - The header's subtitle is the model's name.
-  - Kept: the model chip, attachments, dictation, the queue, Stop, Run Again, Edit & Resend, Copy and Save as Markdown, titles and the archive.
+  - Kept: the pill (the model alone), attachments, dictation, the queue, Stop, Run Again, Edit & Resend, Copy and Save as Markdown, titles and the archive.
 - **Tool activity:** the plain cards of §2.6.
 - **Memory:**
   - A save shows **Memory updated** with Undo, because a page the model read can ask it to remember something.

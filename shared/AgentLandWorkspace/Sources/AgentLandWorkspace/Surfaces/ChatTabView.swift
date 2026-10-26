@@ -14,7 +14,6 @@ struct ChatTabView: View {
     @Environment(WorkspaceModel.self) private var workspace
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.workspaceObscured) private var workspaceObscured
-    @Environment(\.workspaceMenuObscured) private var menuObscured
     /// The saved appearance, as the workspace shows it; the Mac's empty-chat landing overrides it.
     @Environment(\.colorScheme) private var colorScheme
     let tab: WorkspaceTab
@@ -29,9 +28,6 @@ struct ChatTabView: View {
     private var active: Bool { workspace.selectedTabID == tab.id && !workspace.locked && scenePhase == .active }
     /// Input also waits for the opening cover and anything covering the workspace.
     private var inputActive: Bool { active && !workspace.presentationPending && !workspaceObscured }
-    /// The title menu's choices wait for the same, except the iPhone's drawer, whose pill for this tab carries them
-    /// (owner, 2026-10-08).
-    private var menuActive: Bool { active && !workspace.presentationPending && !menuObscured }
     private var refreshToken: UUID? { workspace.tabRefreshGeneration[tab.id] }
 
     private struct EnvironmentKey: Equatable {
@@ -85,8 +81,6 @@ struct ChatTabView: View {
                 } message: {
                     Text(store.runAgainConfirmation)
                 }
-                // Bypass permissions or Full access chosen from the title menu asks here, once per chat.
-                .chatModeConfirmation(store, origin: .titleMenu)
         }
         .onChange(of: environmentKey, initial: true) { _, _ in store.update(environment) }
         .onChange(of: workspace.presentationRequest(for: tab.id), initial: true) { _, _ in reportPresentationIfReady(store) }
@@ -143,11 +137,11 @@ struct ChatTabView: View {
 
     // MARK: Title menu
 
-    /// The chat's model, mode and effort and its actions (the chat package's), then what the archive
+    /// The chat's actions (the chat package's), then what the archive
     /// adds: Pin, Export as JSON and Delete.
     @ViewBuilder private func titleMenu(_ store: ChatSessionStore, title: String) -> some View {
         // Continue's sheet comes up once the iPhone's drawer, whose pill menu chose it, has gone.
-        ChatTitleMenuItems(store: store, title: title, workspace: workspaceName, inputEnabled: menuActive,
+        ChatTitleMenuItems(store: store, title: title, workspace: workspaceName,
                            continueWithAnotherModel: { [workspace] in workspace.phoneNavigation.afterPanels { showsContinue = true } })
         if workspace.sidebar.usesArchive, let archive = workspace.archive {
             let record = archivedRecord(title: title, provider: store.provider)

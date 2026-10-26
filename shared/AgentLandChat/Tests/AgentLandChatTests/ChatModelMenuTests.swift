@@ -44,4 +44,20 @@ final class ChatModelMenuTests: XCTestCase {
         XCTAssertTrue(groups.first.isEmpty)
         XCTAssertTrue(groups.more.isEmpty)
     }
+
+    func testEffortNamesAndSummaries() {
+        XCTAssertEqual(["minimal", "low", "medium", "high", "xhigh", "max"].map(ChatEffort.name),
+                       ["Minimal", "Low", "Medium", "High", "Extra High", "Max"])
+        XCTAssertEqual(ChatEffort.summary("high"), "Thinks longer")
+        XCTAssertEqual(ChatEffort.summary("max"), "Thinks the longest")
+        XCTAssertNil(ChatEffort.summary("turbo"), "An effort AgentLand doesn't know shows its name alone")
+        XCTAssertEqual(ChatEffort.name("turbo"), "Turbo")
+    }
+
+    func testPillShortName() {
+        XCTAssertEqual(ChatEffort.shortName("Default (recommended)"), "Default")
+        XCTAssertEqual(ChatEffort.shortName("Opus 5.5"), "Opus 5.5")
+        XCTAssertEqual(ChatEffort.shortName("Sonnet (1M context)"), "Sonnet")
+        XCTAssertEqual(ChatEffort.shortName("(beta)"), "(beta)", "A name that is all note stays whole")
+    }
 }

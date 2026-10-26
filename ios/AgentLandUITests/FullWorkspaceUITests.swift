@@ -1614,22 +1614,25 @@ final class FullWorkspaceUITests: XCTestCase {
         composer.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "Tapping the composer focuses the message field")
         chooseFixtureModel(app)
-        XCTAssertEqual(app.buttons["chatModelMenu"].value as? String, "Deterministic Local Model")
-        let mode = app.buttons["chatModeMenu"]
+        // One pill: the model, its thinking and the mode (owner, 2026-10-25).
+        let pill = app.buttons["chatModelMenu"]
+        XCTAssertTrue((pill.value as? String ?? "").hasPrefix("Deterministic Local Model"))
         if UIDevice.current.userInterfaceIdiom == .phone {
             // The fixture's chat is OpenCode's in the Chats space (the harness's --opencode-chat), which takes no mode.
             // Chat's Claude Code and Codex chats have their modes (testInstalledChatProviders), but tests never start them.
-            XCTAssertFalse(mode.exists, "OpenCode's Chats-space chat takes no mode")
+            XCTAssertFalse((pill.value as? String ?? "").contains(", "), "OpenCode's Chats-space chat takes no mode")
         } else {
-            XCTAssertTrue(mode.exists, "The mode is always visible while composing")
-            XCTAssertTrue((mode.value as? String ?? "").contains("Edits on its own"))
-            mode.tap()
-            // The mode menu is an inline picker (CH-10): its Plan row by its identifier, or by its name.
+            XCTAssertTrue((pill.value as? String ?? "").hasSuffix(", Build"), "The mode is always in the pill while composing")
+            pill.tap()
+            let permissions = app.descendants(matching: .any)["chatModeMenu"].firstMatch
+            XCTAssertTrue(permissions.waitForExistence(timeout: 5), "The pill's menu has Permissions")
+            permissions.tap()
+            // Permissions is a submenu picker (CH-10): its Plan row by its identifier, or by its name.
             let planToggle = app.descendants(matching: .any).matching(NSPredicate(
                 format: "identifier == %@ OR label == %@ OR label BEGINSWITH %@", "chatPlanToggle", "Plan", "Plan, ")).firstMatch
             XCTAssertTrue(planToggle.waitForExistence(timeout: 5))
             planToggle.tap()
-            XCTAssertTrue(waitForValue(mode, containing: "Plans only", timeout: 5), "Plan mode must be visible before sending")
+            XCTAssertTrue(waitForValue(pill, containing: "Plan", timeout: 5), "Plan mode must be visible before sending")
         }
         let prompt = "Reply from the local fixture only."
         composer.tap(); composer.typeText(prompt)

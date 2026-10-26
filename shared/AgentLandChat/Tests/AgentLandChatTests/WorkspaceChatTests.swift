@@ -107,6 +107,7 @@ final class WorkspaceChatTests: XCTestCase {
         XCTAssertEqual(store.modeChoices.map(\.symbol), ["hand.raised", "pencil", "list.bullet", "checkmark.shield", "bolt"])
         XCTAssertEqual(store.modeChoices.map { $0.confirmation != nil }, [false, false, false, false, true])
         XCTAssertEqual(store.selectedModeChoice?.id, "default", "A new chat starts in Ask")
+        XCTAssertNil(store.flaggedMode, "The pill shows no mode while it asks first")
 
         // Its features come from its workspace entry: no chatProviderInfo here.
         XCTAssertTrue(store.canFork)
@@ -119,6 +120,7 @@ final class WorkspaceChatTests: XCTestCase {
         XCTAssertEqual(asked, "default")
         store.selectMode("acceptEdits")
         XCTAssertNil(store.modeQuestion, "Only Bypass permissions asks")
+        XCTAssertEqual(store.flaggedMode?.symbol, "pencil", "The pill shows a mode that doesn't ask first")
         let acceptingEdits = try await sentMode(store, scripted, "Fix them")
         XCTAssertEqual(acceptingEdits, "acceptEdits")
     }
@@ -131,6 +133,7 @@ final class WorkspaceChatTests: XCTestCase {
         XCTAssertEqual(store.modeChoices.map(\.symbol), ["hand.raised", "pencil", "eye", "bolt"])
         XCTAssertEqual(store.modeChoices.map { $0.confirmation != nil }, [false, false, false, true])
         XCTAssertEqual(store.selectedModeChoice?.id, "ask")
+        XCTAssertNil(store.flaggedMode, "Codex's Ask asks first too")
         XCTAssertFalse(store.rewindRestoresFiles, "Codex's entry lists no restoreFiles")
         let codexMode = try await sentMode(store, scripted, "Hi")
         XCTAssertEqual(codexMode, "ask")

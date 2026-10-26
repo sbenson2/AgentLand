@@ -28,10 +28,8 @@ struct ChatComposer: View {
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: .body) private var circle: CGFloat = 32
-    /// The chip row's width, and what the chips need with whole names: the mode folds to its symbol when they
-    /// don't fit. Neither depends on the fold, so measuring can't loop.
-    @State private var chipRowWidth: CGFloat = 0
-    @State private var wholeChipsWidth: CGFloat = 0
+    /// A send or queue waiting for dictation's last words, so a second tap doesn't send twice.
+    @State private var submitting = false
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
@@ -85,12 +83,18 @@ struct ChatComposer: View {
     private var field: some View {
         // The prompt in the theme's secondary color: the system placeholder
         // color is too faint on the glass composer.
-        TextField(text: Binding(get: { store.draft }, set: { store.editDraft($0, longPastesAsFiles: longPastesAsFiles) }),
-                  prompt: Text(placeholder).foregroundStyle(AgentLandColor.textSecondary.color), axis: .vertical) { Text(placeholder) }
+        TextField(text: Binding(get: { store.draft }, set: { text in
+                      if text != store.draft { dictation.draftEdited(text) }
+                      store.editDraft(text, longPastesAsFiles: longPastesAsFiles)
+                  }),
+                  prompt: Text(dictation.isActive ? "Listening…" : placeholder).foregroundStyle(AgentLandColor.textSecondary.color),
+                  axis: .vertical) { Text(placeholder) }
             // The composer is the field's frame; no second bezel on the Mac.
             .textFieldStyle(.plain)
             .font(.body)
-            .lineLimit(1...(compact ? 6 : 10))
+            // Two lines to start, for prompts that are mostly dictated; it grows to ten on iPhone before it scrolls
+            // (owner, 2026-10-25).
+            .lineLimit(2...(compact ? 10 : 12))
             .focused(focused)
             .disabled(!inputEnabled || store.phase == .deleted)
             .padding(.horizontal, 10)
@@ -115,45 +119,56 @@ struct ChatComposer: View {
 
     private var toolbar: some View {
         HStack(spacing: 2) {
-            HStack(spacing: 4) {
-                attachMenu
-                if typeSize.isAccessibilitySize && compact {
-                    // At accessibility sizes on narrow screens the chips fold into one menu.
-                    optionsMenu
-                } else if store.isPlainChat {
-                    // A plain chat has no mode: the model alone, scrolling sideways when its whole name doesn't fit.
-                    chipRow { modelChip }
+            ZStack(alignment: .leading) {
+                if dictation.isActive {
+                    listening.transition(.opacity)
                 } else {
-                    // Whole names when they fit; then the mode as its symbol alone; as a last resort the row
-                    // scrolls sideways. A chip's name is never cut short. No ViewThatFits: on iOS 27 the one here
-                    // never finished its first layout on a physical iPhone (main thread at 95%, cover never lifted,
-                    // 2026-10-07).
-                    chipRow { HStack(spacing: 4) { modeChip(symbolOnly: wholeChipsWidth > chipRowWidth); modelChip } }
-                        .background(alignment: .leading) {
-                            // The whole names, measured unseen.
-                            HStack(spacing: 4) {
-                                Button {} label: { chip(symbol: modeSymbol, text: modeText) }.chatChipButton(compact: compact)
-                                Button {} label: { chip(symbol: "cpu", text: modelText) }.chatChipButton(compact: compact)
-                            }
-                            .fixedSize()
-                            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { wholeChipsWidth = $0 }
-                            .hidden()
-                            .accessibilityHidden(true)
-                        }
-                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { chipRowWidth = $0 }
+                    HStack(spacing: 4) {
+                        attachMenu
+                        // As a last resort the pill scrolls sideways: its name is never cut short. No ViewThatFits:
+                        // on iOS 27 one here never finished its first layout on a physical iPhone (2026-10-07).
+                        ScrollView(.horizontal) { pill }
+                            .scrollIndicators(.hidden)
+                            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+                    }
+                    .transition(.opacity)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            ChatDictationButton(dictation: dictation, draft: { store.draft }, update: { store.setDraft($0) })
+            .animation(.smooth(duration: 0.25), value: dictation.isActive)
+            ChatDictationButton(dictation: dictation, draft: { store.draft }, vocabulary: [store.provider.displayName],
+                                update: { store.setDraft($0) })
                 .disabled(!inputEnabled || store.sending)
             actionButtons
         }
     }
 
+    /// While dictating, the waveform and the running time take the place of Add and the pill.
+    private var listening: some View {
+        HStack(spacing: 10) {
+            ChatDictationWaveform(meter: dictation.meter)
+                .frame(height: 28)
+            Group {
+                if let since = dictation.listeningSince {
+                    Text(timerInterval: since...Date.distantFuture, countsDown: false)
+                } else {
+                    Text("Starting…")
+                }
+            }
+            .font(.footnote.monospacedDigit())
+            .foregroundStyle(AgentLandColor.textSecondary.color)
+            .fixedSize()
+        }
+        .padding(.leading, 12)
+        .frame(minHeight: ChatMetrics.target)
+        // Dictate's own button says it is listening.
+        .accessibilityHidden(true)
+    }
+
     @ViewBuilder private var actionButtons: some View {
         if store.isWorking {
             if store.canQueue && store.draftHasText {
-                Button { Task { await store.queueDraft() } } label: {
+                Button(action: queue) {
                     Label("Queue", systemImage: "text.line.last.and.arrowtriangle.forward")
                         .labelStyle(.iconOnly)
                         .font(.body.weight(.semibold))
@@ -212,19 +227,32 @@ struct ChatComposer: View {
         .help(title)
     }
 
-    /// Return and the Send button: sends, or queues while the agent works.
+    /// Return and the Send button: sends, or queues while the agent works. Dictation stops first, and the words
+    /// still settling go with the message.
     private func submit() {
         guard inputEnabled else { return }
         if store.isWorking {
             guard store.canQueue, store.draftHasText, store.attachments.isEmpty else { return }
-            Task { await store.queueDraft() }
+            queue()
             return
         }
-        guard store.sendEnabled || !store.reachable else { return }
-        dictation.stop()
+        guard store.sendEnabled || !store.reachable, !submitting else { return }
+        submitting = true
         Task {
+            await dictation.finish()
             await store.send()
+            submitting = false
             sent()
+        }
+    }
+
+    private func queue() {
+        guard !submitting else { return }
+        submitting = true
+        Task {
+            await dictation.finish()
+            await store.queueDraft()
+            submitting = false
         }
     }
 
@@ -266,100 +294,53 @@ struct ChatComposer: View {
         .accessibilityIdentifier("chatOptions")
     }
 
-    /// The current mode, always visible: its symbol says whether the agent asks first.
-    /// The chips scroll sideways when they don't fit.
-    private func chipRow(@ViewBuilder _ chips: () -> some View) -> some View {
-        ScrollView(.horizontal) { chips() }
-            .scrollIndicators(.hidden)
-            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+    /// The one pill (owner, 2026-10-25, after Claude's and ChatGPT's composers): the model and its thinking,
+    /// "Opus 4.5 · High", with the mode's symbol in front when the mode isn't one that asks first. It opens
+    /// `ChatModelMenuContent`: the models, then Thinking and Permissions.
+    private var pill: some View {
+        Menu { ChatModelMenuContent(store: store) } label: { pillLabel }
+            .menuIndicator(.hidden)
+            // Written order: the composer sits at the bottom, and iOS would otherwise turn the menu over so the
+            // models came last.
+            .menuOrder(.fixed)
+            .chatChipButton(compact: compact)
+            .accessibilityShowsLargeContentViewer { Label(pillValue, systemImage: store.flaggedMode?.symbol ?? "cpu") }
+            .disabled(!inputEnabled)
+            .keyboardShortcut("m", modifiers: [.command, .shift])
+            .accessibilityLabel("Model and Options")
+            .accessibilityValue(pillValue)
+            .accessibilityIdentifier("chatModelMenu")
+            .chatModeConfirmation(store, origin: .composer)
     }
 
-    private var modeSymbol: String { store.selectedModeChoice?.symbol ?? "slider.horizontal.3" }
-    private var modeText: String { store.selectedModeChoice?.summary ?? "Default mode" }
-
-    private func modeChip(symbolOnly: Bool) -> some View {
-        Menu { modeItems } label: {
-            chip(symbol: modeSymbol, text: modeText, symbolOnly: symbolOnly)
-        }
-        .menuIndicator(.hidden)
-        .chatChipButton(compact: compact)
-        .accessibilityShowsLargeContentViewer { Label(modeText, systemImage: modeSymbol) }
-        .disabled(!inputEnabled || store.modeChoices.count < 2 || store.isWorking)
-        .accessibilityLabel("Mode")
-        .accessibilityValue(store.selectedModeChoice.map { "\($0.name), \($0.summary)" } ?? "Default")
-        .accessibilityIdentifier("chatModeMenu")
-        .chatModeConfirmation(store, origin: .composer)
-    }
-
-    /// One of several, the system's way: an inline picker checks the mode in use (CH-10), as the title menu's does.
-    private var modeItems: some View {
-        Picker(selection: Binding(get: { store.selectedModeChoice?.id ?? "" }, set: { store.selectMode($0, from: .composer) })) {
-            ForEach(store.modeChoices) { choice in
-                // A menu item's second text is its subtitle.
-                VStack(alignment: .leading) {
-                    Label(choice.name, systemImage: choice.symbol)
-                    Text(choice.summary)
-                }
-                .accessibilityIdentifier(choice.id == "plan" ? "chatPlanToggle" : "chatMode-\(choice.id)")
-                .tag(choice.id)
-            }
-        } label: { EmptyView() }
-        .pickerStyle(.inline)
-    }
-
-    /// "Sonnet 4.5 · High"; the effort part only when the provider takes one. It opens the model menu
-    /// (`ChatModelMenuContent`; owner's request, 2026-10-07).
-    private var modelChip: some View {
-        Menu { ChatModelMenuContent(store: store) } label: {
-            chip(symbol: "cpu", text: modelText)
-        }
-        .menuIndicator(.hidden)
-        // Written order: the composer sits at the bottom, and iOS would otherwise turn the menu over so the
-        // models came last.
-        .menuOrder(.fixed)
-        .chatChipButton(compact: compact)
-        .accessibilityShowsLargeContentViewer { Label(modelText, systemImage: "cpu") }
-        .disabled(!inputEnabled)
-        .keyboardShortcut("m", modifiers: [.command, .shift])
-        .accessibilityLabel("Choose Model")
-        .accessibilityValue(modelText)
-        .accessibilityIdentifier("chatModelMenu")
-    }
-
-    private var modelText: String { store.modelMenuSummary }
-
-    /// At accessibility text sizes the chips fold into one Options menu.
-    private var optionsMenu: some View {
-        Menu {
-            if !store.isPlainChat { Section("Mode") { modeItems } }
-            Menu { ChatModelMenuContent(store: store) } label: { Label("Model: \(modelText)", systemImage: "cpu") }
-        } label: {
-            // Only at accessibility sizes: the symbol, with the word in the
-            // Large Content Viewer and for VoiceOver.
-            Image(systemName: "slider.horizontal.3")
-        }
-        .menuIndicator(.hidden)
-        .menuOrder(.fixed)
-        .chatChipButton(compact: compact)
-        .accessibilityLabel("Options")
-        .accessibilityShowsLargeContentViewer { Label("Options", systemImage: "slider.horizontal.3") }
-        .disabled(!inputEnabled)
-        .accessibilityIdentifier("chatComposerOptions")
-        .chatModeConfirmation(store, origin: .composer)
-    }
-
-    /// One line at its full width; the Large Content Viewer shows the chip
-    /// when text is large.
-    private func chip(symbol: String, text: String, symbolOnly: Bool = false) -> some View {
+    /// One line at its full width; at accessibility sizes on a narrow screen the symbol alone, and the Large
+    /// Content Viewer shows the rest.
+    private var pillLabel: some View {
         HStack(spacing: 4) {
-            Image(systemName: symbol)
-            if !symbolOnly {
-                Text(text).lineLimit(1).fixedSize()
+            if let mode = store.flaggedMode {
+                // Bypass permissions and Full access in the danger colour: they run without asking.
+                Image(systemName: mode.symbol)
+                    .foregroundStyle(mode.confirmation == nil ? AgentLandColor.tint.color : AgentLandColor.danger.color)
+            } else if typeSize.isAccessibilitySize && compact {
+                Image(systemName: "cpu")
             }
-            if !compact {
-                Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).accessibilityHidden(true)
+            if !(typeSize.isAccessibilitySize && compact) {
+                pillText.lineLimit(1).fixedSize()
             }
+            Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).accessibilityHidden(true)
         }
+    }
+
+    /// "Opus 4.5 · High", the effort in the secondary colour.
+    private var pillText: Text {
+        guard let effort = store.menuEffortName else { return Text(store.pillModelName) }
+        return Text("\(store.pillModelName) \(Text("· \(effort)").foregroundStyle(AgentLandColor.textSecondary.color))")
+    }
+
+    /// "Opus 4.5 · High, Plan": the model, its thinking and the mode, for VoiceOver.
+    private var pillValue: String {
+        [store.modelMenuSummary, store.modeChoices.count > 1 ? store.selectedModeChoice?.name : nil]
+            .compactMap { $0 }.joined(separator: ", ")
     }
 
     #if os(macOS)

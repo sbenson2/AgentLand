@@ -29,56 +29,95 @@ struct ChatModelMenuGroups: Equatable {
     }
 }
 
-extension ChatSessionStore {
-    /// "Sonnet 4.5 · High": the chosen model, with the effort when its provider takes one.
-    var modelMenuSummary: String {
-        let name = selectedModel?.name ?? (options == nil ? "Default model" : "Choose model")
-        guard !effortChoices.isEmpty, let effort = selectedEffort else { return name }
-        return "\(name) · \(effort.capitalized)"
+/// What an effort is called, and what it does, in the pill's Thinking menu. The host sends Claude Code's and Codex's
+/// own IDs.
+enum ChatEffort {
+    static func name(_ id: String) -> String {
+        switch id {
+        case "xhigh": "Extra High"
+        default: id.capitalized
+        }
+    }
+
+    /// A model's name without a trailing note in parentheses, for the pill; the menu keeps the whole name.
+    static func shortName(_ name: String) -> String {
+        guard name.hasSuffix(")"), let open = name.lastIndex(of: "(") else { return name }
+        let short = name[..<open].trimmingCharacters(in: .whitespaces)
+        return short.isEmpty ? name : short
+    }
+
+    static func summary(_ id: String) -> String? {
+        switch id {
+        case "minimal": "Answers almost at once"
+        case "low": "Quick answers"
+        case "medium": "Balanced"
+        case "high": "Thinks longer"
+        case "xhigh": "Thinks much longer"
+        case "max": "Thinks the longest"
+        default: nil
+        }
     }
 }
 
-/// What the model chip's menu holds, also the Options menu's and the title menu's Model submenu: the first five
-/// models (the chosen one checked, its context size under its name), More Models as a submenu with every other model,
-/// then the chosen model's efforts. No search: a long list is the submenu's.
+extension ChatSessionStore {
+    /// The chosen model's name, as the menu lists it.
+    var menuModelName: String { selectedModel?.name ?? (options == nil ? "Default model" : "Choose model") }
+
+    /// The pill's shorter name: without a trailing note in parentheses ("Default (recommended)" is "Default").
+    var pillModelName: String { ChatEffort.shortName(menuModelName) }
+
+    /// The chosen effort's name, when the provider takes one.
+    var menuEffortName: String? {
+        guard !effortChoices.isEmpty, let effort = selectedEffort else { return nil }
+        return ChatEffort.name(effort)
+    }
+
+    /// "Sonnet 4.5 · High": the chosen model, with the effort when its provider takes one.
+    var modelMenuSummary: String { menuEffortName.map { "\(menuModelName) · \($0)" } ?? menuModelName }
+
+    /// The mode, when it isn't one that asks first: the pill shows its symbol, so Plan or Bypass can't go unnoticed.
+    var flaggedMode: ChatModeChoice? {
+        guard let mode = selectedModeChoice, modeChoices.count > 1, !["default", "ask"].contains(mode.id) else { return nil }
+        return mode
+    }
+}
+
+/// The composer pill's menu (owner, 2026-10-25: one pill that combines the model and its reasoning, as Claude's and
+/// ChatGPT's apps do): the first five models (the chosen one checked, its context size under its name), More Models
+/// with every other model, then Thinking and Permissions, each a submenu that shows its current choice. No search: a
+/// long list is the submenu's.
 struct ChatModelMenuContent: View {
     let store: ChatSessionStore
-    /// Runs after a model or effort is chosen (the iPhone task menu closes itself with it).
-    var chosen: (() -> Void)? = nil
 
     var body: some View {
         let models = store.options?.models ?? []
-        if models.isEmpty {
-            Button {} label: {
-                Label("No Models", systemImage: "cpu")
-                Text("This provider has no models set up. Choose one in AgentLand on your Mac.")
-            }
-            .disabled(true)
-        } else {
-            let groups = ChatModelMenuGroups(models)
-            modelPicker(groups.first)
-            if !groups.more.isEmpty {
-                Menu("More Models", systemImage: "ellipsis.circle") {
-                    if groups.more.count == 1 {
-                        modelPicker(groups.more[0].models)
-                    } else {
-                        ForEach(groups.more) { group in
-                            Section(group.provider) { modelPicker(group.models) }
+        Section {
+            if models.isEmpty {
+                Button {} label: {
+                    Label("No Models", systemImage: "cpu")
+                    Text("This provider has no models set up. Choose one in AgentLand on your Mac.")
+                }
+                .disabled(true)
+            } else {
+                let groups = ChatModelMenuGroups(models)
+                modelPicker(groups.first)
+                if !groups.more.isEmpty {
+                    Menu("More Models", systemImage: "ellipsis.circle") {
+                        if groups.more.count == 1 {
+                            modelPicker(groups.more[0].models)
+                        } else {
+                            ForEach(groups.more) { group in
+                                Section(group.provider) { modelPicker(group.models) }
+                            }
                         }
                     }
+                    .accessibilityIdentifier("chatMoreModels")
                 }
-                .accessibilityIdentifier("chatMoreModels")
             }
         }
-        if !store.effortChoices.isEmpty {
-            Section("Effort") {
-                // The picker's own label stays empty: the section names it, once.
-                Picker(selection: Binding(get: { store.selectedEffort }, set: { if let effort = $0 { store.selectEffort(effort); chosen?() } })) {
-                    ForEach(store.effortChoices, id: \.self) { Label($0.capitalized, systemImage: "brain").tag(Optional($0)) }
-                } label: { EmptyView() }
-                .pickerStyle(.inline)
-                .accessibilityIdentifier("chatEffortPicker")
-            }
+        Section {
+            if !store.effortChoices.isEmpty { thinking }
+            if store.modeChoices.count > 1 { permissions }
         }
     }
 
@@ -86,7 +125,7 @@ struct ChatModelMenuContent: View {
     private func modelPicker(_ models: [AgentModelOption]) -> some View {
         let ids = Set(models.map(\.id))
         let selection = Binding<String?>(get: { ids.contains(store.selectedModelID) ? store.selectedModelID : nil },
-                                         set: { if let id = $0 { store.selectModel(id); chosen?() } })
+                                         set: { if let id = $0 { store.selectModel(id) } })
         return Picker(selection: selection) {
             ForEach(models) { model in
                 // A menu item's second text is its subtitle.
@@ -100,5 +139,43 @@ struct ChatModelMenuContent: View {
             }
         } label: { EmptyView() }
         .pickerStyle(.inline)
+    }
+
+    /// How hard the model thinks: a submenu whose row shows the current effort. Its items are toggles, which the
+    /// system checks like a picker's and which keep each item's summary as its subtitle (a picker's items drop it).
+    private var thinking: some View {
+        Menu {
+            ForEach(store.effortChoices, id: \.self) { effort in
+                Toggle(isOn: Binding(get: { store.selectedEffort == effort }, set: { if $0 { store.selectEffort(effort) } })) {
+                    Text(ChatEffort.name(effort))
+                    if let summary = ChatEffort.summary(effort) { Text(summary) }
+                }
+            }
+        } label: {
+            Label("Thinking", systemImage: "brain")
+            Text(store.menuEffortName ?? "Default")
+        }
+        .accessibilityIdentifier("chatEffortPicker")
+    }
+
+    /// What the agent may do without asking, a submenu whose row shows the current mode, its items toggles like
+    /// Thinking's. Bypass permissions and Full access ask first, on the pill (`chatModeConfirmation(_:origin:
+    /// .composer)`); the mode changes between turns.
+    private var permissions: some View {
+        Menu {
+            ForEach(store.modeChoices) { choice in
+                Toggle(isOn: Binding(get: { store.selectedModeChoice?.id == choice.id },
+                                     set: { if $0 { store.selectMode(choice.id, from: .composer) } })) {
+                    Label(choice.name, systemImage: choice.symbol)
+                    Text(choice.summary)
+                }
+                .accessibilityIdentifier(choice.id == "plan" ? "chatPlanToggle" : "chatMode-\(choice.id)")
+            }
+        } label: {
+            Label("Permissions", systemImage: store.selectedModeChoice?.symbol ?? "hand.raised")
+            Text(store.selectedModeChoice?.name ?? "Default")
+        }
+        .disabled(store.isWorking)
+        .accessibilityIdentifier("chatModeMenu")
     }
 }
