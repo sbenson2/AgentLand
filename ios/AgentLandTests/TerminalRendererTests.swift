@@ -165,6 +165,31 @@ private final class TerminalHost: APITransport, @unchecked Sendable {
         XCTAssertEqual(reports, [focusOut, focusIn], "Another task in front, then this one again, each reported once")
     }
 
+    /// Only a tap on the text entry brings the keyboard (owner, 2026-10-27): the cursor's row and the rows on either
+    /// side of it, where Claude Code's and Codex's input boxes sit, below however much history.
+    func testOnlyTheCursorsRowsAreTheTextEntry() async {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 480))
+        let view = AgentTerminalView(frame: window.bounds)
+        window.addSubview(view)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        let terminal = view.getTerminal()
+        view.feed(byteArray: Array((String(repeating: "line\r\n", count: terminal.rows * 2) + "\u{1b}[6;1H").utf8)[...])
+        try? await Task.sleep(for: .milliseconds(100))
+        XCTAssertGreaterThan(terminal.getTopVisibleRow(), 0, "The screen sits below its history")
+        XCTAssertEqual(terminal.getCursorLocation().y, 5)
+
+        let rowHeight = view.getOptimalFrameSize().height / CGFloat(terminal.rows)
+        func screenRow(_ row: Int) -> CGPoint {
+            CGPoint(x: 10, y: (CGFloat(terminal.getTopVisibleRow() + row) + 0.5) * rowHeight)
+        }
+        XCTAssertTrue(view.isTextEntry(screenRow(5)), "The cursor's row")
+        XCTAssertTrue(view.isTextEntry(screenRow(4)) && view.isTextEntry(screenRow(6)), "An input box's edges")
+        for row in [0, 3, 7, terminal.rows - 1] {
+            XCTAssertFalse(view.isTextEntry(screenRow(row)), "Row \(row) is output, not the text entry")
+        }
+    }
+
     /// The terminal's notice ("Check output before typing again") sits at the bottom, and the rows stop
     /// above it, so it never covers the newest output it asks the person to check (B-13).
     func testTheRowsStopAboveTheNoticeAtTheBottom() {

@@ -4,6 +4,7 @@ import AgentLandCore
 import AgentLandDesign
 #if os(iOS)
 import UIKit
+import GameController
 
 // The Mac's renderer, link, mount and representable are in MacTerminalRenderer.swift.
 
@@ -54,6 +55,10 @@ public final class AgentTerminalView: TerminalView {
             if isFirstResponder { _ = changingKeyboard { super.resignFirstResponder() } }
             return false
         }
+        // SwiftTerm's tap asks for the keyboard wherever it lands; only a tap on the text entry brings it. With a
+        // hardware keyboard none comes up, and a tap anywhere still gives the terminal the typing.
+        if !isFirstResponder, GCKeyboard.coalesced == nil, let tap = tapRecognizer, tap.state == .ended,
+           !isTextEntry(tap.location(in: self)) { return false }
         return changingKeyboard { super.becomeFirstResponder() }
     }
 
@@ -276,6 +281,8 @@ public final class AgentTerminalView: TerminalView {
 
     /// The touch under way began while this terminal didn't have the keyboard.
     private var touchBeganWithoutKeyboard = false
+    /// SwiftTerm's single tap, which asks for the keyboard wherever it lands.
+    private weak var tapRecognizer: UITapGestureRecognizer?
 
     /// SwiftTerm's tap clicks a program that reads the mouse only while the terminal has the keyboard; without it,
     /// the tap just brings the keyboard, the rows shrink under the finger and the click is lost. That made Claude
@@ -284,11 +291,25 @@ public final class AgentTerminalView: TerminalView {
     /// The program still has the focus then (`showInFront`); a focus report just before the click would have
     /// Claude Code ignore it.
     func installTapClicks() {
-        let tap = gestureRecognizers?.first {
-            guard let tap = $0 as? UITapGestureRecognizer else { return false }
-            return tap.numberOfTapsRequired == 1 && tap.numberOfTouchesRequired == 1
+        let tap = gestureRecognizers?.compactMap { $0 as? UITapGestureRecognizer }.first {
+            $0.numberOfTapsRequired == 1 && $0.numberOfTouchesRequired == 1
         }
         tap?.addTarget(self, action: #selector(tapped(_:)))
+        tapRecognizer = tap
+    }
+
+    /// Whether a tap at `point` (in this view) lands on the text entry, the only place a tap brings the keyboard
+    /// (owner, 2026-10-27: "the only thing that should bring up the keyboard is the text entry area, not every part
+    /// of the screen"): the cursor's row, where a shell's prompt and Claude Code's and Codex's input boxes keep it,
+    /// and the row above and below it, the box's edges. Before the terminal has a size, anywhere is.
+    func isTextEntry(_ point: CGPoint) -> Bool {
+        let terminal = getTerminal()
+        guard terminal.rows > 0, contentSize.height > 0 else { return true }
+        let rowHeight = getOptimalFrameSize().height / CGFloat(terminal.rows)
+        guard rowHeight > 0 else { return true }
+        // The content holds every line, the history first and the screen's rows, the cursor's among them, last.
+        let cursorTop = contentSize.height - CGFloat(terminal.rows - terminal.getCursorLocation().y) * rowHeight
+        return (-1...1).contains(Int(((point.y - cursorTop) / rowHeight).rounded(.down)))
     }
 
     @objc private func tapped(_ tap: UITapGestureRecognizer) {

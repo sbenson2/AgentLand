@@ -4988,8 +4988,14 @@ final class FullWorkspaceUITests: XCTestCase {
 
     private func typeTerminal(_ app: XCUIApplication, _ command: String) {
         if UIDevice.current.userInterfaceIdiom == .phone {
-            // The phone has no separate terminal toolbar; touching its retained renderer focuses it.
-            app.descendants(matching: .any)["terminalCanvas"].firstMatch.tap()
+            // Only a tap on the terminal's text entry brings the keyboard (2026-10-27); the session's ••• menu shows
+            // it from anywhere. On iOS 27 that menu's rows can lose their identifiers, so the row is found by its label.
+            if !app.keyboards.firstMatch.exists {
+                app.buttons["sessionActions"].tap()
+                let show = app.buttons.matching(NSPredicate(format: "label == %@", "Show keyboard")).firstMatch
+                XCTAssertTrue(show.waitForExistence(timeout: 5))
+                show.tap()
+            }
         } else {
             surfaceMenu(app, "terminalActions").tap()
             menuItem(app, "terminalKeyboard", label: "Show keyboard").tap()
