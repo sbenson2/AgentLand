@@ -131,6 +131,40 @@ private final class TerminalHost: APITransport, @unchecked Sendable {
         XCTAssertFalse(view.isFirstResponder, "and gives up the keyboard it still held")
     }
 
+    /// Focus reports follow the terminal in front, not the keyboard. Told the focus went when Return put the
+    /// keyboard away, Claude Code ignored the tap on the bar above its prompt, and it ignores clicks for a moment
+    /// after it hears the focus come back, so the keyboard coming with that tap can't report it either.
+    func testFocusReportsFollowTheTerminalInFrontNotTheKeyboard() async {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 480))
+        let view = AgentTerminalView(frame: window.bounds)
+        window.addSubview(view)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        var reports: [Data] = []
+        let link = TerminalRendererLink(send: { reports.append($0) }, sendProtocolReply: { reports.append($0) }, resize: { _, _ in })
+        view.terminalDelegate = link
+        let focusIn = Data("\u{1b}[I".utf8), focusOut = Data("\u{1b}[O".utf8)
+
+        view.showInFront(true)
+        view.feed(byteArray: Array("\u{1b}[?1004h".utf8)[...])
+        try? await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(reports, [focusIn], "A program that asks hears that the terminal in front has the focus")
+
+        reports.removeAll()
+        XCTAssertTrue(view.becomeFirstResponder())
+        XCTAssertTrue(view.resignFirstResponder())
+        view.feed(byteArray: Array("\u{1b}[?1004h".utf8)[...])
+        try? await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(reports, [focusIn], "The keyboard coming and going reports nothing, and the focus stays with the terminal")
+
+        reports.removeAll()
+        view.showInFront(false)
+        view.showInFront(false)
+        view.showInFront(true)
+        try? await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(reports, [focusOut, focusIn], "Another task in front, then this one again, each reported once")
+    }
+
     /// The terminal's notice ("Check output before typing again") sits at the bottom, and the rows stop
     /// above it, so it never covers the newest output it asks the person to check (B-13).
     func testTheRowsStopAboveTheNoticeAtTheBottom() {

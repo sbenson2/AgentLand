@@ -9,8 +9,9 @@ import UIKit
 
 public final class AgentTerminalView: TerminalView {
     private(set) var forwardingProtocolReply = false
-    /// True while this view sends wheel reports for a touch drag: the person's input, not a parser reply.
-    private(set) var sendingWheelReport = false
+    /// True while this view sends mouse reports for a touch (a drag's wheel steps, a tap's click): the person's
+    /// input, not a parser reply.
+    private(set) var sendingMouseReport = false
     /// True while this view draws output whose queries a renderer already answered: their replies would
     /// reach the shell long after the program that asked stopped waiting, and be read as typing.
     private var replayingAnsweredOutput = false
@@ -50,10 +51,10 @@ public final class AgentTerminalView: TerminalView {
     /// holds it. Refusing (and letting go) there is what keeps the restore from showing anything.
     public override func becomeFirstResponder() -> Bool {
         guard canBecomeFirstResponder else {
-            if isFirstResponder { _ = super.resignFirstResponder() }
+            if isFirstResponder { _ = changingKeyboard { super.resignFirstResponder() } }
             return false
         }
-        return super.becomeFirstResponder()
+        return changingKeyboard { super.becomeFirstResponder() }
     }
 
     /// Scrolls back to the rows the terminal displays. A renderer mounted into a new view can come
@@ -156,14 +157,44 @@ public final class AgentTerminalView: TerminalView {
         super.cursorStyleChanged(source: source, newStyle: steady)
     }
     public override func send(source: Terminal, data: ArraySlice<UInt8>) {
-        guard !sendingWheelReport else {
+        guard !sendingMouseReport else {
             super.send(source: source, data: data)
             return
         }
         guard !replayingAnsweredOutput else { return }
+        if keyboardChanging && (data.elementsEqual([0x1b, 0x5b, 0x49]) || data.elementsEqual([0x1b, 0x5b, 0x4f])) { return }
         forwardingProtocolReply = true
         defer { forwardingProtocolReply = false }
         super.send(source: source, data: data)
+    }
+
+    // MARK: Focus reports
+
+    /// The program's focus reports (CSI I and CSI O, for a program that asked) follow whether this terminal is in
+    /// front (`showInFront`), not the keyboard: putting the keyboard away leaves the person on the terminal. Told
+    /// the focus went, Claude Code ignores clicks, and still does for a moment after it hears the focus come back.
+    private var inFront = false
+    /// True while the keyboard comes or goes: SwiftTerm's focus report for it is dropped.
+    private var keyboardChanging = false
+
+    func showInFront(_ front: Bool) {
+        guard front != inFront else { return }
+        inFront = front
+        getTerminal().setTerminalFocus(front)
+    }
+
+    /// Runs a first-responder change without its focus report, and puts SwiftTerm's focus back to `inFront`
+    /// (it reports that focus again when a program turns focus reports on).
+    private func changingKeyboard(_ change: () -> Bool) -> Bool {
+        keyboardChanging = true
+        defer { keyboardChanging = false }
+        let changed = change()
+        getTerminal().setTerminalFocus(inFront)
+        return changed
+    }
+
+    public override func resignFirstResponder() -> Bool {
+        changingKeyboard { super.resignFirstResponder() }
     }
 
     // MARK: Wheel scrolling
@@ -217,19 +248,60 @@ public final class AgentTerminalView: TerminalView {
     /// program's own mouse encoding (SGR, UTF-8, URXVT or X10) and the guarded input queue.
     private func turnWheel(travel: CGFloat, at point: CGPoint) {
         let terminal = getTerminal()
-        guard programReadsWheel, terminal.rows > 0, terminal.cols > 0 else { return }
+        guard programReadsWheel, let cell = mouseCell(at: point),
+              let step = wheel.steps(forTravel: travel, rowHeight: cell.rowHeight) else { return }
+        let flags = terminal.encodeButton(button: step.direction == .up ? 4 : 5, release: false, shift: false, meta: false, control: false)
+        sendingMouseReport = true
+        defer { sendingMouseReport = false }
+        for _ in 0..<step.count {
+            terminal.sendEvent(buttonFlags: flags, x: cell.column, y: cell.row, pixelX: cell.pixelX, pixelY: cell.pixelY)
+        }
+    }
+
+    /// The screen cell under `point` (in this view) as a mouse report names it, the point in pixels from the
+    /// screen's corner, and the row height; nil before the terminal has a size.
+    private func mouseCell(at point: CGPoint) -> (column: Int, row: Int, pixelX: Int, pixelY: Int, rowHeight: CGFloat)? {
+        let terminal = getTerminal()
+        guard terminal.rows > 0, terminal.cols > 0 else { return nil }
         let grid = getOptimalFrameSize().size
         let rowHeight = grid.height / CGFloat(terminal.rows)
         let columnWidth = grid.width / CGFloat(terminal.cols)
-        guard columnWidth > 0, let step = wheel.steps(forTravel: travel, rowHeight: rowHeight) else { return }
+        guard columnWidth > 0, rowHeight > 0 else { return nil }
         let visibleY = point.y - contentOffset.y
-        let column = min(max(Int(point.x / columnWidth), 0), terminal.cols - 1)
-        let row = min(max(Int(visibleY / rowHeight), 0), terminal.rows - 1)
-        let flags = terminal.encodeButton(button: step.direction == .up ? 4 : 5, release: false, shift: false, meta: false, control: false)
-        sendingWheelReport = true
-        defer { sendingWheelReport = false }
-        for _ in 0..<step.count {
-            terminal.sendEvent(buttonFlags: flags, x: column, y: row, pixelX: max(Int(point.x), 0), pixelY: max(Int(visibleY), 0))
+        return (min(max(Int(point.x / columnWidth), 0), terminal.cols - 1), min(max(Int(visibleY / rowHeight), 0), terminal.rows - 1),
+                max(Int(point.x), 0), max(Int(visibleY), 0), rowHeight)
+    }
+
+    // MARK: A tap that brings the keyboard
+
+    /// The touch under way began while this terminal didn't have the keyboard.
+    private var touchBeganWithoutKeyboard = false
+
+    /// SwiftTerm's tap clicks a program that reads the mouse only while the terminal has the keyboard; without it,
+    /// the tap just brings the keyboard, the rows shrink under the finger and the click is lost. That made Claude
+    /// Code's bar above its prompt untappable once Return had put the keyboard away. A second action on SwiftTerm's
+    /// own tap recognizer sends that tap's click too, at the cell it landed on, before the keyboard resizes the rows.
+    /// The program still has the focus then (`showInFront`); a focus report just before the click would have
+    /// Claude Code ignore it.
+    func installTapClicks() {
+        let tap = gestureRecognizers?.first {
+            guard let tap = $0 as? UITapGestureRecognizer else { return false }
+            return tap.numberOfTapsRequired == 1 && tap.numberOfTouchesRequired == 1
+        }
+        tap?.addTarget(self, action: #selector(tapped(_:)))
+    }
+
+    @objc private func tapped(_ tap: UITapGestureRecognizer) {
+        let terminal = getTerminal()
+        // The modes SwiftTerm's own tap clicks in: press and release reports.
+        guard tap.state == .ended, touchBeganWithoutKeyboard, canBecomeFirstResponder, allowMouseReporting, !selectionActive,
+              [.vt200, .buttonEventTracking, .anyEvent].contains(terminal.mouseMode),
+              let cell = mouseCell(at: tap.location(in: self)) else { return }
+        sendingMouseReport = true
+        defer { sendingMouseReport = false }
+        for release in [false, true] {
+            let flags = terminal.encodeButton(button: 0, release: release, shift: false, meta: false, control: false)
+            terminal.sendEvent(buttonFlags: flags, x: cell.column, y: cell.row, pixelX: cell.pixelX, pixelY: cell.pixelY)
         }
     }
 
@@ -261,6 +333,7 @@ public final class AgentTerminalView: TerminalView {
 
     public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         stopCoasting()
+        touchBeganWithoutKeyboard = !isFirstResponder
         super.touchesBegan(touches, with: event)
     }
 
@@ -512,7 +585,7 @@ final class TerminalKeyBar: UIInputView, UIInputViewAudioFeedback {
         } ?? false
         let view = source as? AgentTerminalView
         let protocolReply = view?.forwardingProtocolReply == true
-        let wheelReport = view?.sendingWheelReport == true
+        let wheelReport = view?.sendingMouseReport == true
         guard TerminalTouchInputPolicy.shouldForward(isTouchPan: touchPan, isProtocolReply: protocolReply, isWheelReport: wheelReport) else { return }
         if protocolReply {
             let reply = Data(data)
@@ -777,6 +850,7 @@ struct TerminalRenderer: UIViewRepresentable {
         view.observeKeyboard()
         view.allowMouseReporting = true
         view.installWheelScrolling()
+        view.installTapClicks()
         view.linkReporting = .none
         view.getTerminal().setCursorStyle(.steadyBlock)
         view.accessibilityIdentifier = "terminalCanvas"
@@ -840,6 +914,7 @@ struct TerminalRenderer: UIViewRepresentable {
         // the terminal as still focused and showed its key bar again after the resign, over Home and with
         // nothing focused (B-8). Resigned first, the restore has to ask, and an inactive terminal refuses.
         if !active && view.isFirstResponder { _ = view.resignFirstResponder() }
+        view.showInFront(active && visible)
         view.isUserInteractionEnabled = active
         // SwiftTerm explicitly makes itself an accessibility element. Mirror the cover/input gate
         // here as well as on its SwiftUI container.
