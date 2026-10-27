@@ -190,6 +190,59 @@ private final class TerminalHost: APITransport, @unchecked Sendable {
         }
     }
 
+    /// A full-screen program's bars (Claude Code's input box, status line and mode line) hide while its history scrolls
+    /// back (owner, 2026-10-27): the host's rows grow by them and the renderer hangs that much below its foot, masked.
+    /// They come back at the program's bottom, and when the program leaves the alternate screen.
+    func testFullScreenBarsHideWhileScrollingBackAndComeBackAtTheBottom() {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 480))
+        let mount = TerminalMountView(frame: window.bounds)
+        window.addSubview(mount)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        var sizes: [Int] = []
+        let link = TerminalRendererLink(send: { _ in }, sendProtocolReply: { _ in }, resize: { rows, _ in sizes.append(rows) })
+        let view = AgentTerminalView(frame: .zero)
+        view.terminalDelegate = link
+        mount.mount(view, claim: true)
+        mount.layoutIfNeeded()
+        let terminal = view.getTerminal()
+        let rows = terminal.rows
+        // The alternate screen and the mouse, the cursor in an input box whose top edge is seven rows from the foot.
+        view.feed(TerminalPacket(data: Data("\u{1b}[?1049h\u{1b}[?1000h\u{1b}[?1006h\u{1b}[\(rows - 5);3H".utf8)))
+
+        view.hideBars()
+        XCTAssertEqual(view.hiddenBarRows, 7, "From the row above the cursor to the foot")
+        XCTAssertEqual(terminal.rows, rows + 7, "The terminal grows by the bars")
+        XCTAssertEqual(sizes.last, rows + 7, "and tells the host at once, before any wheel step")
+        XCTAssertEqual(view.layer.mask?.frame.height ?? 0, CGFloat(rows) * view.rowHeight, accuracy: 0.5,
+                       "Only the rows that were in sight show")
+
+        view.wheelTurned(.up, steps: 5)
+        view.wheelTurned(.down, steps: 4)
+        XCTAssertEqual(view.hiddenBarRows, 7, "Above the bottom they stay hidden")
+        view.wheelTurned(.down, steps: 3)
+        XCTAssertEqual(view.hiddenBarRows, 0, "Back at the bottom they come back")
+        XCTAssertEqual(terminal.rows, rows)
+        XCTAssertEqual(sizes.last, rows)
+        XCTAssertNil(view.layer.mask)
+
+        // Claude Code marks its scrolled-up history: the mark, not the steps, says when it is at its bottom.
+        view.hideBars()
+        view.wheelTurned(.up, steps: 3)
+        view.feed(TerminalPacket(data: Data("\u{1b}7\u{1b}[4;1HJump to bottom (click)\u{1b}8".utf8)))
+        view.wheelTurned(.down, steps: 3)
+        XCTAssertEqual(view.hiddenBarRows, 7, "Still marked as scrolled up, past where the steps say the bottom is")
+        view.feed(TerminalPacket(data: Data("\u{1b}7\u{1b}[4;1H\u{1b}[2K\u{1b}8".utf8)))
+        XCTAssertEqual(view.hiddenBarRows, 0, "The mark gone, the program is at its bottom")
+
+        view.hideBars()
+        XCTAssertEqual(view.hiddenBarRows, 7)
+        view.feed(TerminalPacket(data: Data("\u{1b}[?1049l".utf8)))
+        XCTAssertEqual(view.hiddenBarRows, 0, "Leaving the alternate screen brings them back")
+        view.hideBars()
+        XCTAssertEqual(view.hiddenBarRows, 0, "A shell's screen has no bars to hide")
+    }
+
     /// The terminal's notice ("Check output before typing again") sits at the bottom, and the rows stop
     /// above it, so it never covers the newest output it asks the person to check (B-13).
     func testTheRowsStopAboveTheNoticeAtTheBottom() {

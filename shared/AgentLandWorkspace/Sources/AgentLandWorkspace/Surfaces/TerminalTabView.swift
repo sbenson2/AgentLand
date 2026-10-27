@@ -33,6 +33,8 @@ public final class AgentTerminalView: TerminalView {
             replayingAnsweredOutput = false
         }
         if packet.answeredPrefix < bytes.count { feed(byteArray: bytes[packet.answeredPrefix...]) }
+        let terminal = getTerminal()
+        if !terminal.isCurrentBufferAlternate || terminal.mouseMode == .off { showBars() } else { followScrolledUpMark() }
     }
 
     /// Whether this terminal's tab takes input now (selected, unlocked, uncovered), from its session. The
@@ -59,7 +61,9 @@ public final class AgentTerminalView: TerminalView {
         // hardware keyboard none comes up, and a tap anywhere still gives the terminal the typing.
         if !isFirstResponder, GCKeyboard.coalesced == nil, let tap = tapRecognizer, tap.state == .ended,
            !isTextEntry(tap.location(in: self)) { return false }
-        return changingKeyboard { super.becomeFirstResponder() }
+        let became = changingKeyboard { super.becomeFirstResponder() }
+        if became { showBars() }
+        return became
     }
 
     /// Scrolls back to the rows the terminal displays. A renderer mounted into a new view can come
@@ -118,6 +122,7 @@ public final class AgentTerminalView: TerminalView {
     /// goes once UIKit's text input has finished with the key, and the rows growing back resize the host's terminal
     /// behind the Return, in the same queue.
     public override func insertText(_ text: String) {
+        showBars()
         let closes = TerminalReturnKey.closesKeyboard(
             text: text, keyboardHeight: keyboardHeight, keyBarHeight: inputAccessoryView?.bounds.height ?? 0,
             hardwareKeyboard: hardwareKeyTyping, controlLatched: controlModifier)
@@ -144,6 +149,7 @@ public final class AgentTerminalView: TerminalView {
     }
     public override func layoutSubviews() {
         super.layoutSubviews()
+        maskHiddenBars()
         guard !didReportLayout, window != nil, bounds.width > 0, bounds.height > 0 else { return }
         didReportLayout = true
         DispatchQueue.main.async { [weak self] in self?.onLayoutReady?() }
@@ -253,14 +259,100 @@ public final class AgentTerminalView: TerminalView {
     /// program's own mouse encoding (SGR, UTF-8, URXVT or X10) and the guarded input queue.
     private func turnWheel(travel: CGFloat, at point: CGPoint) {
         let terminal = getTerminal()
-        guard programReadsWheel, let cell = mouseCell(at: point),
-              let step = wheel.steps(forTravel: travel, rowHeight: cell.rowHeight) else { return }
+        guard programReadsWheel, let first = mouseCell(at: point),
+              let step = wheel.steps(forTravel: travel, rowHeight: first.rowHeight) else { return }
+        // The bars hide before the first step up, so the host has the new rows before the steps.
+        if step.direction == .up { hideBars() }
+        let cell = mouseCell(at: point) ?? first
         let flags = terminal.encodeButton(button: step.direction == .up ? 4 : 5, release: false, shift: false, meta: false, control: false)
         sendingMouseReport = true
-        defer { sendingMouseReport = false }
         for _ in 0..<step.count {
             terminal.sendEvent(buttonFlags: flags, x: cell.column, y: cell.row, pixelX: cell.pixelX, pixelY: cell.pixelY)
         }
+        sendingMouseReport = false
+        wheelTurned(step.direction, steps: step.count)
+    }
+
+    // MARK: A full-screen program's bars hide while its history scrolls
+
+    /// Rows the renderer reaches below its visible foot while the person scrolls back through a full-screen program's
+    /// history (owner, 2026-10-27: "the text entry bar and status line take up a lot of space. when scrolling can they
+    /// autohide but then reapear when hitting the bottom of the terminal?"). Claude Code keeps its input box, status
+    /// line and mode line at the bottom; the host's terminal grows by those rows, the program redraws its history over
+    /// the room they had, and the bars land out of sight below. 0 while they show.
+    private(set) var hiddenBarRows = 0
+    /// Wheel steps up since the bars hid, less the steps down, for a program that doesn't mark its scrolled-up history.
+    /// It was at its bottom when they hid, so back at 0 it is at its bottom again; it ignores steps past its top, so
+    /// after those the bars come back that much later.
+    private var stepsAboveBottom = 0
+    /// Claude Code marks a history scrolled up from its bottom with "Jump to bottom". Once seen since the bars hid, its
+    /// going means the program is at its bottom again, by the wheel or by a tap on the mark itself. A tap can't bring
+    /// the bars back itself: the host's resize reached Claude Code before the click, which then missed the mark.
+    private var sawScrolledUpMark = false
+    /// Covers the hidden rows, which reach over the home indicator, the key bar or the notice.
+    private lazy var barsMask: CALayer = {
+        let mask = CALayer()
+        mask.backgroundColor = UIColor.black.cgColor
+        return mask
+    }()
+
+    /// The height of one of the terminal's rows.
+    var rowHeight: CGFloat {
+        let rows = getTerminal().rows
+        return rows > 0 ? getOptimalFrameSize().height / CGFloat(rows) : 0
+    }
+
+    /// Hides the bars of a program on the alternate screen: from the row above the cursor (an input box's top edge,
+    /// as `isTextEntry` reads it) to the foot. A cursor in the top third is no input box at the bottom.
+    func hideBars() {
+        let terminal = getTerminal()
+        let cursorRow = terminal.getCursorLocation().y
+        guard hiddenBarRows == 0, terminal.isCurrentBufferAlternate, terminal.mouseMode != .off, terminal.rows > 0,
+              cursorRow >= terminal.rows / 3, let owner else { return }
+        hiddenBarRows = terminal.rows - cursorRow + 1
+        stepsAboveBottom = 0
+        sawScrolledUpMark = false
+        owner.barsChanged()
+    }
+
+    /// Brings the bars back: at the program's bottom, on typing, as the keyboard comes, and when the program leaves the
+    /// alternate screen or the mouse.
+    func showBars() {
+        guard hiddenBarRows > 0 else { return }
+        hiddenBarRows = 0
+        stepsAboveBottom = 0
+        sawScrolledUpMark = false
+        owner?.barsChanged()
+    }
+
+    func wheelTurned(_ direction: TerminalWheelScroll.Direction, steps: Int) {
+        guard hiddenBarRows > 0 else { return }
+        stepsAboveBottom += direction == .up ? steps : -steps
+        if stepsAboveBottom <= 0 && !sawScrolledUpMark { showBars() }
+    }
+
+    /// After output while the bars are hidden, reads whether the program still marks its history as scrolled up.
+    private func followScrolledUpMark() {
+        guard hiddenBarRows > 0 else { return }
+        let terminal = getTerminal()
+        let marked = (0..<terminal.rows).contains {
+            terminal.getLine(row: $0)?.translateToString().contains("Jump to bottom") == true
+        }
+        if marked { sawScrolledUpMark = true } else if sawScrolledUpMark { showBars() }
+    }
+
+    /// Clips the hidden rows from sight.
+    private func maskHiddenBars() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
+        guard hiddenBarRows > 0 else {
+            if layer.mask === barsMask { layer.mask = nil }
+            return
+        }
+        let shown = CGFloat(max(0, getTerminal().rows - hiddenBarRows)) * rowHeight
+        barsMask.frame = CGRect(x: 0, y: bounds.minY, width: bounds.width, height: shown)
+        layer.mask = barsMask
     }
 
     /// The screen cell under `point` (in this view) as a mouse report names it, the point in pixels from the
@@ -732,7 +824,18 @@ final class TerminalMountView: UIView {
     private func restFrame(for view: AgentTerminalView) -> CGRect {
         var frame = bounds
         frame.size.height = max(0, bounds.height - max(homeIndicatorInset(), keyboardCover(view)) - noticeInset)
+        // A full-screen program's hidden bars hang below, out of sight (`AgentTerminalView.hiddenBarRows`).
+        frame.size.height += CGFloat(view.hiddenBarRows) * view.rowHeight
         return frame
+    }
+
+    /// The renderer's bars hid or came back: it takes its new height at once, so the host has the new rows before the
+    /// wheel steps that follow, in the same queue.
+    func barsChanged() {
+        guard let view = mounted, view.superview === self else { return }
+        setNeedsLayout()
+        layoutIfNeeded()
+        view.layoutIfNeeded()
     }
 
     /// How much of this view's foot is in the window's bottom safe area (the home indicator).
